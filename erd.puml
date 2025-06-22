@@ -114,12 +114,6 @@ entity "ClassInvitation" {
   TimeEnd
 }
 
-entity "RefreshToken" {
-  * Id
-  --
-  Token
-  ExpireAt
-}
 
 entity "Tag" {
   * Id
@@ -127,6 +121,12 @@ entity "Tag" {
   Name
 }
 
+
+entity "ShuffleInstance" {
+  * Id
+  --
+  No
+}
 
 
 
@@ -145,6 +145,8 @@ Test }o--o{ Question : includes
 TestTemplate ||--o{ Question : includes
 Folder ||--o{ TestTemplate : contains
 User }o--o{ Folder : has access to
+ShuffleInstance ||--o{ Question : includes
+Test ||--o{ ShuffleInstance : includes
 User }o--o{ Plan : subscribes to
 User }o--o{ TokenPackage : purchases
 Question ||--o{ Comment : has
@@ -153,7 +155,6 @@ User ||--o{ TestGrade : receives
 Test ||--o{ TestGrade : has
 Class ||--o{ ClassInvitation : issues
 User }o--o{ ClassInvitation : joins 
-User ||--o{ RefreshToken : owns
 User }o--o{ QuestionSet : has access to
 QuestionSet }o--o{ Tag : has
 
