@@ -1,0 +1,70 @@
+      @startuml
+      title QuestionSetEndpoint
+
+      ' ==== Web Layer ====
+      class QuestionSetEndpoint {
+      +CreateQuestionSet(command: CreateQuestionSetCommand, sender: ISender): Task<Ok<ApiResponse<string>>>
+      }
+
+      ' ==== Application Layer ====
+      class CreateQuestionSetCommand {
+      +string Name
+      +string Description
+      +List<CreateQuestionDto> Questions
+      }
+
+      class CreateQuestionDto {
+      +string Type
+      +string QuestionText
+      +string ExplainText
+      +float Score
+      +List<CreateMultipleChoiceDto> MultipleChoices
+      +List<CreateMatchingPairDto> MatchingPairs
+      +List<CreateOrderingItemDto> OrderingItems
+      +string QTypeShortText
+      }
+
+      class CreateMultipleChoiceDto {
+      +string Text
+      +bool IsAnswer
+      }
+
+      class CreateMatchingPairDto {
+      +string LeftItem
+      +string RightItem
+      }
+
+      class CreateOrderingItemDto {
+      +string Text
+      +int CorrectOrder
+      }
+
+      class CreateQuestionSetCommandHandler {
+      -IApplicationDbContext _dbContext
+      +Handle(request: CreateQuestionSetCommand): Task<string>
+      }
+
+
+      ' ==== Infrastructure Abstractions ====
+      interface IApplicationDbContext {
+      +SaveChangesAsync(): Task<int>
+      }
+
+      ' ==== Relationships ====
+
+      ' Web layer
+
+      
+      QuestionSetEndpoint ..> CreateQuestionSetCommand : <<use>>
+
+
+      ' DTO Composition
+      CreateQuestionSetCommand *-- CreateQuestionDto
+      CreateQuestionDto *-- CreateMultipleChoiceDto
+      CreateQuestionDto *-- CreateMatchingPairDto
+      CreateQuestionDto *-- CreateOrderingItemDto
+
+      ' Handler uses domain & infra
+      CreateQuestionSetCommandHandler ..> CreateQuestionSetCommand : <<use>>
+      CreateQuestionSetCommandHandler --> IApplicationDbContext 
+      @enduml

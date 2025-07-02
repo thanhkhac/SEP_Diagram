@@ -1,0 +1,98 @@
+@startuml
+title AiGenerateEndpoint
+
+' === Application Layer ===
+class GenerateOutlineCommand {
+    +FileData file
+}
+
+class Topic {
+    +string Title
+    +int PageStart
+    +int PageEnd
+}
+
+class Outline {
+    +List<Topic> Topics
+}
+
+class GenerateQuestionCommand {
+    +Outline SelectedOutline
+}
+
+class QuestionOption {
+    +string Text
+    +bool IsAnswer
+}
+
+class MatchingPair {
+    +string LeftItem
+    +string RightItem
+}
+
+class OrderingItem {
+    +string Text
+    +int CorrectOrder
+}
+
+
+class Question {
+    +string Type
+    +string QuestionText
+    +string ExplainText
+    +float Score
+    +List<QuestionOption> MultipleChoices
+    +List<MatchingPair> MatchingPairs
+    +List<OrderingItem> OrderingItems
+    +string QTypeShortText
+}
+
+class QuestionList {
+    +List<Question> Questions
+}
+
+class AiGenerateDocumentStructureHandler {
+    +Handle(request: GenerateOutlineCommand): Task<Outline>
+}
+
+class AiGenerateQuestionSetHandler {
+    +Handle(request: GenerateQuestionCommand): Task<QuestionList>
+}
+
+interface IAiService {
+    +GenerateOutline(text: string): Task<Outline>
+    +GenerateQuestions(outline: Outline): Task<QuestionList>
+}
+
+interface IApplicationDbContext {
+    +SaveChangesAsync(): Task<int>
+    +DbSet<T>
+}
+
+' === Web Layer ===
+class AiGenerateEndpoint {
+    +GenerateOutline(request: GenerateOutlineCommand): Task<Outline>
+    +GenerateQuestions(request: GenerateQuestionCommand): Task<QuestionList>
+}
+
+AiGenerateDocumentStructureHandler ..> GenerateOutlineCommand : <<use>>
+AiGenerateQuestionSetHandler ..> GenerateQuestionCommand : <<use>>
+IAiService ..> Outline : <<use>>
+
+
+AiGenerateEndpoint ..> GenerateOutlineCommand : <<use>>
+AiGenerateEndpoint ..> GenerateQuestionCommand : <<use>>
+
+AiGenerateDocumentStructureHandler --> IApplicationDbContext
+AiGenerateDocumentStructureHandler --> IAiService
+AiGenerateQuestionSetHandler --> IAiService
+AiGenerateQuestionSetHandler --> IApplicationDbContext
+
+GenerateQuestionCommand --> Outline
+Outline *-- Topic   
+QuestionList *-- Question
+Question *-- QuestionOption
+Question *-- MatchingPair
+Question *-- OrderingItem
+
+@enduml

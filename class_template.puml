@@ -1,0 +1,99 @@
+@startuml
+title "Mẫu Class Diagram Đầy Đủ Annotation UML"
+
+'=== 1. Lớp cơ bản với stereotype và visibility ===
+class <<(E,#ADD1B2) entity>> Customer {
+  +id: int <<readonly>>
+  -name: String {minLength=3}
+  #address: String
+  +getName(): String
+  +setName(name: String): void
+}
+
+'=== 2. Quan hệ kế thừa ===
+class VIPCustomer {
+  +points: int
+  +calculateBonus(): float
+}
+VIPCustomer --|> Customer
+
+'=== 3. Quan hệ thực thi interface ===
+interface <<interface>> ILogger {
+  {abstract} +log(message: String): void
+}
+
+class DatabaseLogger {
+  +log(message: String): void
+}
+DatabaseLogger .up.|> ILogger
+
+'=== 4. Quan hệ hợp thành (Composition) ===
+class Order {
+  +orderId: String
+  +total: float <<currency>>
+}
+
+class OrderLine {
+  +quantity: int
+  +price: float
+}
+
+Order *-- OrderLine : contains >
+
+'=== 5. Quan hệ tập hợp (Aggregation) ===
+class ShoppingCart {
+  +createdDate: Date
+}
+
+ShoppingCart o-- Product : contains >
+
+'=== 6. Quan hệ phụ thuộc ===
+class PaymentProcessor {
+  +processPayment(amount: float): bool
+}
+
+PaymentProcessor ..> Logger : uses
+
+'=== 7. Quan hệ kết hợp với multiplicity ===
+Customer "1" -- "1..*" Order : places >
+Order "1" -- "1" ShoppingCart : uses >
+
+'=== 8. Lớp utility với tagged values ===
+class <<utility>> Logger {
+  +logLevel: String = "INFO"
+  +log(message: String): void <<override>>
+}
+
+'=== 9. Lớp với constraint ===
+class Product {
+  +id: int
+  +price: float {constraint: price > 0}
+  +checkInventory(): int
+}
+
+'=== 10. Ghi chú và ràng buộc ===
+note top of Product
+  Constraints:
+  - price phải > 0
+  - id là duy nhất
+end note
+
+note right of PaymentProcessor
+  <<service>>
+  Xử lý thanh toán qua
+  nhiều cổng thanh toán
+end note
+
+'=== 11. Enum ===
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+'=== 12. Abstract class ===
+abstract class AbstractService {
+  {abstract} +validate(): bool
+}
+
+@enduml

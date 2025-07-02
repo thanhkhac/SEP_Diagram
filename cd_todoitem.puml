@@ -1,0 +1,55 @@
+@startuml
+' ================= Packages =================
+package "Web Layer" {
+  class TodoItemsEndpoint {
+    +CreateTodoItem(command: CreateTodoItemCommand) : Task<Result>
+  }
+
+  class IMediator {
+    +Send(command: CreateTodoItemCommand) : Task<Result>
+  }
+
+  TodoItemsEndpoint --> IMediator : sends
+}
+
+package "Application Layer" {
+  class CreateTodoItemCommand {
+    +Title : string
+    +Note : string
+  }
+
+  class CreateTodoItemCommandHandler {
+    +Handle(command: CreateTodoItemCommand, cancellationToken: CancellationToken) : Task<Result>
+  }
+
+  CreateTodoItemCommandHandler --> CreateTodoItemCommand : handles
+  CreateTodoItemCommandHandler --> TodoItem : creates
+  CreateTodoItemCommandHandler --> ApplicationDbContext : uses
+
+  note right of CreateTodoItemCommandHandler
+    Implements MediatR's IRequestHandler<CreateTodoItemCommand, Result>
+  end note
+}
+
+package "Domain Layer" {
+  class TodoItem {
+    +Id : int
+    +Title : string
+    +Note : string
+    +Done : bool
+  }
+}
+
+package "Infrastructure Layer" {
+  class ApplicationDbContext {
+    +TodoItems : DbSet<TodoItem>
+    +Add(entity: TodoItem) : void
+    +SaveChangesAsync() : Task<int>
+  }
+
+  ApplicationDbContext o--> TodoItem : contains many
+}
+
+IMediator ..> CreateTodoItemCommandHandler : dispatches
+
+@enduml
