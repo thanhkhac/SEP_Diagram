@@ -1,0 +1,202 @@
+@startuml
+title RegisterUserEndpoint with IdentityService
+
+' ==== Web Layer ====
+class RegisterUserEndpoint {
+    +RegisterUser(command: RegisterUserCommand, sender: ISender): Task<Ok<ApiResponse<string>>>
+}
+
+' ==== Application Layer ====
+class RegisterUserCommand {
+    +string Email
+    +string Password
+}
+
+class RegisterUserCommandValidator {
+    +Validate(request: RegisterUserCommand): ValidationResult
+}
+
+class RegisterUserCommandHandler {
+    -IIdentityService _identityService
+    +Handle(request: RegisterUserCommand): Task<string>
+}
+
+' ==== Infrastructure Layer ====
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -IUserClaimsPrincipalFactory<UserAccount> _userClaimsPrincipalFactory
+    -IAuthorizationService _authorizationService
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+    -JwtSettings _jwtSettings
+    +CreateUserAsync(email: string, password: string): Task<(Result, Guid)>
+    +GetUserNameAsync(userId: Guid): Task<string?>
+    +IsInRoleAsync(userId: Guid, role: string): Task<bool>
+    +AuthorizeAsync(userId: Guid, policyName: string): Task<bool>
+    +DeleteUserAsync(userId: Guid): Task<Result>
+    +IsLockedOutAsync(userAccount: UserAccount): Task<bool>
+    +TryLoginAsync(email: string, password: string): Task<TokenDto>
+    +GetUsersInRoleAsync(): Task<List<Guid>>
+    +ChangeRoleAsync(userId: Guid, role: string): Task<Guid>
+    +RevokeRefreshTokenAsync(refreshToken: string, userId: Guid): Task
+    +RefreshTokenAsync(accessToken: string, refreshToken: string): Task<TokenDto>
+    +TryGoogleLoginAsync(authorizationCode: string, redirectUri: string): Task<TokenDto>
+    +TryGoogleRegisterAsync(authorizationCode: string, redirectUri: string): Task<TokenDto>
+    +RequestEmailVerificationAsync(email: string): Task
+    +VerifyEmailAsync(dto: EmailVerificationConfirmDto): Task
+    +RequestPasswordResetAsync(dto: ForgotPasswordDto): Task
+    +ResetPasswordAsync(dto: ResetPasswordDto): Task
+}
+
+' ==== Domain Entities ====
+class User {
+    +Guid Id
+    +string Email
+    +string FullName
+}
+
+class UserAccount {
+    +Guid Id
+    +string UserName
+    +string Email
+    +bool IsDeleted
+    +bool IsBanned
+    +bool EmailConfirmed
+    +int EmailRequestLockout
+    +DateTime? EmailRequestLockoutTime
+    +int EmailVerificationLockout
+    +DateTime? EmailVerificationCodeTime
+    +string? EmailVerificationCode
+    +int PasswordResetLockout
+    +DateTime? PasswordResetCodeExpiryTime
+    +string? PasswordResetCode
+    +User User
+}
+
+class RefreshToken {
+    +string Id
+    +Guid UserAccountId
+    +string Token
+    +DateTime ExpireAt
+}
+
+' ==== DTOs ====
+class TokenDto {
+    +string AccessToken
+    +string RefreshToken
+    +int ExpireMin
+}
+
+class EmailVerificationConfirmDto {
+    +string Email
+    +string VerificationCode
+}
+
+class ForgotPasswordDto {
+    +string Email
+}
+
+class ResetPasswordDto {
+    +string Email
+    +string ResetCode
+    +string NewPassword
+}
+
+' ==== Infrastructure Abstractions ====
+interface IIdentityService {
+    +CreateUserAsync(email: string, password: string): Task<(Result, Guid)>
+    +GetUserNameAsync(userId: Guid): Task<string?>
+    +IsInRoleAsync(userId: Guid, role: string): Task<bool>
+    +AuthorizeAsync(userId: Guid, policyName: string): Task<bool>
+    +DeleteUserAsync(userId: Guid): Task<Result>
+    +IsLockedOutAsync(userAccount: UserAccount): Task<bool>
+    +TryLoginAsync(email: string, password: string): Task<TokenDto>
+    +GetUsersInRoleAsync(): Task<List<Guid>>
+    +ChangeRoleAsync(userId: Guid, role: string): Task<Guid>
+    +RevokeRefreshTokenAsync(refreshToken: string, userId: Guid): Task
+    +RefreshTokenAsync(accessToken: string, refreshToken: string): Task<TokenDto>
+    +TryGoogleLoginAsync(authorizationCode: string, redirectUri: string): Task<TokenDto>
+    +TryGoogleRegisterAsync(authorizationCode: string, redirectUri: string): Task<TokenDto>
+    +RequestEmailVerificationAsync(email: string): Task
+    +VerifyEmailAsync(dto: EmailVerificationConfirmDto): Task
+    +RequestPasswordResetAsync(dto: ForgotPasswordDto): Task
+    +ResetPasswordAsync(dto: ResetPasswordDto): Task
+}
+
+interface ISender {
+    +Send(request: TRequest): Task<TResponse>
+}
+
+interface IEmailService {
+    +SendEmailAsync(to: string, subject: string, body: string): Task
+}
+
+interface IGoogleAuthService {
+    +ExchangeCodeForUserInfoAsync(authorizationCode: string, redirectUri: string): Task<GoogleUserDto?>
+}
+
+interface IAuthorizationService {
+    +AuthorizeAsync(principal: ClaimsPrincipal, policyName: string): Task<AuthorizationResult>
+}
+
+interface IUserClaimsPrincipalFactory<T> {
+    +CreateAsync(user: T): Task<ClaimsPrincipal>
+}
+
+class UserManager<T> {
+    +FindByIdAsync(id: string): Task<T?>
+    +FindByEmailAsync(email: string): Task<T?>
+    +CreateAsync(user: T, password: string): Task<IdentityResult>
+    +UpdateAsync(user: T): Task<IdentityResult>
+    +IsInRoleAsync(user: T, role: string): Task<bool>
+    +GetRolesAsync(user: T): Task<IList<string>>
+    +RemoveFromRoleAsync(user: T, role: string): Task<IdentityResult>
+    +AddToRoleAsync(user: T, role: string): Task<IdentityResult>
+    +UpdateSecurityStampAsync(user: T): Task<IdentityResult>
+    +IsLockedOutAsync(user: T): Task<bool>
+    +GeneratePasswordResetTokenAsync(user: T): Task<string>
+    +ResetPasswordAsync(user: T, token: string, newPassword: string): Task<IdentityResult>
+}
+
+class SignInManager<T> {
+    +CheckPasswordSignInAsync(user: T, password: string, lockoutOnFailure: bool): Task<SignInResult>
+}
+
+class ApplicationDbContext {
+    +Set<T>(): DbSet<T>
+    +SaveChangesAsync(): Task<int>
+}
+
+' ==== Relationships ====
+RegisterUserEndpoint --> RegisterUserCommand : uses
+RegisterUserEndpoint --> ISender
+
+RegisterUserCommandHandler --> RegisterUserCommand : uses
+RegisterUserCommandHandler --> IIdentityService
+
+RegisterUserCommandValidator --> RegisterUserCommand : validates
+
+IdentityService ..|> IIdentityService
+IdentityService --> UserManager
+IdentityService --> IUserClaimsPrincipalFactory
+IdentityService --> IAuthorizationService
+IdentityService --> SignInManager
+IdentityService --> ApplicationDbContext
+IdentityService --> IGoogleAuthService
+IdentityService --> IEmailService
+IdentityService --> JwtSettings
+
+UserAccount *-- User
+RefreshToken --> UserAccount
+
+IdentityService --> User : creates
+IdentityService --> UserAccount : creates
+IdentityService --> RefreshToken : creates
+IdentityService --> TokenDto : returns
+IdentityService --> EmailVerificationConfirmDto : uses
+IdentityService --> ForgotPasswordDto : uses
+IdentityService --> ResetPasswordDto : uses
+
+@enduml

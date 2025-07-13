@@ -1,0 +1,38 @@
+@startuml
+title Sequence Diagram - RegisterUser
+
+actor User
+participant RegisterUserUi as UI
+participant RegisterUserEndpoint as Endpoint
+participant RegisterUserCommandValidator as Validator
+participant RegisterUserCommandHandler as Handler
+participant IIdentityService as IdentityService
+participant Database
+
+== User Registration ==
+User -> UI: Submit registration form (Email, Password)
+UI -> Endpoint: RegisterUser(RegisterUserCommand)
+Endpoint -> Validator: Validate(RegisterUserCommand)
+alt Validation fails
+    Validator --> Endpoint: Throw ValidationException
+    Endpoint --> UI: Return error response
+    UI --> User: Show error message
+else Validation succeeds
+    Endpoint -> Handler: Handle(RegisterUserCommand)
+    Handler -> IdentityService: CreateUserAsync(Email, Password)
+    alt User creation fails
+        IdentityService --> Handler: Return IdentityResult (Failed)
+        Handler --> Endpoint: Throw ErrorCodeException
+        Endpoint --> UI: Return error response
+        UI --> User: Show error message
+    else User creation succeeds
+        IdentityService -> Database: INSERT User data
+        Database --> IdentityService: Confirm success
+        IdentityService --> Handler: Return IdentityResult (Success, UserId)
+        Handler --> Endpoint: Return UserId
+        Endpoint --> UI: Return success response with UserId
+        UI --> User: Redirect to login page or success page
+    end
+end
+
+@enduml

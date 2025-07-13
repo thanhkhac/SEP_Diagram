@@ -1,0 +1,231 @@
+      @startuml
+      title QuestionSetEndpoint
+
+      ' ==== Web Layer ====
+      class QuestionSetEndpoint {
+      +CreateQuestionSet(command: CreateQuestionSetCommand, sender: ISender): Task<Ok<ApiResponse<string>>>
+      }
+
+      ' ==== Application Layer ====
+      class CreateQuestionSetCommand {
+      +string Name
+      +string Description
+      +List<CreateQuestionDto> Questions
+      }
+
+      class CreateQuestionDto {
+      +string Type
+      +string QuestionText
+      +string ExplainText
+      +float Score
+      +List<CreateMultipleChoiceDto> MultipleChoices
+      +List<CreateMatchingPairDto> MatchingPairs
+      +List<CreateOrderingItemDto> OrderingItems
+      +string QTypeShortText
+      }
+
+      class CreateMultipleChoiceDto {
+      +string Text
+      +bool IsAnswer
+      }
+
+      class CreateMatchingPairDto {
+      +string LeftItem
+      +string RightItem
+      }
+
+      class CreateOrderingItemDto {
+      +string Text
+      +int CorrectOrder
+      }
+
+      class CreateQuestionSetCommandHandler {
+      -IApplicationDbContext _dbContext
+      +Handle(request: CreateQuestionSetCommand): Task<string>
+      }
+
+
+      ' ==== Infrastructure Abstractions ====
+      interface IApplicationDbContext {
+      +SaveChangesAsync(): Task<int>
+      }
+
+      ' ==== Relationships ====
+
+      ' Web layer
+
+      
+      QuestionSetEndpoint ..> CreateQuestionSetCommand : <<use>>
+
+
+      ' DTO Composition
+      CreateQuestionSetCommand *-- CreateQuestionDto
+      CreateQuestionDto *-- CreateMultipleChoiceDto
+      CreateQuestionDto *-- CreateMatchingPairDto
+      CreateQuestionDto *-- CreateOrderingItemDto
+
+      ' Handler uses domain & infra
+      CreateQuestionSetCommandHandler ..> CreateQuestionSetCommand : <<use>>
+      CreateQuestionSetCommandHandler --> IApplicationDbContext 
+      @enduml
+@startuml
+title AiGenerateEndpoint
+
+' === Application Layer ===
+class GenerateOutlineCommand {
+    +FileData file
+}
+
+class Topic {
+    +string Title
+    +int PageStart
+    +int PageEnd
+}
+
+class Outline {
+    +List<Topic> Topics
+}
+
+class GenerateQuestionCommand {
+    +Outline SelectedOutline
+}
+
+class QuestionOption {
+    +string Text
+    +bool IsAnswer
+}
+
+class MatchingPair {
+    +string LeftItem
+    +string RightItem
+}
+
+class OrderingItem {
+    +string Text
+    +int CorrectOrder
+}
+
+
+class Question {
+    +string Type
+    +string QuestionText
+    +string ExplainText
+    +float Score
+    +List<QuestionOption> MultipleChoices
+    +List<MatchingPair> MatchingPairs
+    +List<OrderingItem> OrderingItems
+    +string QTypeShortText
+}
+
+class QuestionList {
+    +List<Question> Questions
+}
+
+class AiGenerateDocumentStructureHandler {
+    +Handle(request: GenerateOutlineCommand): Task<Outline>
+}
+
+class AiGenerateQuestionSetHandler {
+    +Handle(request: GenerateQuestionCommand): Task<QuestionList>
+}
+
+interface IAiService {
+    +GenerateOutline(text: string): Task<Outline>
+    +GenerateQuestions(outline: Outline): Task<QuestionList>
+}
+
+interface IApplicationDbContext {
+    +SaveChangesAsync(): Task<int>
+    +DbSet<T>
+}
+
+' === Web Layer ===
+class AiGenerateEndpoint {
+    +GenerateOutline(request: GenerateOutlineCommand): Task<Outline>
+    +GenerateQuestions(request: GenerateQuestionCommand): Task<QuestionList>
+}
+
+AiGenerateDocumentStructureHandler ..> GenerateOutlineCommand : <<use>>
+AiGenerateQuestionSetHandler ..> GenerateQuestionCommand : <<use>>
+IAiService ..> Outline : <<use>>
+
+
+AiGenerateEndpoint ..> GenerateOutlineCommand : <<use>>
+AiGenerateEndpoint ..> GenerateQuestionCommand : <<use>>
+
+AiGenerateDocumentStructureHandler --> IApplicationDbContext
+AiGenerateDocumentStructureHandler --> IAiService
+AiGenerateQuestionSetHandler --> IAiService
+AiGenerateQuestionSetHandler --> IApplicationDbContext
+
+GenerateQuestionCommand --> Outline
+Outline *-- Topic   
+QuestionList *-- Question
+Question *-- QuestionOption
+Question *-- MatchingPair
+Question *-- OrderingItem
+
+@enduml
+
+@startuml
+title Sequence Diagram - CreateQuestionSet 
+
+actor User
+participant CreateQuestionSetUi as UI
+participant AiGenerateEndpoint as AiEndpoint
+participant QuestionSetEndpoint as QsEndpoint
+participant AiGenerateDocumentStructureHandler
+participant AiGenerateQuestionSetHandler
+participant IAiService
+participant CreateQuestionSetCommandHandler
+participant IApplicationDbContext
+database Database
+
+== Enter Information ==
+User -> UI: Click "Create Question Set"
+UI --> User: Display input form
+User -> UI: Enter Name, Description
+
+== Option: AI ==
+opt User selects "Use AI"
+    User -> UI: Submit file for outline generation
+    UI -> AiEndpoint: GenerateOutline(GenerateOutlineCommand)
+    AiEndpoint -> AiGenerateDocumentStructureHandler: Handle(GenerateOutlineCommand)
+    AiGenerateDocumentStructureHandler -> IApplicationDbContext: Check user token availability
+    alt Insufficient tokens
+        IApplicationDbContext --> AiGenerateDocumentStructureHandler:  Throw ErrorCodeException(InsufficientToken)
+        AiGenerateDocumentStructureHandler --> AiEndpoint: Throw ErrorCodeException(InsufficientToken)
+        AiEndpoint --> UI: Return error response
+        UI --> User: Show error message "Insufficient tokens"
+    else Sufficient tokens
+        AiGenerateDocumentStructureHandler -> IAiService: GenerateOutline(inputText)
+        IAiService --> AiGenerateDocumentStructureHandler: Return Outline
+        AiGenerateDocumentStructureHandler --> AiEndpoint: Return Outline
+        AiEndpoint --> UI: Display Outline
+        User -> UI: Select topics for question generation
+        UI -> AiEndpoint: GenerateQuestions(GenerateQuestionCommand)
+        AiEndpoint -> AiGenerateQuestionSetHandler: Handle(GenerateQuestionCommand)
+        AiGenerateQuestionSetHandler -> IAiService: GenerateQuestions(selectedOutline)
+        IAiService --> AiGenerateQuestionSetHandler: Return QuestionList
+        AiGenerateQuestionSetHandler --> AiEndpoint: Return QuestionList
+        AiEndpoint --> UI: Display AI-generated questions
+    end
+end
+
+== Manual Input/Editing ==
+User -> UI: Edit AI-generated questions / Add new questions / Delete questions
+UI --> User: Update question list preview
+
+== Create Question Set ==
+User -> UI: Submit final Question Set
+UI -> QsEndpoint: CreateQuestionSet(CreateQuestionSetCommand)
+QsEndpoint -> CreateQuestionSetCommandHandler: Handle(CreateQuestionSetCommand)
+CreateQuestionSetCommandHandler -> IApplicationDbContext: SaveChangesAsync()
+IApplicationDbContext -> Database: INSERT QuestionSet, Questions, and related data
+Database --> IApplicationDbContext: Confirm success
+IApplicationDbContext --> CreateQuestionSetCommandHandler: Return success
+CreateQuestionSetCommandHandler --> QsEndpoint: Return QuestionSet ID
+QsEndpoint --> UI: Return success response with QuestionSet ID
+UI --> User: Redirect to QuestionSet detail page
+
+@enduml
