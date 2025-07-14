@@ -4,6 +4,7 @@
 !define GOOGLE_SERVICE
 !define JWT
 '=====================IMPORT========================
+!include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
@@ -25,7 +26,7 @@ class AuthenticationEndpoints {
 GoogleRegisterCommand ..|> IRequest : implements
 GoogleRegisterCommandHandler ..> IIdentityService : inject
 GoogleRegisterCommandHandler ..> GoogleRegisterCommand :  use
-AuthenticationEndpoints ..> RegisterUserCommand : use
+AuthenticationEndpoints ..> GoogleRegisterCommand : use
 GoogleRegisterCommandHandler <.. ISender : sends to
 GoogleRegisterCommandHandler ..|> IRequestHandler : implements
 AuthenticationEndpoints ..> JwtSettings : <<inject>>

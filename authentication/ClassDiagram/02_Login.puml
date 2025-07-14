@@ -3,6 +3,7 @@
 !define JWT
 !define LOGIN
 '=====================IMPORT========================
+!include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
@@ -18,15 +19,16 @@ class LoginCommandHandler {
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +Login(LoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+    +Login(LoginCommand, ISender, HttpContext, IOptions<JwtSettings>) Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
 LoginCommand ..|> IRequest : implements
 LoginCommandHandler ..> IIdentityService : inject
-LoginCommandHandler ..> RegisterUserCommand :  use
-AuthenticationEndpoints ..> RegisterUserCommand : use
+LoginCommandHandler ..> LoginCommand :  use
+AuthenticationEndpoints ..> LoginCommand : use
 LoginCommandHandler <.. ISender : sends to
 LoginCommandHandler ..|> IRequestHandler : implements
+AuthenticationEndpoints ..> JwtSettings : <<inject>>
 
 @enduml 

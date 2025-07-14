@@ -3,6 +3,7 @@ top to bottom direction
 '=====================DEFINE========================
 !define REGISTER
 '=====================IMPORT========================
+!include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
@@ -14,7 +15,7 @@ class RegisterUserCommand {
 class RegisterUserCommandHandler {
     -IIdentityService _identityService
     +Handle(RegisterUserCommand, CancellationToken) : Task<string>
-
+}
 '=====================ENDPOINT========================
 class AuthenticationEndpoints  {
     +RegisterUser(RegisterUserCommand, ISender) : Task<Ok<ApiResponse<string>>>

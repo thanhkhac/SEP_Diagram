@@ -2,6 +2,7 @@
 '=====================DEFINE========================
 !define VERIFY_EMAIL
 '=====================IMPORT========================
+!include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
@@ -20,4 +21,10 @@ class AuthenticationEndpoints {
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
+VerifyEmailCommand ..|> IRequest : implements
+VerifyEmailCommandHandler ..> IIdentityService : inject
+VerifyEmailCommandHandler ..> VerifyEmailCommand :  use
+AuthenticationEndpoints ..> VerifyEmailCommand : use
+VerifyEmailCommandHandler <.. ISender : sends to
+VerifyEmailCommandHandler ..|> IRequestHandler : implements
 @enduml 

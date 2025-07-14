@@ -1,12 +1,13 @@
 @startuml
 '=====================DEFINE========================
 !define REQUEST_EMAIL_VERIFICATION
+!define SERVICE_EMAIL
 '======================IMPORT========================
+!include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
 '=======================COMMAND========================
-!define REQUEST_EMAIL_VERIFICATION
 class RequestEmailVerificationCommand {
     +string Email
 }
@@ -20,4 +21,10 @@ class AuthenticationEndpoints {
 }
 '=======================RELATIONSHIP========================
 !include zCommon.puml
+RequestEmailVerificationCommand ..|> IRequest : implements
+RequestEmailVerificationCommandHandler ..> IIdentityService : inject
+RequestEmailVerificationCommandHandler ..> RequestEmailVerificationCommand :  use
+AuthenticationEndpoints ..> RequestEmailVerificationCommand : use
+RequestEmailVerificationCommandHandler <.. ISender : sends to
+RequestEmailVerificationCommandHandler ..|> IRequestHandler : implements
 @enduml 
