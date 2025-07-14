@@ -1,0 +1,30 @@
+@startuml
+' Login Endpoint Class Diagram
+interface IIdentityService {
+    +TryLoginAsync(email, password)
+}
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -JwtSettings _jwtSettings
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+}
+class LoginCommand {
+    +string Email
+    +string Password
+}
+class LoginCommandHandler {
+    -IIdentityService _identityService
+    -IApplicationDbContext _context
+    +Handle(LoginCommand, CancellationToken)
+}
+class Authentication {
+    +Login(LoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+LoginCommandHandler --> IIdentityService
+LoginCommandHandler --> IApplicationDbContext
+LoginCommandHandler --> LoginCommand
+Authentication --> LoginCommandHandler : via ISender
+@enduml 

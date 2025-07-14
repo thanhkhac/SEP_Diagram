@@ -1,0 +1,23 @@
+@startuml
+
+!include ../settings/JwtSettings.puml
+!include IGoogleAuthService.puml
+
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -JwtSettings _jwtSettings
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+}
+
+
+interface IIdentityService {
+    +CreateUserAsync(email, password)
+}
+
+IdentityService ..|> IIdentityService : implements
+IdentityService ..>IGoogleAuthService
+
+@enduml

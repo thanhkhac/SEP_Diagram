@@ -1,0 +1,42 @@
+@startuml
+' GoogleLogin Endpoint Class Diagram
+interface IIdentityService {
+    +TryGoogleLoginAsync(authorizationCode, redirectUri)
+}
+interface IGoogleAuthService {
+    +ExchangeCodeForUserInfoAsync(authorizationCode, redirectUri)
+}
+class GoogleAuthService {
+    -HttpClient _httpClient
+    -GoogleSettings _googleSettings
+}
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -JwtSettings _jwtSettings
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+}
+class GoogleLoginCommand {
+    +string AuthorizationCode
+}
+class GoogleLoginCommandHandler {
+    -IIdentityService _identityService
+    -IApplicationDbContext _context
+    +Handle(GoogleLoginCommand, CancellationToken)
+}
+class Authentication {
+    +GoogleLogin(GoogleLoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+
+interface IRequestHandler<TRequest, TResponse>
+
+
+
+IdentityService --> IGoogleAuthService
+GoogleLoginCommandHandler --> IIdentityService
+GoogleLoginCommandHandler --> IApplicationDbContext
+GoogleLoginCommandHandler --> GoogleLoginCommand
+Authentication --> GoogleLoginCommandHandler : via ISender
+@enduml 

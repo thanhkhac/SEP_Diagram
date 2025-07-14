@@ -1,0 +1,54 @@
+@startuml
+' Register Endpoint Class Diagram
+top to bottom direction
+
+
+
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+
+
+
+interface IRequestHandler<TRequest, TResponse>{
+    +Handle(TRequest request, CancellationToken cancellationToken): TResponse
+}
+
+
+
+class RegisterUserCommand {
+    +Email: string
+    +Password: string
+}
+
+RegisterUserCommand ..|> IRequest : implements
+
+class AuthenticationEndpoints  {
+    +RegisterUser(RegisterUserCommand, ISender) : Task<Ok<ApiResponse<string>>>
+}
+
+AuthenticationEndpoints ..> ApiResponse : use
+
+
+EndpointGroupBase <|-- AuthenticationEndpoints : extends
+
+class RegisterUserCommandHandler {
+    -IIdentityService _identityService
+    +Handle(RegisterUserCommand, CancellationToken) : Task<string>
+}
+
+
+
+
+
+RegisterUserCommandHandler ..> IIdentityService : inject
+RegisterUserCommandHandler ..> RegisterUserCommand :  use
+AuthenticationEndpoints ..> RegisterUserCommand : use
+RegisterUserCommandHandler <.. ISender : sends to
+AuthenticationEndpoints ..> ISender : inject
+RegisterUserCommandHandler ..|> IRequestHandler : implements
+
+
+
+
+@enduml 

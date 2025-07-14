@@ -1,0 +1,28 @@
+@startuml
+' VerifyEmail Endpoint Class Diagram
+interface IIdentityService {
+    +VerifyEmailAsync(EmailVerificationConfirmDto)
+}
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -JwtSettings _jwtSettings
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+}
+class VerifyEmailCommand {
+    +string Email
+    +string VerificationCode
+}
+class VerifyEmailCommandHandler {
+    -IIdentityService _identityService
+    +Handle(VerifyEmailCommand, CancellationToken)
+}
+class Authentication {
+    +VerifyEmail(EmailVerificationConfirmDto, ISender)
+}
+VerifyEmailCommandHandler --> IIdentityService
+VerifyEmailCommandHandler --> VerifyEmailCommand
+Authentication --> VerifyEmailCommandHandler : via ISender
+@enduml 

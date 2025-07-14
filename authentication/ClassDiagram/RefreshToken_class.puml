@@ -1,0 +1,28 @@
+@startuml
+' RefreshToken Endpoint Class Diagram
+interface IIdentityService {
+    +RefreshTokenAsync(accessToken, refreshToken)
+}
+class IdentityService {
+    -UserManager<UserAccount> _userManager
+    -SignInManager<UserAccount> _signInManager
+    -ApplicationDbContext _dbContext
+    -JwtSettings _jwtSettings
+    -IGoogleAuthService _googleAuthService
+    -IEmailService _emailService
+}
+class RefreshTokenCommand {
+    +string? AccessToken
+    +string? RefreshToken
+}
+class RefreshTokenCommandHandler {
+    -IIdentityService _identityService
+    +Handle(RefreshTokenCommand, CancellationToken)
+}
+class Authentication {
+    +RefreshToken(RefreshTokenCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+RefreshTokenCommandHandler --> IIdentityService
+RefreshTokenCommandHandler --> RefreshTokenCommand
+Authentication --> RefreshTokenCommandHandler : via ISender
+@enduml 

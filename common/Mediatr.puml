@@ -1,0 +1,12 @@
+@startuml
+interface ISender {
+    +Send<T>(T command, CancellationToken cancellationToken):Task<TResponse>
+}
+
+interface IRequestHandler<TRequest, TResponse>{
+    +Handle(TRequest request, CancellationToken cancellationToken): TResponse
+}
+
+interface IRequest<TResponse>
+
+@enduml
