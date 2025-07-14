@@ -1,23 +1,134 @@
 @startuml
 
+!ifdef JWT
 !include ../settings/JwtSettings.puml
-!include IGoogleAuthService.puml
+!endif
+
+!ifdef GOOGLE_SERVICE
+    !include IGoogleAuthService.puml
+!endif
+
+!include ../entities/UserAccount.puml
 
 class IdentityService {
-    -UserManager<UserAccount> _userManager
-    -SignInManager<UserAccount> _signInManager
-    -ApplicationDbContext _dbContext
-    -JwtSettings _jwtSettings
-    -IGoogleAuthService _googleAuthService
-    -IEmailService _emailService
+    - UserManager<UserAccount> _userManager
+    - SignInManager<UserAccount> _signInManager
+    - ApplicationDbContext _dbContext
+    !ifdef JWT
+    - JwtSettings _jwtSettings
+    !endif
+    !ifdef GOOGLE_SERVICE
+    - IGoogleAuthService _googleAuthService
+    !endif
+    !ifdef EMAIL_SERVICE
+    - IEmailService _emailService
+    !endif EMAIL_SERVICE
+    + GetUserNameAsync(Guid): Task<string?>
+    + GetUserByIdAsync(Guid): Task<UserAccount?>
+    !ifdef REGISTER
+    + CreateUserAsync(string, string): Task<(Result, Guid)>
+    !endif
+    !ifdef LOGIN
+    + TryLoginAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef GOOGLE_LOGIN
+    + TryGoogleLoginAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef GOOGLE_REGISTER
+    + TryGoogleRegisterAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef REQUEST_EMAIL_VERIFICATION
+    + RequestEmailVerificationAsync(string): Task
+    !endif
+    !ifdef VERIFY_EMAIL
+    + VerifyEmailAsync(EmailVerificationConfirmDto): Task
+    !endif
+    !ifdef REQUEST_PASSWORD_RESET
+    + RequestPasswordResetAsync(ForgotPasswordDto): Task
+    !endif
+    !ifdef RESET_PASSWORD
+    + ResetPasswordAsync(ResetPasswordDto): Task
+    !endif
+    !ifdef CHANGE_PASSWORD
+    + ChangePasswordAsync(Guid, string, string): Task
+    !endif
+    !ifdef BAN_USER
+    + BanUser(Guid): Task
+    !endif
+    !ifdef ACTIVE_USER
+    + ActiveUser(Guid): Task
+    !endif
+    !ifdef CHECK_ROLE
+    + IsInRoleAsync(Guid, string): Task<bool>
+    + IsInAnyRoleAsync(Guid, string[]): Task<bool>
+    + GetUserRolesAsync(Guid): Task<IList<string>>
+    !endif
+    !ifdef DELETE_USER
+    + DeleteUserAsync(Guid): Task<Result>
+    !endif
+    !ifdef TOKEN_REFRESH
+    + RefreshTokenAsync(string, string): Task<TokenDto>
+    + RevokeRefreshTokenAsync(string, Guid): Task
+    !endif
 }
-
 
 interface IIdentityService {
-    +CreateUserAsync(email, password)
+    + GetUserNameAsync(Guid): Task<string?>
+    + GetUserByIdAsync(Guid): Task<UserAccount?>
+    !ifdef REGISTER
+    + CreateUserAsync(string, string): Task<(Result, Guid)>
+    !endif
+    !ifdef LOGIN
+    + TryLoginAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef GOOGLE_LOGIN
+    + TryGoogleLoginAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef GOOGLE_REGISTER
+    + TryGoogleRegisterAsync(string, string): Task<TokenDto>
+    !endif
+    !ifdef REQUEST_EMAIL_VERIFICATION
+    + RequestEmailVerificationAsync(string): Task
+    !endif
+    !ifdef VERIFY_EMAIL
+    + VerifyEmailAsync(EmailVerificationConfirmDto): Task
+    !endif
+    !ifdef REQUEST_PASSWORD_RESET
+    + RequestPasswordResetAsync(ForgotPasswordDto): Task
+    !endif
+    !ifdef RESET_PASSWORD
+    + ResetPasswordAsync(ResetPasswordDto): Task
+    !endif
+    !ifdef CHANGE_PASSWORD
+    + ChangePasswordAsync(Guid, string, string): Task
+    !endif
+    !ifdef BAN_USER
+    + BanUser(Guid): Task
+    !endif
+    !ifdef ACTIVE_USER
+    + ActiveUser(Guid): Task
+    !endif
+    !ifdef CHECK_ROLE
+    + IsInRoleAsync(Guid, string): Task<bool>
+    + IsInAnyRoleAsync(Guid, string[]): Task<bool>
+    + GetUserRolesAsync(Guid): Task<IList<string>>
+    !endif
+    !ifdef DELETE_USER
+    + DeleteUserAsync(Guid): Task<Result>
+    !endif
+    !ifdef TOKEN_REFRESH
+    + RefreshTokenAsync(string, string): Task<TokenDto>
+    + RevokeRefreshTokenAsync(string, Guid): Task
+    !endif
 }
 
-IdentityService ..|> IIdentityService : implements
-IdentityService ..>IGoogleAuthService
+IdentityService ..|> IIdentityService : <<implements>>
+!ifdef GOOGLE_SERVICE
+IdentityService ..> IGoogleAuthService : <<inject>>
+!endif
+!ifdef JWT
+IdentityService ..> JwtSettings : <<inject>>
+!endif
+IdentityService ..> UserAccount : <<uses>>
 
 @enduml

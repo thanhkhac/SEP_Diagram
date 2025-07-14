@@ -1,18 +1,12 @@
 @startuml
-' Register Endpoint Class Diagram
 top to bottom direction
 
-
+!define REGISTER
 
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
 
-
-
-interface IRequestHandler<TRequest, TResponse>{
-    +Handle(TRequest request, CancellationToken cancellationToken): TResponse
-}
 
 
 
