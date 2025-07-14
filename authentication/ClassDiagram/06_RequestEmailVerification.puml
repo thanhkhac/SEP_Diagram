@@ -1,0 +1,23 @@
+@startuml
+'=====================DEFINE========================
+!define REQUEST_EMAIL_VERIFICATION
+'======================IMPORT========================
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+'=======================COMMAND========================
+!define REQUEST_EMAIL_VERIFICATION
+class RequestEmailVerificationCommand {
+    +string Email
+}
+class RequestEmailVerificationCommandHandler {
+    -IIdentityService _identityService
+    +Handle(RequestEmailVerificationCommand, CancellationToken)
+}
+'=======================ENDPOINT========================
+class AuthenticationEndpoints {
+    +RequestEmailVerification(RequestEmailVerificationCommand, ISender)
+}
+'=======================RELATIONSHIP========================
+!include zCommon.puml
+@enduml 

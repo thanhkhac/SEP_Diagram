@@ -1,0 +1,25 @@
+@startuml
+'=====================DEFINE========================
+!define GOOGLE_LOGIN
+!define GOOGLE_SERVICE
+!define JWT
+'=====================IMPORT========================
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+'=====================COMMAND========================
+class GoogleLoginCommand {
+    +string AuthorizationCode
+}
+class GoogleLoginCommandHandler {
+    -IIdentityService _identityService
+    -IApplicationDbContext _context
+    +Handle(GoogleLoginCommand, CancellationToken)
+}
+'=====================ENDPOINT========================
+class AuthenticationEndpoints {
+    +GoogleLogin(GoogleLoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+'=====================RElATIONSHIP========================
+!include zCommon.puml
+@enduml 

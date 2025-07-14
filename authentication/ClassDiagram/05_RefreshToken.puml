@@ -1,0 +1,24 @@
+@startuml
+'=====================DEFINE========================
+!define REFRESH_TOKEN
+!define JWT
+'=====================IMPORT========================
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+'=====================COMMAND========================
+class RefreshTokenCommand {
+    +string? AccessToken
+    +string? RefreshToken
+}
+class RefreshTokenCommandHandler {
+    -IIdentityService _identityService
+    +Handle(RefreshTokenCommand, CancellationToken)
+}
+'=======================ENDPOINT========================
+class AuthenticationEndpoints {
+    +RefreshToken(RefreshTokenCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+@enduml 

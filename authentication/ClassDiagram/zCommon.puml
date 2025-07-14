@@ -1,0 +1,5 @@
+@startuml
+EndpointGroupBase <|-- AuthenticationEndpoints : extends
+AuthenticationEndpoints ..> ApiResponse : use
+AuthenticationEndpoints ..> ISender : inject
+@enduml

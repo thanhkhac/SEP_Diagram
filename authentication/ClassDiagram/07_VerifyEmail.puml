@@ -1,0 +1,23 @@
+@startuml
+'=====================DEFINE========================
+!define VERIFY_EMAIL
+'=====================IMPORT========================
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+'=======================COMMAND========================
+class VerifyEmailCommand {
+    +string Email
+    +string VerificationCode
+}
+class VerifyEmailCommandHandler {
+    -IIdentityService _identityService
+    +Handle(VerifyEmailCommand, CancellationToken)
+}
+'=======================ENDPOINT========================
+class AuthenticationEndpoints {
+    +VerifyEmail(VerifyEmailCommand, ISender)
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+@enduml 

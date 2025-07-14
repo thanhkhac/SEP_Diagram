@@ -25,6 +25,6 @@ class UserAccount {
     + User : User
 }
 
-IdentityUser <|-- UserAccount
+IdentityUser <|-- UserAccount : extends
 
 @enduml

@@ -1,5 +1,7 @@
 @startuml
 
+
+
 !ifdef JWT
 !include ../settings/JwtSettings.puml
 !endif
@@ -116,7 +118,7 @@ interface IIdentityService {
     !ifdef DELETE_USER
     + DeleteUserAsync(Guid): Task<Result>
     !endif
-    !ifdef TOKEN_REFRESH
+    !ifdef REFRESH_TOKEN
     + RefreshTokenAsync(string, string): Task<TokenDto>
     + RevokeRefreshTokenAsync(string, Guid): Task
     !endif

@@ -1,0 +1,32 @@
+@startuml
+'======================DEFINE========================
+!define JWT
+!define LOGIN
+'=====================IMPORT========================
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/service/IIdentityService.puml
+'=======================COMMAND========================
+class LoginCommand {
+    +string Email
+    +string Password
+}
+class LoginCommandHandler {
+    -IIdentityService _identityService
+    -IApplicationDbContext _context
+    +Handle(LoginCommand, CancellationToken)
+}
+'=======================ENDPOINT========================
+class AuthenticationEndpoints {
+    +Login(LoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+LoginCommand ..|> IRequest : implements
+LoginCommandHandler ..> IIdentityService : inject
+LoginCommandHandler ..> RegisterUserCommand :  use
+AuthenticationEndpoints ..> RegisterUserCommand : use
+LoginCommandHandler <.. ISender : sends to
+LoginCommandHandler ..|> IRequestHandler : implements
+
+@enduml 
