@@ -28,7 +28,7 @@ GoogleLoginCommand ..|> IRequest : <<implements>>
 GoogleLoginCommandHandler ..> IIdentityService : <<inject>>
 GoogleLoginCommandHandler ..> GoogleLoginCommand :  <<uses>>
 AuthenticationEndpoints ..> GoogleLoginCommand : <<uses>>
-GoogleLoginCommandHandler <.. ISender : sends to
+GoogleLoginCommandHandler <.. ISender : <<sends to>>
 GoogleLoginCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 @enduml 
