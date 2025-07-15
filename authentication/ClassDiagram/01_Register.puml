@@ -22,10 +22,10 @@ class AuthenticationEndpoints  {
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-RegisterUserCommand ..|> IRequest : implements
-RegisterUserCommandHandler ..> IIdentityService : inject
-RegisterUserCommandHandler ..> RegisterUserCommand :  use
-AuthenticationEndpoints ..> RegisterUserCommand : use
-RegisterUserCommandHandler <.. ISender : sends to
-RegisterUserCommandHandler ..|> IRequestHandler : implements
+RegisterUserCommand ..|> IRequest : <<implements>>
+RegisterUserCommandHandler ..> IIdentityService : <<inject>>
+RegisterUserCommandHandler ..> RegisterUserCommand :  <<uses>>
+AuthenticationEndpoints ..> RegisterUserCommand : <<uses>>
+RegisterUserCommandHandler <.. ISender : <<sends to>>
+RegisterUserCommandHandler ..|> IRequestHandler : <<implements>>
 @enduml

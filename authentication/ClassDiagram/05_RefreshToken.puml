@@ -18,15 +18,15 @@ class RefreshTokenCommandHandler {
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +RefreshToken(RefreshTokenCommand, ISender, HttpContext, IOptions<JwtSettings>)
+    +RefreshToken(RefreshTokenCommand, ISender, HttpContext, IOptions<JwtSettings>) : Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-GoogleLoginCommand ..|> IRequest : implements
-GoogleLoginCommandHandler ..> IIdentityService : inject
-GoogleLoginCommandHandler ..> GoogleLoginCommand :  use
-AuthenticationEndpoints ..> GoogleLoginCommand : use
-GoogleLoginCommandHandler <.. ISender : sends to
-GoogleLoginCommandHandler ..|> IRequestHandler : implements
+GoogleLoginCommand ..|> IRequest : <<implements>>
+GoogleLoginCommandHandler ..> IIdentityService : <<inject>>
+GoogleLoginCommandHandler ..> GoogleLoginCommand :  <<uses>>
+AuthenticationEndpoints ..> GoogleLoginCommand : <<uses>>
+GoogleLoginCommandHandler <.. ISender : <<sends to>>
+GoogleLoginCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 @enduml 

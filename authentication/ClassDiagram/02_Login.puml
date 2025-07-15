@@ -23,12 +23,12 @@ class AuthenticationEndpoints {
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-LoginCommand ..|> IRequest : implements
-LoginCommandHandler ..> IIdentityService : inject
-LoginCommandHandler ..> LoginCommand :  use
-AuthenticationEndpoints ..> LoginCommand : use
-LoginCommandHandler <.. ISender : sends to
-LoginCommandHandler ..|> IRequestHandler : implements
+LoginCommand ..|> IRequest : <<implements>>
+LoginCommandHandler ..> IIdentityService : <<inject>>
+LoginCommandHandler ..> LoginCommand :  <<uses>>
+AuthenticationEndpoints ..> LoginCommand : <<uses>>
+LoginCommandHandler <.. ISender : <<sends to>>
+LoginCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 
 @enduml 

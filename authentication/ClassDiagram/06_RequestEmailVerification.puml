@@ -17,14 +17,14 @@ class RequestEmailVerificationCommandHandler {
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +RequestEmailVerification(RequestEmailVerificationCommand, ISender)
+    +RequestEmailVerification(RequestEmailVerificationCommand, ISender) : Task<Ok<ApiResponse<object>>>
 }
 '=======================RELATIONSHIP========================
 !include zCommon.puml
-RequestEmailVerificationCommand ..|> IRequest : implements
-RequestEmailVerificationCommandHandler ..> IIdentityService : inject
-RequestEmailVerificationCommandHandler ..> RequestEmailVerificationCommand :  use
-AuthenticationEndpoints ..> RequestEmailVerificationCommand : use
+RequestEmailVerificationCommand ..|> IRequest : <<implements>>
+RequestEmailVerificationCommandHandler ..> IIdentityService : <<inject>>
+RequestEmailVerificationCommandHandler ..> RequestEmailVerificationCommand :  <<uses>>
+AuthenticationEndpoints ..> RequestEmailVerificationCommand : <<uses>>
 RequestEmailVerificationCommandHandler <.. ISender : sends to
-RequestEmailVerificationCommandHandler ..|> IRequestHandler : implements
+RequestEmailVerificationCommandHandler ..|> IRequestHandler : <<implements>>
 @enduml 

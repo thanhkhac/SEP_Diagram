@@ -19,15 +19,15 @@ class GoogleLoginCommandHandler {
 }
 '=====================ENDPOINT========================
 class AuthenticationEndpoints {
-    +GoogleLogin(GoogleLoginCommand, ISender, HttpContext, IOptions<JwtSettings>)
+    +GoogleLogin(GoogleLoginCommand, ISender, HttpContext, IOptions<JwtSettings>) :  Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RElATIONSHIP========================
 !include zCommon.puml
-GoogleLoginCommand ..|> IRequest : implements
-GoogleLoginCommandHandler ..> IIdentityService : inject
-GoogleLoginCommandHandler ..> GoogleLoginCommand :  use
-AuthenticationEndpoints ..> GoogleLoginCommand : use
+GoogleLoginCommand ..|> IRequest : <<implements>>
+GoogleLoginCommandHandler ..> IIdentityService : <<inject>>
+GoogleLoginCommandHandler ..> GoogleLoginCommand :  <<uses>>
+AuthenticationEndpoints ..> GoogleLoginCommand : <<uses>>
 GoogleLoginCommandHandler <.. ISender : sends to
-GoogleLoginCommandHandler ..|> IRequestHandler : implements
+GoogleLoginCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 @enduml 

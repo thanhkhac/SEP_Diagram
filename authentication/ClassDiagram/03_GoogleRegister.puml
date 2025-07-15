@@ -19,16 +19,16 @@ class GoogleRegisterCommandHandler {
     +Handle(GoogleRegisterCommand, CancellationToken)
 }
 class AuthenticationEndpoints {
-    +GoogleRegisterCommand(GoogleRegisterCommand, ISender, HttpContext, IOptions<JwtSettings>)
+    +GoogleRegisterCommand(GoogleRegisterCommand, ISender, HttpContext, IOptions<JwtSettings>) : Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-GoogleRegisterCommand ..|> IRequest : implements
-GoogleRegisterCommandHandler ..> IIdentityService : inject
-GoogleRegisterCommandHandler ..> GoogleRegisterCommand :  use
-AuthenticationEndpoints ..> GoogleRegisterCommand : use
-GoogleRegisterCommandHandler <.. ISender : sends to
-GoogleRegisterCommandHandler ..|> IRequestHandler : implements
+GoogleRegisterCommand ..|> IRequest : <<implements>>
+GoogleRegisterCommandHandler ..> IIdentityService : <<inject>>
+GoogleRegisterCommandHandler ..> GoogleRegisterCommand :  <<uses>>
+AuthenticationEndpoints ..> GoogleRegisterCommand : <<uses>>
+GoogleRegisterCommandHandler <.. ISender : <<sends to>>
+GoogleRegisterCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 
 @enduml
