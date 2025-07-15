@@ -3,6 +3,7 @@
 !define GOOGLE_LOGIN
 !define GOOGLE_SERVICE
 !define JWT
+!define TOKEN_DTO
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

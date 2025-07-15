@@ -15,9 +15,9 @@ IdentityService -> UserManager : FindByEmailAsync(email)
 UserManager -> Database : Query UserAccount
 Database --> UserManager : UserAccount/null
 alt User exists
-    IdentityService --> RegisterUserHandler : Error: ACCOUNT_EMAIL_ALREADY_EXISTS
-    RegisterUserHandler --> AuthEndpoint : Error (ACCOUNT_EMAIL_ALREADY_EXISTS)
-    AuthEndpoint --> UI : 400 Bad Request (ACCOUNT_EMAIL_ALREADY_EXISTS)
+    IdentityService --> RegisterUserHandler : Error: IDENTITY_DUPLICATE_EMAIL
+    RegisterUserHandler --> AuthEndpoint : Error (IDENTITY_DUPLICATE_EMAIL)
+    AuthEndpoint --> UI : 400 Bad Request (IDENTITY_DUPLICATE_EMAIL)
     UI -> User : Thông báo lỗi: Email đã tồn tại
 else User doesn't exist
     IdentityService -> UserManager : CreateAsync(userAccount, password)

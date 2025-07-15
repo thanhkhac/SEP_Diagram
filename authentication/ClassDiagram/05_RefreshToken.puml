@@ -2,6 +2,7 @@
 '=====================DEFINE========================
 !define REFRESH_TOKEN
 !define JWT
+!define TOKEN_DTO
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -22,11 +23,11 @@ class AuthenticationEndpoints {
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-GoogleLoginCommand ..|> IRequest : <<implements>>
-GoogleLoginCommandHandler ..> IIdentityService : <<inject>>
-GoogleLoginCommandHandler ..> GoogleLoginCommand :  <<uses>>
-AuthenticationEndpoints ..> GoogleLoginCommand : <<uses>>
-GoogleLoginCommandHandler <.. ISender : <<sends to>>
-GoogleLoginCommandHandler ..|> IRequestHandler : <<implements>>
+RefreshTokenCommand ..|> IRequest : <<implements>>
+RefreshTokenCommandHandler ..> IIdentityService : <<inject>>
+RefreshTokenCommandHandler ..> RefreshTokenCommand :  <<uses>>
+AuthenticationEndpoints ..> RefreshTokenCommand : <<uses>>
+RefreshTokenCommandHandler <.. ISender : <<sends to>>
+RefreshTokenCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 @enduml 

@@ -2,6 +2,7 @@
 '======================DEFINE========================
 !define JWT
 !define LOGIN
+!define TOKEN_DTO
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

@@ -125,6 +125,15 @@ interface IIdentityService {
     !endif
 }
 
+!ifdef TOKEN_DTO
+class TokenDto {
+    +AccessToken : string
+    +RefreshToken : string
+    +ExpireMin : int
+}
+IdentityService --> TokenDto : <<returns>>
+!endif
+
 IdentityService ..|> IIdentityService : <<implements>>
 !ifdef GOOGLE_SERVICE
 IdentityService ..> IGoogleAuthService : <<inject>>
