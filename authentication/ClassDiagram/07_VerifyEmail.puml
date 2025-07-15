@@ -8,16 +8,16 @@
 !include ../../common/service/IIdentityService.puml
 '=======================COMMAND========================
 class VerifyEmailCommand {
-    +string Email
-    +string VerificationCode
+    +Email : string
+    +VerificationCode : string
 }
 class VerifyEmailCommandHandler {
-    -IIdentityService _identityService
-    +Handle(VerifyEmailCommand, CancellationToken)
+    -_identityService : IIdentityService
+    +Handle(command: VerifyEmailCommand, cancellationToken: CancellationToken)
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +VerifyEmail(VerifyEmailCommand, ISender) :  Task<Ok<ApiResponse<object>>>
+    +VerifyEmail(command: VerifyEmailCommand, sender: ISender) :  Task<Ok<ApiResponse<object>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

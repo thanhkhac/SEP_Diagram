@@ -12,14 +12,14 @@ class GoogleUserDto {
 }
 
 interface IGoogleAuthService {
-    + ExchangeCodeForUserInfoAsync(string authorizationCode, string redirectUri) : Task<GoogleUserDto>
+    + ExchangeCodeForUserInfoAsync(authorizationCode: string, redirectUri: string) : Task<GoogleUserDto>
 }
 
 class GoogleAuthService {
-    - HttpClient _httpClient
-    - GoogleSettings _googleSettings
+    - _httpClient: HttpClient
+    - _googleSettings: GoogleSettings
     --
-    + ExchangeCodeForUserInfoAsync(string authorizationCode, string redirectUri) : Task<GoogleUserDto>
+    + ExchangeCodeForUserInfoAsync(authorizationCode: string, redirectUri: string) : Task<GoogleUserDto>
 }
 
 

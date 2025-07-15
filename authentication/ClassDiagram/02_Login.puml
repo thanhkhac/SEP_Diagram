@@ -10,17 +10,16 @@
 !include ../../common/service/IIdentityService.puml
 '=======================COMMAND========================
 class LoginCommand {
-    +string Email
-    +string Password
+    + Email : string
+    + Password : string
 }
 class LoginCommandHandler {
-    -IIdentityService _identityService
-    -IApplicationDbContext _context
-    +Handle(LoginCommand, CancellationToken)
+    -_identityService : IIdentityService
+    +Handle(command: LoginCommand, cancellationToken: CancellationToken)
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +Login(LoginCommand, ISender, HttpContext, IOptions<JwtSettings>) Task<Ok<ApiResponse<TokenDto>>>
+    +Login(command: LoginCommand, sender: ISender, httpContext: HttpContext, jwtSettings: IOptions<JwtSettings>) Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

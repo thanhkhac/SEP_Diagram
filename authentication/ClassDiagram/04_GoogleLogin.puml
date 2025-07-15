@@ -11,16 +11,15 @@
 !include ../../common/service/IIdentityService.puml
 '=====================COMMAND========================
 class GoogleLoginCommand {
-    +string AuthorizationCode
+    +AuthorizationCode: string
 }
 class GoogleLoginCommandHandler {
-    -IIdentityService _identityService
-    -IApplicationDbContext _context
-    +Handle(GoogleLoginCommand, CancellationToken)
+    -_identityService : IIdentityService
+    +Handle(command: GoogleLoginCommand, cancellationToken: CancellationToken)
 }
 '=====================ENDPOINT========================
 class AuthenticationEndpoints {
-    +GoogleLogin(GoogleLoginCommand, ISender, HttpContext, IOptions<JwtSettings>) :  Task<Ok<ApiResponse<TokenDto>>>
+    +GoogleLogin(command: GoogleLoginCommand, sender: ISender, httpContext: HttpContext, jwtSettings: IOptions<JwtSettings>) :  Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RElATIONSHIP========================
 !include zCommon.puml

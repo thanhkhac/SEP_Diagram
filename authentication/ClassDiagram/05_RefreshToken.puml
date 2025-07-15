@@ -10,16 +10,16 @@
 !include ../../common/service/IIdentityService.puml
 '=====================COMMAND========================
 class RefreshTokenCommand {
-    +string? AccessToken
-    +string? RefreshToken
+    +AccessToken string
+    +RefreshToken string
 }
 class RefreshTokenCommandHandler {
-    -IIdentityService _identityService
-    +Handle(RefreshTokenCommand, CancellationToken)
+    -_identityService : IIdentityService
+    +Handle(command: RefreshTokenCommand, cancellationToken: CancellationToken)
 }
 '=======================ENDPOINT========================
 class AuthenticationEndpoints {
-    +RefreshToken(RefreshTokenCommand, ISender, HttpContext, IOptions<JwtSettings>) : Task<Ok<ApiResponse<TokenDto>>>
+    +RefreshToken(command: RefreshTokenCommand, sender: ISender, httpContext: HttpContext, jwtSettings: IOptions<JwtSettings>) : Task<Ok<ApiResponse<TokenDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

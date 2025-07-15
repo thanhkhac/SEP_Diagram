@@ -1,9 +1,7 @@
 @startuml
 
 class EmailService {
-    - EmailSettings _settings
-    --
-    + EmailService(IOptions<EmailSettings>)
+    - _settings: EmailSettings
     + SendEmailAsync(to: string, subject: string, body: string): Task
 }
 

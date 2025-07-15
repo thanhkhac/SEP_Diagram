@@ -13,12 +13,12 @@ class RegisterUserCommand {
     +Password: string
 }
 class RegisterUserCommandHandler {
-    -IIdentityService _identityService
-    +Handle(RegisterUserCommand, CancellationToken) : Task<string>
+    -_identityService : IIdentityService
+    +Handle(command: RegisterUserCommand, cancellationToken: CancellationToken) : Task<string>
 }
 '=====================ENDPOINT========================
 class AuthenticationEndpoints  {
-    +RegisterUser(RegisterUserCommand, ISender) : Task<Ok<ApiResponse<string>>>
+    +RegisterUser(command: RegisterUserCommand, sender: ISender) : Task<Ok<ApiResponse<string>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
