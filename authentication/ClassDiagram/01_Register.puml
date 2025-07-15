@@ -1,5 +1,5 @@
 @startuml
-top to bottom direction
+title Authentication | Register
 '=====================DEFINE========================
 !define REGISTER
 '=====================IMPORT========================

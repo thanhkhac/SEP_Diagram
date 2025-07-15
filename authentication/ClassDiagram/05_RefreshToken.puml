@@ -1,4 +1,5 @@
 @startuml
+title Authentication | Refresh token
 '=====================DEFINE========================
 !define REFRESH_TOKEN
 !define JWT

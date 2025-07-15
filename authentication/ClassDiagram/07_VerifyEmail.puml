@@ -1,4 +1,5 @@
 @startuml
+title Authentication | Verify email
 '=====================DEFINE========================
 !define VERIFY_EMAIL
 '=====================IMPORT========================
