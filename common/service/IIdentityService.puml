@@ -1,13 +1,14 @@
 @startuml
-
-
-
 !ifdef JWT
 !include ../settings/JwtSettings.puml
 !endif
 
 !ifdef GOOGLE_SERVICE
     !include IGoogleAuthService.puml
+!endif
+
+!ifdef EMAIL_SERVICE
+    !include IEmailService.puml
 !endif
 
 !include ../entities/UserAccount.puml
@@ -128,6 +129,11 @@ IdentityService ..|> IIdentityService : <<implements>>
 !ifdef GOOGLE_SERVICE
 IdentityService ..> IGoogleAuthService : <<inject>>
 !endif
+
+!ifdef EMAIL_SERVICE
+IdentityService ..> IEmailService : <<inject>>
+!endif
+
 !ifdef JWT
 IdentityService ..> JwtSettings : <<inject>>
 !endif

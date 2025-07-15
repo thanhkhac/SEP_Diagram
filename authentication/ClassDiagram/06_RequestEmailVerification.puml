@@ -1,7 +1,7 @@
 @startuml
 '=====================DEFINE========================
 !define REQUEST_EMAIL_VERIFICATION
-!define SERVICE_EMAIL
+!define EMAIL_SERVICE
 '======================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
