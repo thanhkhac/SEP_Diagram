@@ -1,5 +1,5 @@
 @startuml
-actor Guest
+actor Guest as User
 participant UI
 participant AuthenticationEndpoints
 participant LoginHandler
@@ -29,7 +29,7 @@ else User found
         IdentityService --> LoginHandler : Error: ACCOUNT_EMAIL_NOT_VERIFIED
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_NOT_VERIFIED)
         AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_EMAIL_NOT_VERIFIED)
-        UI -> User : Display error message: "Please verify your email before logging in"
+        UI -> User : Redirect to email verification page
     else Valid user
         IdentityService -> UserManager : CheckPasswordSignInAsync(user, password)
         UserManager -> Database : Verify password

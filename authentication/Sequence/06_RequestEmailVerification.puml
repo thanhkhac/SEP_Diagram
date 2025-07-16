@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor Guest as User
 participant UI
 participant AuthenticationEndpoints 
 participant RequestEmailVerificationHandler
