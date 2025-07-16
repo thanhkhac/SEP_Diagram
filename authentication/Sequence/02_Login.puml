@@ -18,21 +18,22 @@ alt User not found
     IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
     LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
-    UI -> User : Thông báo lỗi: Sai tài khoản hoặc mật khẩu
+    UI -> User : Display error message: "Invalid account or password"
 else User found
     IdentityService -> UserManager : CheckPasswordSignInAsync(user, password)
     UserManager -> Database : Verify password
-    Database --> UserManager : Result
+    Database --> UserManager : Result (SignInResult)
+    UserManager --> IdentityService : SignInResult
     alt Password correct
         IdentityService --> LoginHandler : TokenDto
         LoginHandler --> AuthenticationEndpoints : TokenDto
         AuthenticationEndpoints --> UI : 200 OK + Tokens
-        UI -> User : Đăng nhập thành công, chuyển trang
+        UI -> User : Redirect to homepage
     else Password incorrect
         IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
         AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
-        UI -> User : Thông báo lỗi: Sai tài khoản hoặc mật khẩu
+        UI -> User :Display error message: "Invalid account or password"
     end
 end
 @enduml
