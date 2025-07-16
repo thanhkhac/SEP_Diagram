@@ -1,14 +1,14 @@
 @startuml
 actor User
 participant UI
-participant AuthenticationEndpoints
+participant AuthenticationEndpoints 
 participant RequestEmailVerificationHandler
 participant IdentityService
 participant UserManager
 participant Database
 participant EmailService
 
-User -> UI : Nhập email, nhấn gửi mã xác thực
+User -> UI : Enter email, click "Send verification code"
 UI -> AuthenticationEndpoints : POST /api/Authentication/RequestEmailVerification
 AuthenticationEndpoints -> RequestEmailVerificationHandler : Handle(command)
 RequestEmailVerificationHandler -> IdentityService : RequestEmailVerificationAsync(email)
@@ -17,18 +17,18 @@ UserManager -> Database : Query UserAccount
 Database --> UserManager : UserAccount/null
 alt User not found
     IdentityService --> RequestEmailVerificationHandler : Error: ACCOUNT_NOTFOUND
-    RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (ACCOUNT_NOTFOUND)
+    RequestEmailVerificationHandler --> AuthenticationEndpoints : Error ACCOUNT_NOTFOUND
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
-    UI -> User : Thông báo lỗi: Không tìm thấy tài khoản
+    UI -> User : Error: Account not found
 else User found
     IdentityService -> IdentityService : Check lockout
-    alt Quá số lần gửi
+    alt Lockout active
         IdentityService --> RequestEmailVerificationHandler : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
         AuthenticationEndpoints --> UI : 400 Bad Request (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
-        UI -> User : Thông báo lỗi: Gửi quá nhiều lần
-    else Được phép gửi
-        IdentityService -> IdentityService : GenerateRandomCode()
+        UI -> User : Error: Too many verification requests
+    else Allowed to send
+        IdentityService -> IdentityService : Generate random code
         IdentityService -> UserManager : UpdateAsync(user)
         UserManager -> Database : Update UserAccount
         Database --> UserManager : Success
@@ -37,7 +37,7 @@ else User found
         IdentityService --> RequestEmailVerificationHandler : Success
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Success
         AuthenticationEndpoints --> UI : 200 OK
-        UI -> User : Thông báo đã gửi mã xác thực
+        UI -> User : Info: Verification code sent to your email
     end
 end
 @enduml

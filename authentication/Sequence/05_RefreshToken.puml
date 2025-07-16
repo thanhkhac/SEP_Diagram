@@ -1,15 +1,15 @@
 @startuml
 actor User
 participant UI
-participant AuthenticationEndpoints
-participant RefreshTokenHandler
+participant AuthenticationEndpoints as Endpoint
+participant RefreshTokenHandler as Handler
 participant IdentityService
 participant Database
 participant UserManager
 
 User -> UI : Tiếp tục thao tác khi token hết hạn
 UI -> AuthenticationEndpoints : POST /api/Authentication/RefreshToken
-AuthenticationEndpoints -> RefreshTokenHandler : Handle(command)
+Endpoint -> RefreshTokenHandler : Handle(command)
 RefreshTokenHandler -> IdentityService : RefreshTokenAsync(accessToken, refreshToken)
 IdentityService -> Database : Find RefreshToken
 Database --> IdentityService : RefreshToken/null

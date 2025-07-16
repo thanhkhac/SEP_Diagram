@@ -31,9 +31,9 @@ else User doesn't exist
     UserManager -> Database : Insert UserAccount + User
     Database --> UserManager : Success
     UserManager --> IdentityService : Success
-    IdentityService --> RegisterUserHandler : Success + UserId
-    RegisterUserHandler --> AuthenticationEndpoints : Success
-    AuthenticationEndpoints --> UI : UserId
+    IdentityService --> RegisterUserHandler : Return userId
+    RegisterUserHandler --> AuthenticationEndpoints : Return userId
+    AuthenticationEndpoints --> UI : Return 200 + UserId
     UI -> User : Redirect to login page
 end
 @enduml

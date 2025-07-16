@@ -20,20 +20,38 @@ alt User not found
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
     UI -> User : Display error message: "Invalid account or password"
 else User found
-    IdentityService -> UserManager : CheckPasswordSignInAsync(user, password)
-    UserManager -> Database : Verify password
-    Database --> UserManager : Result (SignInResult)
-    UserManager --> IdentityService : SignInResult
-    alt Password correct
-        IdentityService --> LoginHandler : TokenDto
-        LoginHandler --> AuthenticationEndpoints : TokenDto
-        AuthenticationEndpoints --> UI : 200 OK + Tokens
-        UI -> User : Redirect to homepage
-    else Password incorrect
-        IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
-        LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
-        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
-        UI -> User :Display error message: "Invalid account or password"
+    alt Account is banned
+        IdentityService --> LoginHandler : Error: ACCOUNT_BANNED
+        LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
+        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_BANNED)
+        UI -> User : Display error message: "Your account has been banned"
+    else Email not confirmed
+        IdentityService --> LoginHandler : Error: ACCOUNT_EMAIL_NOT_VERIFIED
+        LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_NOT_VERIFIED)
+        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_EMAIL_NOT_VERIFIED)
+        UI -> User : Display error message: "Please verify your email before logging in"
+    else Valid user
+        IdentityService -> UserManager : CheckPasswordSignInAsync(user, password)
+        UserManager -> Database : Verify password
+        Database --> UserManager : Data
+        UserManager --> IdentityService : SignInResult
+
+        alt Account is locked
+            IdentityService --> LoginHandler : Error: ACCOUNT_LOCKED_OUT
+            LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_LOCKED_OUT)
+            AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_LOCKED_OUT)
+            UI -> User : Display error message: "Account locked due to multiple incorrect login attempts"
+        else Password incorrect
+            IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
+            LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
+            AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
+            UI -> User : Display error message: "Invalid account or password"
+        else Password correct
+            IdentityService --> LoginHandler : TokenDto
+            LoginHandler --> AuthenticationEndpoints : TokenDto
+            AuthenticationEndpoints --> UI : 200 OK + TokenDto
+            UI -> User : Redirect to home page
+        end
     end
 end
 @enduml
