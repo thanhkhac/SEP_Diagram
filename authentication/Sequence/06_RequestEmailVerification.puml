@@ -10,7 +10,7 @@ participant EmailService
 
 User -> UI : Enter email, click "Send verification code"
 UI -> AuthenticationEndpoints : POST /api/Authentication/RequestEmailVerification
-AuthenticationEndpoints -> RequestEmailVerificationHandler : Handle(command)
+AuthenticationEndpoints -> RequestEmailVerificationHandler : SendRequestEmailVerificationCommand
 RequestEmailVerificationHandler -> IdentityService : RequestEmailVerificationAsync(email)
 IdentityService -> UserManager : FindByEmailAsync(email)
 UserManager -> Database : Query UserAccount

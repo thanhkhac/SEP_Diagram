@@ -4,7 +4,7 @@ class ApplicationDbContext {
     + DbSet<T> ...
 }
 
-class IApplicationDbContext {
+interface IApplicationDbContext {
     + SaveChangesAsync(token): Task<int>
     + DbSet<T> ...
 }

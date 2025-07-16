@@ -9,7 +9,7 @@ participant Database
 
 User -> UI : Enter verification code and click Confirm
 UI -> AuthenticationEndpoints : POST /api/Authentication/VerifyEmail
-AuthenticationEndpoints -> VerifyEmailHandler : Handle(command)
+AuthenticationEndpoints -> VerifyEmailHandler : Send VerifyEmailCommand
 VerifyEmailHandler -> IdentityService : VerifyEmailAsync(email, code)
 IdentityService -> UserManager : FindByEmailAsync(email)
 UserManager -> Database : Query UserAccount

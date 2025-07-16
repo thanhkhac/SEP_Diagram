@@ -1,46 +1,37 @@
 @startuml
 actor User
 participant UI
-participant AuthenticationEndpoints
-participant GoogleLoginHandler
+participant AuthenticationEndpoints as Endpoint
+participant RefreshTokenHandler as Handler
 participant IdentityService
-participant GoogleAuthService
-participant GoogleOAuthServer
-participant UserManager
 participant Database
+participant UserManager
 
-User -> UI : Nhấn nút Google Login
-UI -> AuthenticationEndpoints : POST /api/Authentication/GoogleLogin
-AuthenticationEndpoints -> GoogleLoginHandler : Send GoogleLoginCommand
-GoogleLoginHandler -> IdentityService : TryGoogleLoginAsync(code, redirectUri)
-IdentityService -> GoogleAuthService : ExchangeCodeForUserInfoAsync(code, redirectUri)
-GoogleAuthService -> GoogleAPI : Exchange code for tokens
-GoogleAPI --> GoogleAuthService : Access token
-GoogleAuthService -> GoogleAPI : Get user info
-GoogleAPI --> GoogleAuthService : User info
-GoogleAuthService --> IdentityService : GoogleUserDto
-IdentityService -> UserManager : FindByEmailAsync(email)
-UserManager -> Database : Query UserAccount
-Database --> UserManager : UserAccount/null
-alt User exists
-    alt User banned
-        IdentityService --> GoogleLoginHandler : Error: ACCOUNT_BANNED
-        GoogleLoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
-        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_BANNED)
-        UI -> User : Thông báo lỗi: Tài khoản bị khóa
-    else User không bị ban
-        IdentityService --> GoogleLoginHandler : TokenDto
-        GoogleLoginHandler --> AuthenticationEndpoints : TokenDto
-        AuthenticationEndpoints --> UI : 200 OK + TokenDto
-        UI -> User : Redirect to home page
+User -> UI : Continue operation when token expires
+UI -> Endpoint : POST /api/Authentication/RefreshToken
+Endpoint -> Handler : Send RefreshTokenCommand
+Handler -> IdentityService : RefreshTokenAsync(accessToken, refreshToken)
+IdentityService -> Database : Find RefreshToken
+Database --> IdentityService : RefreshToken/null
+alt RefreshToken invalid/expired
+    IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
+    Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
+    Endpoint --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
+    UI -> User : Display error: Session expired
+else RefreshToken valid
+    IdentityService -> UserManager : FindByIdAsync(userId)
+    UserManager -> Database : Query UserAccount
+    Database --> UserManager : UserAccount/null
+    alt User invalid/banned
+        IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
+        Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
+        Endpoint --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
+        UI -> User : Display error: Session expired
+    else User valid
+        IdentityService --> Handler : New TokenDto
+        Handler --> Endpoint : TokenDto
+        Endpoint --> UI : 200 OK + New Tokens
+        UI -> User : Continue using the system
     end
-else User doesn't exist
-    IdentityService -> UserManager : CreateAsync(userAccount)
-    UserManager -> Database : Insert UserAccount + User
-    Database --> UserManager : Success
-    IdentityService --> GoogleLoginHandler : TokenDto
-    GoogleLoginHandler --> AuthenticationEndpoints : TokenDto
-    AuthenticationEndpoints --> UI : 200 OK + TokenDto
-    UI -> User : Redirect to home page
 end
 @enduml
