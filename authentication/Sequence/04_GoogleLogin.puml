@@ -1,7 +1,7 @@
 @startuml
 actor User
 participant UI
-participant AuthEndpoint
+participant AuthenticationEndpoints
 participant GoogleLoginHandler
 participant IdentityService
 participant GoogleAuthService

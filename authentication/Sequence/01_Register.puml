@@ -1,24 +1,31 @@
 @startuml
 actor User
 participant UI
-participant AuthEndpoint
+participant AuthenticationEndpoint
 participant RegisterUserHandler
 participant IdentityService
 participant UserManager
 participant Database
 
-User -> UI : Nhập email, password, fullName
+User -> UI : Enter email, password
 UI -> AuthEndpoint : POST /api/Authentication/Register
-AuthEndpoint -> RegisterUserHandler : Handle(command)
+AuthEndpoint -> RegisterUserHandler : Send RegisterUserCommand
 RegisterUserHandler -> IdentityService : CreateUserAsync(email, password)
 IdentityService -> UserManager : FindByEmailAsync(email)
 UserManager -> Database : Query UserAccount
 Database --> UserManager : UserAccount/null
 alt User exists
-    IdentityService --> RegisterUserHandler : Error: IDENTITY_DUPLICATE_EMAIL
-    RegisterUserHandler --> AuthEndpoint : Error (IDENTITY_DUPLICATE_EMAIL)
-    AuthEndpoint --> UI : 400 Bad Request (IDENTITY_DUPLICATE_EMAIL)
-    UI -> User : Thông báo lỗi: Email đã tồn tại
+    alt User is banned
+        IdentityService --> RegisterUserHandler : Error: ACCOUNT_EMAIL_BANNED
+        RegisterUserHandler --> AuthEndpoint : Error (ACCOUNT_EMAIL_BANNED)
+        AuthEndpoint --> UI : 400 Bad Request (ACCOUNT_EMAIL_BANNED)
+        UI -> User : Error message: Email is banned
+    else User is not banned
+        IdentityService --> RegisterUserHandler : Error: IDENTITY_DUPLICATE_EMAIL
+        RegisterUserHandler --> AuthEndpoint : Error (IDENTITY_DUPLICATE_EMAIL)
+        AuthEndpoint --> UI : 400 Bad Request (IDENTITY_DUPLICATE_EMAIL)
+        UI -> User : Error message: Email already exists
+    end
 else User doesn't exist
     IdentityService -> UserManager : CreateAsync(userAccount, password)
     UserManager -> Database : Insert UserAccount + User
@@ -26,7 +33,7 @@ else User doesn't exist
     UserManager --> IdentityService : Success
     IdentityService --> RegisterUserHandler : Success + UserId
     RegisterUserHandler --> AuthEndpoint : Success
-    AuthEndpoint --> UI : 200 OK + UserId
-    UI -> User : Thông báo đăng ký thành công
+    AuthEndpoint --> UI : UserId
+    UI -> User : Redirect to login page
 end
 @enduml

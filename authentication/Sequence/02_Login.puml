@@ -1,7 +1,7 @@
 @startuml
 actor User
 participant UI
-participant AuthEndpoint
+participant AuthenticationEndpoints
 participant LoginHandler
 participant IdentityService
 participant UserManager
