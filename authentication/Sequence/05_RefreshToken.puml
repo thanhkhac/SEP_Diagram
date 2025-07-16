@@ -4,8 +4,8 @@ participant UI
 participant AuthenticationEndpoints as Endpoint
 participant RefreshTokenHandler as Handler
 participant IdentityService
-participant Database
 participant UserManager
+Database Database
 
 User -> UI : Continue operation when token expires
 UI -> Endpoint : POST /api/Authentication/RefreshToken

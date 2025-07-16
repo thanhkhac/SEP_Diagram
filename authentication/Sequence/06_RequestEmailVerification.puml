@@ -1,12 +1,12 @@
 @startuml
 actor Guest as User
-participant UI
-participant AuthenticationEndpoints 
+participant "Request email verification UI" as UI
+participant AuthenticationEndpoints
 participant RequestEmailVerificationHandler
 participant IdentityService
 participant UserManager
-participant Database
 participant EmailService
+participant Database
 
 User -> UI : Enter email, click "Send verification code"
 UI -> AuthenticationEndpoints : POST /api/Authentication/RequestEmailVerification

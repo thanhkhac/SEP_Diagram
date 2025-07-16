@@ -1,11 +1,11 @@
 @startuml
 actor Guest as User
-participant UI
+participant "Register UI" as UI
 participant AuthenticationEndpoints
 participant RegisterUserHandler
 participant IdentityService
 participant UserManager
-participant Database
+Database Database
 
 User -> UI : Enter email, password
 UI -> AuthenticationEndpoints : POST /api/Authentication/Register
