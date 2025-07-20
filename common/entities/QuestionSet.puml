@@ -1,0 +1,20 @@
+@startuml
+class QuestionSet {
+    + Id : Guid
+    + Name : string
+    + Description : string
+    + VisibilityMode : QuestionSetVisibilityMode 
+    + QuestionCount : int
+    + Questions : List<Question>
+    + IsDeleted : bool
+}
+
+QuestionSet --> QuestionSetVisibilityMode : "has"
+
+enum QuestionSetVisibilityMode {
+    Public,
+    Private,
+    OnlyClass,
+}
+
+@enduml
