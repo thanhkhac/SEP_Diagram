@@ -26,6 +26,5 @@ VerifyEmailCommand ..|> IRequest : <<implements>>
 VerifyEmailCommandHandler ..> IIdentityService : <<inject>>
 VerifyEmailCommandHandler ..> VerifyEmailCommand :  <<uses>>
 AuthenticationEndpoints ..> VerifyEmailCommand : <<uses>>
-VerifyEmailCommandHandler <.. ISender : <<sends to>>
 VerifyEmailCommandHandler ..|> IRequestHandler : <<implements>>
 @enduml 

@@ -28,7 +28,6 @@ RefreshTokenCommand ..|> IRequest : <<implements>>
 RefreshTokenCommandHandler ..> IIdentityService : <<inject>>
 RefreshTokenCommandHandler ..> RefreshTokenCommand :  <<uses>>
 AuthenticationEndpoints ..> RefreshTokenCommand : <<uses>>
-RefreshTokenCommandHandler <.. ISender : <<sends to>>
 RefreshTokenCommandHandler ..|> IRequestHandler : <<implements>>
 AuthenticationEndpoints ..> JwtSettings : <<inject>>
 @enduml 

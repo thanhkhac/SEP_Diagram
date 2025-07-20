@@ -26,6 +26,5 @@ RegisterUserCommand ..|> IRequest : <<implements>>
 RegisterUserCommandHandler ..> IIdentityService : <<inject>>
 RegisterUserCommandHandler ..> RegisterUserCommand :  <<uses>>
 AuthenticationEndpoints ..> RegisterUserCommand : <<uses>>
-RegisterUserCommandHandler <.. ISender : <<sends to>>
 RegisterUserCommandHandler ..|> IRequestHandler : <<implements>>
 @enduml

@@ -26,6 +26,5 @@ RequestEmailVerificationCommand ..|> IRequest : <<implements>>
 RequestEmailVerificationCommandHandler ..> IIdentityService : <<inject>>
 RequestEmailVerificationCommandHandler ..> RequestEmailVerificationCommand :  <<uses>>
 AuthenticationEndpoints ..> RequestEmailVerificationCommand : <<uses>>
-RequestEmailVerificationCommandHandler <.. ISender : sends to
 RequestEmailVerificationCommandHandler ..|> IRequestHandler : <<implements>>
 @enduml 
