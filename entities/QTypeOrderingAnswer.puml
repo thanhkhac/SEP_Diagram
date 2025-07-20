@@ -1,0 +1,6 @@
+@startuml
+class QTypeOrderingAnswer {
+    + ItemId : Guid
+    + Order : int
+}
+@enduml 

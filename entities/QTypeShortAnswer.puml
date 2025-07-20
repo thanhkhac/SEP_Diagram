@@ -1,0 +1,5 @@
+@startuml
+class QTypeShortAnswer {
+    + Answer : string
+}
+@enduml 

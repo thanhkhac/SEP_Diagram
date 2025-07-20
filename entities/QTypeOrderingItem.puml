@@ -1,0 +1,8 @@
+@startuml
+class QTypeOrderingItem {
+    + Id : Guid
+    + Text : string
+    + CorrectOrder : int
+    + ShuffleOrder : short
+}
+@enduml 

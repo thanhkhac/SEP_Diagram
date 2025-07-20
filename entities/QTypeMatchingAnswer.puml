@@ -1,0 +1,6 @@
+@startuml
+class QTypeMatchingAnswer {
+    + RightItemId : Guid
+    + LeftItemId : Guid
+}
+@enduml 

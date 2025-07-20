@@ -1,20 +1,30 @@
 @startuml
-class QuestionSet {
-    + Id : Guid
-    + Name : string
-    + Description : string
-    + VisibilityMode : QuestionSetVisibilityMode 
-    + QuestionCount : int
-    + Questions : List<Question>
-    + IsDeleted : bool
+class Question {
+    + Id : Guid 
+    + QuestionSetId : Guid? 
+    + Type : QuestionType 
+    + QuestionText : string? 
+    + TextFormat : TextFormat 
+    + ExplainText : string? 
+    + Score : float 
+    + DataJson : string? 
+    + IsDeleted : bool 
+    + Data : object?
 }
 
-QuestionSet --> QuestionSetVisibilityMode : "has"
-
-enum QuestionSetVisibilityMode {
-    Public,
-    Private,
-    OnlyClass,
+enum TextFormat {
+    MarkDown,
+    PlainText,
+    Html,
 }
 
+enum QuestionType {
+    MultipleChoice,
+    Matching,
+    Ordering,
+    ShortText,
+}
+
+Question --> QuestionType : "has"
+Question --> TextFormat
 @enduml

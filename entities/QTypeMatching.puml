@@ -1,0 +1,8 @@
+@startuml
+class QTypeMatching {
+    + Id : Guid
+    + Text : string
+    + AnswerId : string?
+    + ShuffleOrder : short
+}
+@enduml 

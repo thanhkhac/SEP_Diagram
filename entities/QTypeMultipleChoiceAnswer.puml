@@ -1,0 +1,5 @@
+@startuml
+class QTypeMultipleChoiceAnswer {
+    + ChoiceId : Guid
+}
+@enduml 

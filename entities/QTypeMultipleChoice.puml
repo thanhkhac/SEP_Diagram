@@ -1,0 +1,8 @@
+@startuml
+class QTypeMultipleChoice {
+    + Id : Guid
+    + Text : string
+    + IsAnswer : bool
+    + ShuffleOrder : short
+}
+@enduml 
