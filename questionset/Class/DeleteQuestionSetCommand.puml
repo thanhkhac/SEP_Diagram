@@ -1,9 +1,7 @@
 @startuml
-title Authentication | Register
+title QuestionSet | DeleteQuestionSetCommand
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERDELETE
-!define QUESTIONSET_SERVICE_CANUSEREDIT
-!define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -29,7 +27,6 @@ class QuestionSetEndpoints  {
 '=====================RELATIONSHIP========================
 !include zCommon.puml
 DeleteQuestionSetCommand ..|> IRequest : <<implements>>
-
 DeleteQuestionSetCommandHandler ..> DeleteQuestionSetCommand :  <<uses>>
 QuestionSetEndpoints ..> DeleteQuestionSetCommand : <<uses>>
 DeleteQuestionSetCommandHandler ..|> IRequestHandler : <<implements>>

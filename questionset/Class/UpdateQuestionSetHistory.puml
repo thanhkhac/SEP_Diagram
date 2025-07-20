@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Register
+title QuestionSet | UpdateQuestionSetHistoryCommand
 '=====================DEFINE========================
 
 '=====================IMPORT========================
@@ -37,10 +37,10 @@ UpdateQuestionSetHistoryCommand ..|> IRequest : <<implements>>
 UpdateQuestionSetHistoryCommandHandler ..> UpdateQuestionSetHistoryCommand :  <<uses>>
 QuestionSetEndpoints ..> UpdateQuestionSetHistoryCommand : <<uses>>
 UpdateQuestionSetHistoryCommandHandler ..|> IRequestHandler : <<implements>>
-UpdateQuestionSetHistoryCommand ..> QuestionHistoryUpdate : <<uses>>
+UpdateQuestionSetHistoryCommand --* QuestionHistoryUpdate : <<uses>>
 '=====INJECT
 UpdateQuestionSetHistoryCommandHandler ..> IQuestionSetService : <<inject>>
 UpdateQuestionSetHistoryCommandHandler ..> IUser : <<inject>>
 UpdateQuestionSetHistoryCommandHandler ..> IApplicationDbContext : <<inject>>
-'=====END INJECT
+'=====INJECT
 @enduml

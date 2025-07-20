@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Register
+title QuestionSet | GetQuestionSetQuestionsQuery
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================
@@ -9,6 +9,7 @@ title Authentication | Register
 !include ../../common/service/IUser.puml
 !include ../Services/IQuestionSetService.puml
 !include ../../Question/Services/IQuestionService.puml
+!include ../dtos/QuestionResponseDto.puml
 '=====================COMMAND========================
 class GetQuestionSetQuestionsQuery {
     + QuestionSetId : Guid <<get>> <<set>>
@@ -32,6 +33,7 @@ GetQuestionSetQuestionsQuery ..|> IRequest : <<implements>>
 GetQuestionSetQuestionsQueryHandler ..> GetQuestionSetQuestionsQuery :  <<uses>>
 QuestionSetEndpoints ..> GetQuestionSetQuestionsQuery : <<uses>>
 GetQuestionSetQuestionsQueryHandler ..|> IRequestHandler : <<implements>>
+GetQuestionSetQuestionsQueryHandler ..> QuestionResponseDto : <<uses>>
 
 '=====INJECT
 GetQuestionSetQuestionsQueryHandler ..> IQuestionSetService : <<inject>>

@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Register
+title QuestionSet | UpdateQuestionSetCommand
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSEREDIT
 '=====================IMPORT========================
@@ -9,6 +9,7 @@ title Authentication | Register
 !include ../../common/IApplicationDbContext.puml
 !include ../../common/Service/IUser.puml
 !include ../Services/IQuestionSetService.puml
+!include ../dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class UpdateQuestionSetCommand {
     + QuestionSetId : Guid <<get>> <<set>>
@@ -36,10 +37,10 @@ UpdateQuestionSetCommand ..|> IRequest : <<implements>>
 UpdateQuestionSetCommandHandler ..> UpdateQuestionSetCommand :  <<uses>>
 QuestionSetEndpoints ..> UpdateQuestionSetCommand : <<uses>>
 UpdateQuestionSetCommandHandler ..|> IRequestHandler : <<implements>>
-
 '=====INJECT
 UpdateQuestionSetCommandHandler ..> IApplicationDbContext : <<inject>>
 UpdateQuestionSetCommandHandler ..> IQuestionSetService : <<inject>>
 UpdateQuestionSetCommandHandler ..> IUser : <<inject>>
 '=====END INJECT
+UpdateQuestionSetCommand --* CreateUpdateQuestionDto 
 @enduml

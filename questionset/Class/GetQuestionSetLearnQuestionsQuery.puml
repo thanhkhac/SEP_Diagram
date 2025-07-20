@@ -10,6 +10,7 @@ title Authentication | Register
 !include ../../common/service/IUser.puml
 !include ../Services/IQuestionSetService.puml
 !include ../../Plan/Services/IPlanService.puml
+!include ../dtos/QuestionResponseDto.puml
 '=====================COMMAND========================
 class GetQuestionSetLearnQuestionsQuery {
     + QuestionSetId : Guid <<get>> <<set>>
@@ -41,5 +42,6 @@ GetQuestionSetLearnQuestionsQueryHandler ..> IQuestionSetService : <<inject>>
 GetQuestionSetLearnQuestionsQueryHandler ..> IUser : <<inject>>
 GetQuestionSetLearnQuestionsQueryHandler ..> IQuestionService : <<inject>>
 GetQuestionSetLearnQuestionsQueryHandler ..> IPlanService : <<inject>>
+GetQuestionSetLearnQuestionsQueryHandler ..> QuestionResponseDto : <<use>>
 '=====INJECT
 @enduml

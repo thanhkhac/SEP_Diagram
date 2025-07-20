@@ -9,6 +9,7 @@ title Authentication | Register
 !include ../../common/EndpointClasses.puml
 !include ../../common/service/IUser.puml
 !include ../Services/IQuestionSetService.puml
+!include ../dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class GetQuestionSetQuestionsForEditQuery {
     + QuestionSetId : Guid <<get>> <<set>>
@@ -26,13 +27,14 @@ class QuestionSetEndpoints  {
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
-CreateQuestionSetCommand ..|> IRequest : <<implements>>
-CreateQuestionSetCommandHandler ..> CreateQuestionSetCommand :  <<uses>>
-QuestionSetEndpoints ..> CreateQuestionSetCommand : <<uses>>
-CreateQuestionSetCommandHandler ..|> IRequestHandler : <<implements>>
+GetQuestionSetQuestionsForEditQuery ..|> IRequest : <<implements>>
+GetQuestionSetQuestionsForEditQueryHandler ..> GetQuestionSetQuestionsForEditQuery :  <<uses>>
+QuestionSetEndpoints ..> GetQuestionSetQuestionsForEditQuery : <<uses>>
+GetQuestionSetQuestionsForEditQueryHandler ..|> IRequestHandler : <<implements>>
 
 '=====INJECT
-CreateQuestionSetCommandHandler ..> IQuestionSetService : <<inject>>
-CreateQuestionSetCommandHandler ..> IUser : <<inject>>
+GetQuestionSetQuestionsForEditQueryHandler ..> IQuestionSetService : <<inject>>
+GetQuestionSetQuestionsForEditQueryHandler ..> IUser : <<inject>>
 '=====INJECT
+GetQuestionSetQuestionsForEditQueryHandler --* CreateUpdateQuestionDto
 @enduml

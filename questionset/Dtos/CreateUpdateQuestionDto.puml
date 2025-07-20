@@ -22,17 +22,8 @@ class CreateUpdateQuestionDto {
     + OrderingItems : List<CreateOrderingItemDto>? <<get>> <<set>>
     + ShortAnswer : string? <<get>> <<set>>
 }
-class QuestionCreateDtoValidator {
-    + QuestionCreateDtoValidator()
-}
-class Serializer <<static>> {
-    + {static} Serialize(dto:CreateUpdateQuestionDto) : string
-}
-class Deserializer <<static>> {
-    + {static} Deserialize(question:Question) : CreateUpdateQuestionDto
-}
-CreateUpdateQuestionDto +-- QuestionCreateDtoValidator
-"AbstractValidator`1" "<CreateUpdateQuestionDto>" <|-- QuestionCreateDtoValidator
-CreateUpdateQuestionDto +-- Serializer
-CreateUpdateQuestionDto +-- Deserializer
+
+CreateUpdateQuestionDto *-- CreateMultipleChoiceDto
+CreateUpdateQuestionDto *-- CreateMatchingPairDto
+CreateUpdateQuestionDto *-- CreateOrderingItemDto
 @enduml

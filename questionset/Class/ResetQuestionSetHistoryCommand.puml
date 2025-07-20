@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Register
+title QuestionSet | ResetQuestionSetHistoryCommand
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================
@@ -31,7 +31,6 @@ ResetQuestionSetHistoryCommand ..|> IRequest : <<implements>>
 ResetQuestionSetHistoryCommandHandler ..> ResetQuestionSetHistoryCommand :  <<uses>>
 QuestionSetEndpoints ..> ResetQuestionSetHistoryCommand : <<uses>>
 ResetQuestionSetHistoryCommandHandler ..|> IRequestHandler : <<implements>>
-
 '=====INJECT
 ResetQuestionSetHistoryCommandHandler ..> IUser : <<inject>>
 ResetQuestionSetHistoryCommandHandler ..> IQuestionSetService : <<inject>>
