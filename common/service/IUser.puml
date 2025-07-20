@@ -1,0 +1,5 @@
+@startuml
+interface IUser {
+    UserId : Guid? <<get>>
+}
+@enduml
