@@ -1,0 +1,42 @@
+@startuml
+title Class | AddQuestionSetToClassCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IClassService.puml
+'=====================COMMAND========================
+class AddQuestionSetToClassCommand {
+    + ClassId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid <<get>> <<set>>
+}
+
+class AddQuestionSetToClassCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    - <<readonly>> _user : IUser
+    + AddQuestionSetToClassCommandHandler(context:IApplicationDbContext, classService:IClassService, user:IUser)
+    + <<async>> Handle(request:AddQuestionSetToClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> AddQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+AddQuestionSetToClassCommand ..|> IRequest : <<implements>>
+AddQuestionSetToClassCommandHandler ..> AddQuestionSetToClassCommand :  <<uses>>
+ClassEndpoints ..> AddQuestionSetToClassCommand : <<uses>>
+AddQuestionSetToClassCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+AddQuestionSetToClassCommandHandler ..> IApplicationDbContext : <<inject>>
+AddQuestionSetToClassCommandHandler ..> IClassService : <<inject>>
+AddQuestionSetToClassCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

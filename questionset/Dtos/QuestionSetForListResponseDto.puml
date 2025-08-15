@@ -1,0 +1,18 @@
+@startuml
+!include ../../tags/dtos/TagForListReponseDto.puml
+class QuestionSetForListResponseDto {
+    + Id : Guid
+    + Name : string?
+    + Description : string?
+    + TotalQuestionCount : int
+    + RatingCount : int
+    + RatingAverage : double
+    + VisibilityMode : string?
+    + CompletedQuestionCount : int
+    + CreateBy : string?
+    + CreatedAt : DateTimeOffset?
+    + CreatedById : Guid?
+    + Tags : List<TagForListReponseDto>
+    + LastAccessByMe : DateTimeOffset?
+}
+@enduml

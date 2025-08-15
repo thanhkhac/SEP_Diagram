@@ -1,0 +1,38 @@
+@startuml
+title Class | JoinClassByCodeCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class JoinClassByCodeCommand {
+    + Code : string <<get>> <<set>>
+}
+
+class JoinClassByCodeCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + JoinClassByCodeCommandHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:JoinClassByCodeCommand, cancellationToken:CancellationToken) : Task<Unit>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> JoinClassByCode(rq:JoinClassByCodeCommand, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+JoinClassByCodeCommand ..|> IRequest : <<implements>>
+JoinClassByCodeCommandHandler ..> JoinClassByCodeCommand :  <<uses>>
+ClassEndpoints ..> JoinClassByCodeCommand : <<uses>>
+JoinClassByCodeCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+JoinClassByCodeCommandHandler ..> IApplicationDbContext : <<inject>>
+JoinClassByCodeCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

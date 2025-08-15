@@ -1,0 +1,39 @@
+@startuml
+title Class | CreateClassCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class CreateClassCommand {
+    + Name : string <<get>> <<set>>
+    + Topic : string? <<get>> <<set>>
+}
+
+class CreateClassCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + CreateClassCommandHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:CreateClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> CreateClass(rq:CreateClassCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+CreateClassCommand ..|> IRequest : <<implements>>
+CreateClassCommandHandler ..> CreateClassCommand :  <<uses>>
+ClassEndpoints ..> CreateClassCommand : <<uses>>
+CreateClassCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+CreateClassCommandHandler ..> IApplicationDbContext : <<inject>>
+CreateClassCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

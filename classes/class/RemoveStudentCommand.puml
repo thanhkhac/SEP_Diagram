@@ -1,0 +1,39 @@
+@startuml
+title Class | RemoveStudentCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+'=====================COMMAND========================
+class RemoveStudentCommand {
+    + ClassId : Guid <<get>> <<set>>
+    + UserId : Guid <<get>> <<set>>
+}
+
+class RemoveStudentCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + RemoveStudentCommandHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:RemoveStudentCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> RemoveStudent(classId:Guid, userId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+RemoveStudentCommand ..|> IRequest : <<implements>>
+RemoveStudentCommandHandler ..> RemoveStudentCommand :  <<uses>>
+ClassEndpoints ..> RemoveStudentCommand : <<uses>>
+RemoveStudentCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+RemoveStudentCommandHandler ..> IApplicationDbContext : <<inject>>
+RemoveStudentCommandHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

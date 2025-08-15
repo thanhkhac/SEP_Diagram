@@ -1,0 +1,6 @@
+@startuml
+class TagForListReponseDto {
+    + Id : Guid
+    + Name : string?
+}
+@enduml

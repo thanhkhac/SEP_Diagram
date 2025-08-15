@@ -1,0 +1,14 @@
+@startuml
+class "PaginatedList<T>" {
+    + Items : IReadOnlyCollection<T> <<get>>
+    + PageNumber : int <<get>>
+    + TotalPages : int <<get>>
+    + TotalCount : int <<get>>
+    + PageSize : int <<get>>
+    + HasPreviousPage : bool <<get>>
+    + HasNextPage : bool <<get>>
+    + PaginatedList(items:IReadOnlyCollection<T>, count:int, pageNumber:int, pageSize:int)
+    + {static} CreateAsync(source:IQueryable<T>, pageNumber:int, pageSize:int) : Task<PaginatedList<T>>
+    + {static} Create(source:List<T>, pageIndex:int, pageSize:int) : PaginatedList<T>
+}
+@enduml

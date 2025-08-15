@@ -1,0 +1,38 @@
+@startuml
+title Class | GetInviteStudentCodeQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+'=====================QUERY========================
+class GetInviteStudentCodeQuery {
+    + ClassId : Guid <<get>> <<set>>
+}
+
+class GetInviteStudentCodeQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + GetInviteStudentCodeQueryHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:GetInviteStudentCodeQuery, cancellationToken:CancellationToken) : Task<string?>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> GetInviteStudentCode(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<string?>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetInviteStudentCodeQuery ..|> IRequest : <<implements>>
+GetInviteStudentCodeQueryHandler ..> GetInviteStudentCodeQuery :  <<uses>>
+ClassEndpoints ..> GetInviteStudentCodeQuery : <<uses>>
+GetInviteStudentCodeQueryHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+GetInviteStudentCodeQueryHandler ..> IApplicationDbContext : <<inject>>
+GetInviteStudentCodeQueryHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

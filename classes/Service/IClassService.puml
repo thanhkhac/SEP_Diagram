@@ -1,0 +1,7 @@
+@startuml
+interface IClassService {
+    + <<async>> IsLecturerOrOwnerInClass(classId:Guid): Task<bool>
+    + <<async>> IsUserInClass(classId:Guid): Task<bool>
+    + <<async>> GetClassOwnerAccess(classId:Guid, cancellationToken:CancellationToken): Task<(bool, Class)>
+}
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+title Class | SearchStudentInClassQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+!include ../../common/Models/PaginatedList.puml
+'=====================QUERY========================
+class StudentSearchResultDto {
+    + StudentId : Guid
+    + FullName : string?
+    + Email : string
+    + Position : string?
+}
+
+class SearchStudentInClassQuery {
+    + ClassId : Guid <<get>> <<set>>
+    + Keyword : string? <<get>> <<set>>
+    + FieldName : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class SearchStudentInClassQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + SearchStudentInClassQueryHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:SearchStudentInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<StudentSearchResultDto>>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> SearchStudent(classId:Guid, keyword:string?, fieldName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<StudentSearchResultDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchStudentInClassQuery ..|> IRequest : <<implements>>
+SearchStudentInClassQueryHandler ..> SearchStudentInClassQuery :  <<uses>>
+ClassEndpoints ..> SearchStudentInClassQuery : <<uses>>
+SearchStudentInClassQueryHandler ..|> IRequestHandler : <<implements>>
+SearchStudentInClassQueryHandler ..> PaginatedList : <<uses>>
+SearchStudentInClassQueryHandler ..> StudentSearchResultDto : <<uses>>
+
+'=====INJECT
+SearchStudentInClassQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchStudentInClassQueryHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

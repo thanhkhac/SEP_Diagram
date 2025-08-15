@@ -1,0 +1,45 @@
+@startuml
+title Class | SearchQuestionSetQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../../questionset/dtos/QuestionSetForListResponseDto.puml
+'=====================QUERY========================
+class SearchQuestionSetQuery {
+    + ClassId : Guid <<get>> <<set>>
+    + Name : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class SearchQuestionSetQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + SearchQuestionSetQueryHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:SearchQuestionSetQuery, cancellationToken:CancellationToken) : Task<PaginatedList<QuestionSetForListResponseDto>>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> SearchQuestionSet(name:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<QuestionSetForListResponseDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchQuestionSetQuery ..|> IRequest : <<implements>>
+SearchQuestionSetQueryHandler ..> SearchQuestionSetQuery :  <<uses>>
+ClassEndpoints ..> SearchQuestionSetQuery : <<uses>>
+SearchQuestionSetQueryHandler ..|> IRequestHandler : <<implements>>
+SearchQuestionSetQueryHandler ..> PaginatedList : <<uses>>
+SearchQuestionSetQueryHandler ..> QuestionSetForListResponseDto : <<uses>>
+
+'=====INJECT
+SearchQuestionSetQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchQuestionSetQueryHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

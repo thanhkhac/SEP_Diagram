@@ -1,0 +1,44 @@
+@startuml
+title Class | CreateInviteCodeCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+'=====================COMMAND========================
+class ClassCodeDto {
+    + Code : string <<get>> <<set>>
+}
+
+class CreateInviteCodeCommand {
+    + ClassId : Guid? <<get>> <<set>>
+    + ExpiredTime : double <<get>> <<set>>
+}
+
+class CreateInviteCodeCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + CreateInviteCodeCommandHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:CreateInviteCodeCommand, cancellationToken:CancellationToken) : Task<ClassCodeDto>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> CreateInviteCode(classId:Guid, rq:CreateInviteCodeCommand, sender:ISender) : Task<Ok<ApiResponse<ClassCodeDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+CreateInviteCodeCommand ..|> IRequest : <<implements>>
+CreateInviteCodeCommandHandler ..> CreateInviteCodeCommand :  <<uses>>
+ClassEndpoints ..> CreateInviteCodeCommand : <<uses>>
+CreateInviteCodeCommandHandler ..|> IRequestHandler : <<implements>>
+CreateInviteCodeCommandHandler ..> ClassCodeDto : <<uses>>
+
+'=====INJECT
+CreateInviteCodeCommandHandler ..> IApplicationDbContext : <<inject>>
+CreateInviteCodeCommandHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

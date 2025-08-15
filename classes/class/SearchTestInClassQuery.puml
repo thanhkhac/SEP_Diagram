@@ -1,0 +1,56 @@
+@startuml
+title Class | SearchTestInClassQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+!include ../../common/Models/PaginatedList.puml
+'=====================QUERY========================
+class SearchTestResultDto {
+    + TestId : Guid
+    + Name : string
+    + NumberOfQuestions : int?
+    + TimeLimit : int
+    + TimeStart : DateTimeOffset
+    + RelativeTime : double
+    + NumberOfCompletion : int?
+    + Status : string?
+}
+
+class SearchTestInClassQuery {
+    + ClassId : Guid <<get>> <<set>>
+    + TestName : string? <<get>> <<set>>
+    + Status : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class SearchTestInClassQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + SearchTestInClassQueryHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:SearchTestInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchTestResultDto>>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> SearchTest(status:string?, testName:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchTestResultDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchTestInClassQuery ..|> IRequest : <<implements>>
+SearchTestInClassQueryHandler ..> SearchTestInClassQuery :  <<uses>>
+ClassEndpoints ..> SearchTestInClassQuery : <<uses>>
+SearchTestInClassQueryHandler ..|> IRequestHandler : <<implements>>
+SearchTestInClassQueryHandler ..> PaginatedList : <<uses>>
+SearchTestInClassQueryHandler ..> SearchTestResultDto : <<uses>>
+
+'=====INJECT
+SearchTestInClassQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchTestInClassQueryHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml

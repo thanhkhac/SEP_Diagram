@@ -1,0 +1,39 @@
+@startuml
+title Class | RemoveQuestionSetFromClassCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IClassService.puml
+'=====================COMMAND========================
+class RemoveQuestionSetFromClassCommand {
+    + ClassId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid <<get>> <<set>>
+}
+
+class RemoveQuestionSetFromClassCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _classService : IClassService
+    + RemoveQuestionSetFromClassCommandHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:RemoveQuestionSetFromClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class ClassEndpoints  {
+    + <<async>> RemoveQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+RemoveQuestionSetFromClassCommand ..|> IRequest : <<implements>>
+RemoveQuestionSetFromClassCommandHandler ..> RemoveQuestionSetFromClassCommand :  <<uses>>
+ClassEndpoints ..> RemoveQuestionSetFromClassCommand : <<uses>>
+RemoveQuestionSetFromClassCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+RemoveQuestionSetFromClassCommandHandler ..> IApplicationDbContext : <<inject>>
+RemoveQuestionSetFromClassCommandHandler ..> IClassService : <<inject>>
+'=====INJECT
+@enduml
