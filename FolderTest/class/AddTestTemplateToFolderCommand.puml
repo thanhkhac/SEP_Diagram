@@ -1,7 +1,8 @@
 @startuml
 title FolderTest | AddTestTemplateToFolderCommand
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
+!define FOLDER_TEST_SERVICE_TRYCANUSETESTEMPLATE
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -26,7 +27,7 @@ class FolderEndpoints  {
     + <<async>> AddTestTemplateToFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 AddTestTemplateToFolderCommand ..|> IRequest : <<implements>>
 AddTestTemplateToFolderCommandHandler ..> AddTestTemplateToFolderCommand :  <<uses>>
 FolderEndpoints ..> AddTestTemplateToFolderCommand : <<uses>>

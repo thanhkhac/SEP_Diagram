@@ -1,7 +1,6 @@
 @startuml
-title FolderTest | UpdateFolderCommand
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -28,7 +27,7 @@ class FolderEndpoints  {
     + <<async>> UpdateFolder(folderId:Guid, rq:UpdateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 UpdateFolderCommand ..|> IRequest : <<implements>>
 UpdateFolderCommandHandler ..> UpdateFolderCommand :  <<uses>>
 FolderEndpoints ..> UpdateFolderCommand : <<uses>>

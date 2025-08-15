@@ -1,7 +1,7 @@
 @startuml
 title FolderTest | DeleteFolderCommand
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_CANDELETEOREDITFOLDERTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -25,7 +25,7 @@ class FolderEndpoints  {
     + <<async>> DeleteFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 DeleteFolderCommand ..|> IRequest : <<implements>>
 DeleteFolderCommandHandler ..> DeleteFolderCommand :  <<uses>>
 FolderEndpoints ..> DeleteFolderCommand : <<uses>>

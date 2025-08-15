@@ -1,7 +1,7 @@
 @startuml
 title FolderTest | RemoveTestTemplateInFolderCommand
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -26,7 +26,7 @@ class FolderEndpoints  {
     + <<async>> RemoveTestTestTemplateInFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 RemoveTestTemplateInFolderCommand ..|> IRequest : <<implements>>
 RemoveTestTemplateInFolderCommandHandler ..> RemoveTestTemplateInFolderCommand :  <<uses>>
 FolderEndpoints ..> RemoveTestTemplateInFolderCommand : <<uses>>

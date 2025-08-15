@@ -1,15 +1,13 @@
 @startuml
 title FolderTest | SearchFolderQuery
 '=====================DEFINE========================
-
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/IApplicationDbContext.puml
 !include ../../common/service/IUser.puml
-!include ../../common/Models/PaginatedList.puml
-!include ../Dto/SearchFolderTestDto.puml
+!include /Dto/SearchFolderTestDto.puml
 '=====================QUERY========================
 class SearchFolderQuery {
     + FolderName : string? <<get>> <<set>>
@@ -30,12 +28,11 @@ class FolderEndpoints  {
     + <<async>> SearchFolderTest(folderName:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchFolderTestDto>>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 SearchFolderQuery ..|> IRequest : <<implements>>
 SearchFolderQueryHandler ..> SearchFolderQuery :  <<uses>>
 FolderEndpoints ..> SearchFolderQuery : <<uses>>
 SearchFolderQueryHandler ..|> IRequestHandler : <<implements>>
-SearchFolderQueryHandler ..> PaginatedList : <<uses>>
 SearchFolderQueryHandler ..> SearchFolderTestDto : <<uses>>
 
 '=====INJECT

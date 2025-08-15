@@ -1,5 +1,5 @@
 @startuml
-class "PaginatedList<T>" {
+class "PaginatedList<T>" as PaginatedList {
     + Items : IReadOnlyCollection<T> <<get>>
     + PageNumber : int <<get>>
     + TotalPages : int <<get>>

@@ -1,0 +1,25 @@
+@startuml
+interface IFolderTestService {
+    !ifdef FOLDER_TEST_SERVICE_CANDELETEOREDITFOLDERTEST
+    + <<async>> CanDeleteOrEditFolderTest(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+    !endif
+    !ifdef FOLDER_TEST_SERVICE_ISOWNEROREDITOR
+    + <<async>> IsOwnerOrEditor(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+    !endif
+    !ifdef FOLDER_TEST_SERVICE_TRYCANUSETESTEMPLATE
+    + <<async>> TryCanUseTesTemplate(testTemplateId:Guid): Task
+    !endif
+}
+
+'class FolderTestService {
+'    - <<readonly>> _context : IApplicationDbContext
+'    - <<readonly>> _identityService : IIdentityService
+'    - <<readonly>> _user : IUser
+'    + FolderTestService(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+'    + <<async>> CanDeleteOrEditFolderTest(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+'    + <<async>> IsOwnerOrEditor(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+'    + <<async>> TryCanUseTesTemplate(testTemplateId:Guid): Task
+'}
+
+IFolderTestService <|.. FolderTestService : <<implements>>
+@enduml

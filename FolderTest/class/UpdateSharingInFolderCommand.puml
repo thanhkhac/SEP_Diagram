@@ -1,14 +1,14 @@
 @startuml
 title FolderTest | UpdateSharingInFolderCommand
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/IApplicationDbContext.puml
 !include ../Service/IFolderTestService.puml
-!include ../Dto/UpsertSharingModelDto.puml
+!include /Dto/UpsertSharingModelDto.puml
 '=====================COMMAND========================
 class UpdateSharingInFolderCommand {
     + FolderId : Guid <<get>> <<set>>
@@ -28,7 +28,7 @@ class FolderEndpoints  {
     + <<async>> UpdateSharingInFolder(folderId:Guid, rq:UpdateSharingInFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 UpdateSharingInFolderCommand ..|> IRequest : <<implements>>
 UpdateSharingInFolderCommandHandler ..> UpdateSharingInFolderCommand :  <<uses>>
 FolderEndpoints ..> UpdateSharingInFolderCommand : <<uses>>

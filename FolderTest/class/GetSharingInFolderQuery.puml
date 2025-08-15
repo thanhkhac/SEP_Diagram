@@ -1,14 +1,14 @@
 @startuml
 title FolderTest | GetSharingInFolderQuery
 '=====================DEFINE========================
-
+!define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/EndpointClasses.puml
 !include ../../common/IApplicationDbContext.puml
 !include ../Service/IFolderTestService.puml
-!include ../Dto/ResourceShareDto.puml
+!include /Dto/ResourceShareDto.puml
 '=====================QUERY========================
 class GetSharingInFolderQuery {
     + FolderId : Guid <<get>> <<set>>

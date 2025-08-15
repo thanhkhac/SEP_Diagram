@@ -25,7 +25,7 @@ class FolderEndpoints  {
     + <<async>> CreateFolder(rq:CreateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
-!include zCommon.puml
+!include ./zCommon.puml
 CreateFolderCommand ..|> IRequest : <<implements>>
 CreateFolderCommandHandler ..> CreateFolderCommand :  <<uses>>
 FolderEndpoints ..> CreateFolderCommand : <<uses>>
