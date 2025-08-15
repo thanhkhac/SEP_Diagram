@@ -1,0 +1,45 @@
+@startuml
+title QuestionSet | GetTestFromQuestionSetQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_CANUSERVIEW
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Services/IQuestionSetService.puml
+!include ../dtos/QuestionResponseDto.puml
+'=====================QUERY========================
+class GetTestFromQuestionSetQuery {
+    + QuestionSetId : Guid? <<get>> <<set>>
+    + NumberOfQuestion : int <<get>> <<set>>
+    + QuestionTypes : List<string> <<get>> <<set>>
+}
+
+class GetTestFromQuestionSetQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _questionSetService : IQuestionSetService
+    - <<readonly>> _user : IUser
+    + GetTestFromQuestionSetQueryHandler(context:IApplicationDbContext, questionSetService:IQuestionSetService, user:IUser)
+    + <<async>> Handle(request:GetTestFromQuestionSetQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> GetTestFromQuestionSet(questionSetId:Guid, numberOfQuestion:int, questionTypes:string, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestFromQuestionSetQuery ..|> IRequest : <<implements>>
+GetTestFromQuestionSetQueryHandler ..> GetTestFromQuestionSetQuery :  <<uses>>
+QuestionSetEndpoints ..> GetTestFromQuestionSetQuery : <<uses>>
+GetTestFromQuestionSetQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestFromQuestionSetQueryHandler ..> QuestionResponseDto : <<uses>>
+
+'=====INJECT
+GetTestFromQuestionSetQueryHandler ..> IApplicationDbContext : <<inject>>
+GetTestFromQuestionSetQueryHandler ..> IQuestionSetService : <<inject>>
+GetTestFromQuestionSetQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

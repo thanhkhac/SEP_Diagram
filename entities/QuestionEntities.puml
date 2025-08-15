@@ -1,0 +1,19 @@
+@startuml
+class Question {
+    + Id : Guid
+    + Content : string
+    + Type : QuestionType
+    + QuestionSetId : Guid
+    --
+    + QuestionSet : QuestionSet
+}
+
+enum QuestionType {
+    MultipleChoice
+    Matching
+    Ordering
+    ShortText
+}
+
+QuestionSet "1" -- "*" Question : contains
+@enduml
