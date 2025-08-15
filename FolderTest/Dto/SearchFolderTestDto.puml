@@ -1,0 +1,7 @@
+@startuml
+class SearchFolderTestDto {
+    + FolderTestId : Guid
+    + Name : string?
+    + CreateBy : string?
+}
+@enduml

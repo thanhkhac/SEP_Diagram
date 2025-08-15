@@ -1,0 +1,10 @@
+@startuml
+class TestTemplateDto {
+    + TestTemplateId : Guid
+    + FolderName : string?
+    + Name : string?
+    + NumberOfQuestion : int
+    + DateCreated : DateTime?
+    + CreateBy : string?
+}
+@enduml

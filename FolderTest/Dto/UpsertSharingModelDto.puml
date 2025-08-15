@@ -1,0 +1,6 @@
+@startuml
+class UpsertSharingModelDto {
+    + SharingUserId : Guid
+    + ShareMode : string?
+}
+@enduml

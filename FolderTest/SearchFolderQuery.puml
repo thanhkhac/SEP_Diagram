@@ -1,0 +1,45 @@
+@startuml
+title FolderTest | SearchFolderQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../Dto/SearchFolderTestDto.puml
+'=====================QUERY========================
+class SearchFolderQuery {
+    + FolderName : string? <<get>> <<set>>
+    + ShareMode : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class SearchFolderQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + SearchFolderQueryHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:SearchFolderQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchFolderTestDto>>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> SearchFolderTest(folderName:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchFolderTestDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchFolderQuery ..|> IRequest : <<implements>>
+SearchFolderQueryHandler ..> SearchFolderQuery :  <<uses>>
+FolderEndpoints ..> SearchFolderQuery : <<uses>>
+SearchFolderQueryHandler ..|> IRequestHandler : <<implements>>
+SearchFolderQueryHandler ..> PaginatedList : <<uses>>
+SearchFolderQueryHandler ..> SearchFolderTestDto : <<uses>>
+
+'=====INJECT
+SearchFolderQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchFolderQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

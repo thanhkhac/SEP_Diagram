@@ -1,0 +1,42 @@
+@startuml
+title FolderTest | UpdateFolderCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IFolderTestService.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class UpdateFolderCommand {
+    + FolderId : Guid? <<get>> <<set>>
+    + Name : string <<get>> <<set>>
+}
+
+class UpdateFolderCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _folderTestService : IFolderTestService
+    - <<readonly>> _user : IUser
+    + UpdateFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService, user:IUser)
+    + <<async>> Handle(request:UpdateFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> UpdateFolder(folderId:Guid, rq:UpdateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+UpdateFolderCommand ..|> IRequest : <<implements>>
+UpdateFolderCommandHandler ..> UpdateFolderCommand :  <<uses>>
+FolderEndpoints ..> UpdateFolderCommand : <<uses>>
+UpdateFolderCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+UpdateFolderCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateFolderCommandHandler ..> IFolderTestService : <<inject>>
+UpdateFolderCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

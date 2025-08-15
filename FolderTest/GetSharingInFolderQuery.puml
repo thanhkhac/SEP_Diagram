@@ -1,0 +1,40 @@
+@startuml
+title FolderTest | GetSharingInFolderQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IFolderTestService.puml
+!include ../Dto/ResourceShareDto.puml
+'=====================QUERY========================
+class GetSharingInFolderQuery {
+    + FolderId : Guid <<get>> <<set>>
+}
+
+class GetSharingInFolderQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _folderTestService : IFolderTestService
+    + GetSharingInFolderQueryHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
+    + <<async>> Handle(request:GetSharingInFolderQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> GetSharingInFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetSharingInFolderQuery ..|> IRequest : <<implements>>
+GetSharingInFolderQueryHandler ..> GetSharingInFolderQuery :  <<uses>>
+FolderEndpoints ..> GetSharingInFolderQuery : <<uses>>
+GetSharingInFolderQueryHandler ..|> IRequestHandler : <<implements>>
+GetSharingInFolderQueryHandler ..> ResourceShareDto : <<uses>>
+
+'=====INJECT
+GetSharingInFolderQueryHandler ..> IApplicationDbContext : <<inject>>
+GetSharingInFolderQueryHandler ..> IFolderTestService : <<inject>>
+'=====INJECT
+@enduml

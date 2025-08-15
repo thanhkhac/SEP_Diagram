@@ -1,0 +1,39 @@
+@startuml
+title FolderTest | AddTestTemplateToFolderCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IFolderTestService.puml
+'=====================COMMAND========================
+class AddTestTemplateToFolderCommand {
+    + FolderId : Guid <<get>> <<set>>
+    + TestTemplateId : Guid <<get>> <<set>>
+}
+
+class AddTestTemplateToFolderCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _folderTestService : IFolderTestService
+    + AddTestTemplateToFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
+    + <<async>> Handle(request:AddTestTemplateToFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> AddTestTemplateToFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+AddTestTemplateToFolderCommand ..|> IRequest : <<implements>>
+AddTestTemplateToFolderCommandHandler ..> AddTestTemplateToFolderCommand :  <<uses>>
+FolderEndpoints ..> AddTestTemplateToFolderCommand : <<uses>>
+AddTestTemplateToFolderCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+AddTestTemplateToFolderCommandHandler ..> IApplicationDbContext : <<inject>>
+AddTestTemplateToFolderCommandHandler ..> IFolderTestService : <<inject>>
+'=====INJECT
+@enduml

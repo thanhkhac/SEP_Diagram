@@ -1,0 +1,8 @@
+@startuml
+!include PaginatedList.puml
+!include TestTemplateDto.puml
+class SearchTestTemplateInFolderDto {
+    + FolderName : string?
+    + TestTemplates : PaginatedList<TestTemplateDto>
+}
+@enduml

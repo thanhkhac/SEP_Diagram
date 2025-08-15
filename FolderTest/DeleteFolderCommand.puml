@@ -1,0 +1,38 @@
+@startuml
+title FolderTest | DeleteFolderCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IFolderTestService.puml
+'=====================COMMAND========================
+class DeleteFolderCommand {
+    + FolderId : Guid <<get>> <<set>>
+}
+
+class DeleteFolderCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _folderTestService : IFolderTestService
+    + DeleteFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
+    + <<async>> Handle(request:DeleteFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> DeleteFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+DeleteFolderCommand ..|> IRequest : <<implements>>
+DeleteFolderCommandHandler ..> DeleteFolderCommand :  <<uses>>
+FolderEndpoints ..> DeleteFolderCommand : <<uses>>
+DeleteFolderCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+DeleteFolderCommandHandler ..> IApplicationDbContext : <<inject>>
+DeleteFolderCommandHandler ..> IFolderTestService : <<inject>>
+'=====INJECT
+@enduml

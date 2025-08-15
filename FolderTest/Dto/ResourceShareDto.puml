@@ -1,0 +1,12 @@
+@startuml
+class ResourceShareDto {
+    + Id : Guid
+    + SharingModel : List<SharingModelDto>
+}
+
+class SharingModelDto {
+    + ShareMode : string?
+    + UserId : Guid
+    + FullName : string?
+}
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+title FolderTest | SearchTestTemplateInFolderQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/SearchTestTemplateInFolderDto.puml
+'=====================QUERY========================
+class SearchTestTemplateInFolderQuery {
+    + FolderId : Guid? <<get>> <<set>>
+    + TestTemplateName : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class SearchTestTemplateInFolderQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + SearchTestTemplateInFolderQueryHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:SearchTestTemplateInFolderQuery, cancellationToken:CancellationToken) : Task<SearchTestTemplateInFolderDto>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> SearchTestTemplateInFolder(folderId:Guid, testTemplateName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<SearchTestTemplateInFolderDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchTestTemplateInFolderQuery ..|> IRequest : <<implements>>
+SearchTestTemplateInFolderQueryHandler ..> SearchTestTemplateInFolderQuery :  <<uses>>
+FolderEndpoints ..> SearchTestTemplateInFolderQuery : <<uses>>
+SearchTestTemplateInFolderQueryHandler ..|> IRequestHandler : <<implements>>
+SearchTestTemplateInFolderQueryHandler ..> SearchTestTemplateInFolderDto : <<uses>>
+
+'=====INJECT
+SearchTestTemplateInFolderQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchTestTemplateInFolderQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

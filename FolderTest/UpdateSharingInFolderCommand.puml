@@ -1,0 +1,42 @@
+@startuml
+title FolderTest | UpdateSharingInFolderCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/IFolderTestService.puml
+!include ../Dto/UpsertSharingModelDto.puml
+'=====================COMMAND========================
+class UpdateSharingInFolderCommand {
+    + FolderId : Guid <<get>> <<set>>
+    + SharingModels : List<UpsertSharingModelDto> <<get>> <<set>>
+    + DeleteUserIds : List<Guid> <<get>> <<set>>
+}
+
+class UpdateSharingInFolderCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _folderTestService : IFolderTestService
+    + UpdateSharingInFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
+    + <<async>> Handle(request:UpdateSharingInFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class FolderEndpoints  {
+    + <<async>> UpdateSharingInFolder(folderId:Guid, rq:UpdateSharingInFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+UpdateSharingInFolderCommand ..|> IRequest : <<implements>>
+UpdateSharingInFolderCommandHandler ..> UpdateSharingInFolderCommand :  <<uses>>
+FolderEndpoints ..> UpdateSharingInFolderCommand : <<uses>>
+UpdateSharingInFolderCommandHandler ..|> IRequestHandler : <<implements>>
+UpdateSharingInFolderCommandHandler ..> UpsertSharingModelDto : <<uses>>
+
+'=====INJECT
+UpdateSharingInFolderCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateSharingInFolderCommandHandler ..> IFolderTestService : <<inject>>
+'=====INJECT
+@enduml
