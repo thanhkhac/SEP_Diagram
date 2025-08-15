@@ -1,0 +1,42 @@
+@startuml
+title Plan | GetPlatformOverviewQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IIdentityService.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/PlatformOverviewDto.puml
+'=====================QUERY========================
+class GetPlatformOverviewQuery {
+}
+
+class GetPlatformOverviewQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _identityService : IIdentityService
+    - <<readonly>> _user : IUser
+    + GetPlatformOverviewQueryHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
+    + <<async>> Handle(request:GetPlatformOverviewQuery, cancellationToken:CancellationToken) : Task<PlatformOverviewDto>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> GetPlatformOverview(sender:ISender) : Task<Ok<ApiResponse<PlatformOverviewDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetPlatformOverviewQuery ..|> IRequest : <<implements>>
+GetPlatformOverviewQueryHandler ..> GetPlatformOverviewQuery :  <<uses>>
+PlanEndpoints ..> GetPlatformOverviewQuery : <<uses>>
+GetPlatformOverviewQueryHandler ..|> IRequestHandler : <<implements>>
+GetPlatformOverviewQueryHandler ..> PlatformOverviewDto : <<uses>>
+
+'=====INJECT
+GetPlatformOverviewQueryHandler ..> IApplicationDbContext : <<inject>>
+GetPlatformOverviewQueryHandler ..> IIdentityService : <<inject>>
+GetPlatformOverviewQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

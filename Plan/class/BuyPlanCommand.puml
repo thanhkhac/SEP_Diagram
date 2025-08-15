@@ -1,0 +1,38 @@
+@startuml
+title Plan | BuyPlanCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class BuyPlanCommand {
+    + PlanId : Guid <<get>> <<set>>
+}
+
+class BuyPlanCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + BuyPlanCommandHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:BuyPlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> BuyPlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+BuyPlanCommand ..|> IRequest : <<implements>>
+BuyPlanCommandHandler ..> BuyPlanCommand :  <<uses>>
+PlanEndpoints ..> BuyPlanCommand : <<uses>>
+BuyPlanCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+BuyPlanCommandHandler ..> IApplicationDbContext : <<inject>>
+BuyPlanCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

@@ -1,0 +1,8 @@
+@startuml
+class PlatformOverviewDto {
+    + Users : int
+    + Classes : int
+    + Revenue : int
+    + UsersHavePlan : int
+}
+@enduml

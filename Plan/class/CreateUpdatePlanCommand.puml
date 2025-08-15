@@ -1,0 +1,47 @@
+@startuml
+title Plan | CreateUpdatePlanCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IIdentityService.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class CreateUpdatePlanCommand {
+    + PlanId : Guid? <<get>> <<set>>
+    + Name : string <<get>> <<set>>
+    + Price : int <<get>> <<set>>
+    + Duration : int <<get>> <<set>>
+    + Unit : string <<get>> <<set>>
+    + CanLearn : bool <<get>> <<set>>
+    + CanOpenTest : bool <<get>> <<set>>
+    + CanCopyOrImportQuestionSet : bool <<get>> <<set>>
+    + IsActive : bool <<get>> <<set>>
+}
+
+class CreatePlanCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _identityService : IIdentityService
+    + CreatePlanCommandHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
+    + <<async>> Handle(request:CreateUpdatePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> CreateUpdatePlan(rq:CreateUpdatePlanCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+CreateUpdatePlanCommand ..|> IRequest : <<implements>>
+CreatePlanCommandHandler ..> CreateUpdatePlanCommand :  <<uses>>
+PlanEndpoints ..> CreateUpdatePlanCommand : <<uses>>
+CreatePlanCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+CreatePlanCommandHandler ..> IApplicationDbContext : <<inject>>
+CreatePlanCommandHandler ..> IIdentityService : <<inject>>
+'=====INJECT
+@enduml

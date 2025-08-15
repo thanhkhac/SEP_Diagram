@@ -1,0 +1,43 @@
+@startuml
+title Plan | GetRevenueByYearQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IIdentityService.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/RevenueDto.puml
+'=====================QUERY========================
+class GetRevenueByYearQuery {
+    + Year : int <<get>> <<set>>
+}
+
+class GetRevenueByYearQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _identityService : IIdentityService
+    - <<readonly>> _user : IUser
+    + GetRevenueByYearQueryHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
+    + <<async>> Handle(request:GetRevenueByYearQuery, cancellationToken:CancellationToken) : Task<List<RevenueDto>>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> GetRevenueByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<RevenueDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetRevenueByYearQuery ..|> IRequest : <<implements>>
+GetRevenueByYearQueryHandler ..> GetRevenueByYearQuery :  <<uses>>
+PlanEndpoints ..> GetRevenueByYearQuery : <<uses>>
+GetRevenueByYearQueryHandler ..|> IRequestHandler : <<implements>>
+GetRevenueByYearQueryHandler ..> RevenueDto : <<uses>>
+
+'=====INJECT
+GetRevenueByYearQueryHandler ..> IApplicationDbContext : <<inject>>
+GetRevenueByYearQueryHandler ..> IIdentityService : <<inject>>
+GetRevenueByYearQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

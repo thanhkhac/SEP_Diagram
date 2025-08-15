@@ -1,0 +1,35 @@
+@startuml
+title Plan | DeletePlanCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+'=====================COMMAND========================
+class DeletePlanCommand {
+    + PlanId : Guid <<get>> <<init>>
+}
+
+class DeletePlanCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    + DeletePlanCommandHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
+    + <<async>> Handle(request:DeletePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> DeletePlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+DeletePlanCommand ..|> IRequest : <<implements>>
+DeletePlanCommandHandler ..> DeletePlanCommand :  <<uses>>
+PlanEndpoints ..> DeletePlanCommand : <<uses>>
+DeletePlanCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+DeletePlanCommandHandler ..> IApplicationDbContext : <<inject>>
+'=====INJECT
+@enduml

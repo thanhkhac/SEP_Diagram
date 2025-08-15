@@ -1,0 +1,37 @@
+@startuml
+title Plan | SearchPlanQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Dto/PlanDetailDto.puml
+'=====================QUERY========================
+class SearchPlanQuery {
+    + IsActive : bool? <<get>> <<set>>
+}
+
+class SearchPlanQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    + SearchPlanQueryHandler(context:IApplicationDbContext)
+    + <<async>> Handle(request:SearchPlanQuery, cancellationToken:CancellationToken) : Task<List<PlanDetailDto>>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> SearchPlan(query:SearchPlanQuery, sender:ISender) : Task<Ok<ApiResponse<List<PlanDetailDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchPlanQuery ..|> IRequest : <<implements>>
+SearchPlanQueryHandler ..> SearchPlanQuery :  <<uses>>
+PlanEndpoints ..> SearchPlanQuery : <<uses>>
+SearchPlanQueryHandler ..|> IRequestHandler : <<implements>>
+SearchPlanQueryHandler ..> PlanDetailDto : <<uses>>
+
+'=====INJECT
+SearchPlanQueryHandler ..> IApplicationDbContext : <<inject>>
+'=====INJECT
+@enduml

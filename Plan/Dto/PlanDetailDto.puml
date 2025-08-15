@@ -1,0 +1,13 @@
+@startuml
+class PlanDetailDto {
+    + Id : Guid
+    + Name : string?
+    + Price : int
+    + Duration : int
+    + Unit : string?
+    + CanLearn : bool
+    + CanOpenTest : bool
+    + CanCopyOrImportQuestionSet : bool
+    + IsActive : bool
+}
+@enduml

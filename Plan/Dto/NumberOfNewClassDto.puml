@@ -1,0 +1,6 @@
+@startuml
+class NumberOfNewClassDto {
+    + Month : int
+    + Revenue : int
+}
+@enduml

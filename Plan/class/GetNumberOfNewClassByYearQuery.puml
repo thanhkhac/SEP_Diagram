@@ -1,0 +1,43 @@
+@startuml
+title Plan | GetNumberOfNewClassByYearQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IIdentityService.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/NumberOfNewClassDto.puml
+'=====================QUERY========================
+class GetNumberOfNewClassByYearQuery {
+    + Year : int <<get>> <<set>>
+}
+
+class GetNumberOfNewClassByYearQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _identityService : IIdentityService
+    - <<readonly>> _user : IUser
+    + GetNumberOfNewClassByYearQueryHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
+    + <<async>> Handle(request:GetNumberOfNewClassByYearQuery, cancellationToken:CancellationToken) : Task<List<NumberOfNewClassDto>>
+}
+
+'=====================ENDPOINT========================
+class PlanEndpoints  {
+    + <<async>> GetNumberOfNewClassByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<NumberOfNewClassDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetNumberOfNewClassByYearQuery ..|> IRequest : <<implements>>
+GetNumberOfNewClassByYearQueryHandler ..> GetNumberOfNewClassByYearQuery :  <<uses>>
+PlanEndpoints ..> GetNumberOfNewClassByYearQuery : <<uses>>
+GetNumberOfNewClassByYearQueryHandler ..|> IRequestHandler : <<implements>>
+GetNumberOfNewClassByYearQueryHandler ..> NumberOfNewClassDto : <<uses>>
+
+'=====INJECT
+GetNumberOfNewClassByYearQueryHandler ..> IApplicationDbContext : <<inject>>
+GetNumberOfNewClassByYearQueryHandler ..> IIdentityService : <<inject>>
+GetNumberOfNewClassByYearQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml
