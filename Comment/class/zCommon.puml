@@ -1,0 +1,6 @@
+@startuml
+EndpointGroupBase <|-- CommentEndpoints : <<extends>>
+CommentEndpoints ..> ApiResponse : <<uses>>
+CommentEndpoints ..> ISender : <<inject>>
+
+@enduml

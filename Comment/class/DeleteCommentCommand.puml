@@ -1,0 +1,38 @@
+@startuml
+title Comment | DeleteCommentCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ICommentService.puml
+'=====================COMMAND========================
+class DeleteCommentCommand {
+    + CommentId : Guid <<get>> <<set>>
+}
+
+class DeleteCommentCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _commentService : ICommentService
+    + DeleteCommentCommandHandler(context:IApplicationDbContext, commentService:ICommentService)
+    + <<async>> Handle(request:DeleteCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class CommentEndpoints  {
+    + <<async>> DeleteComment(commentId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+DeleteCommentCommand ..|> IRequest : <<implements>>
+DeleteCommentCommandHandler ..> DeleteCommentCommand :  <<uses>>
+CommentEndpoints ..> DeleteCommentCommand : <<uses>>
+DeleteCommentCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+DeleteCommentCommandHandler ..> IApplicationDbContext : <<inject>>
+DeleteCommentCommandHandler ..> ICommentService : <<inject>>
+'=====INJECT
+@enduml

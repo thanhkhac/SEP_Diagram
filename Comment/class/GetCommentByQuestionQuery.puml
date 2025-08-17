@@ -1,0 +1,46 @@
+@startuml
+title Comment | GetCommentByQuestionQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ICommentService.puml
+!include ../../common/Models/PaginatedList.puml
+!include /Dto/CommentDto.puml
+'=====================QUERY========================
+class GetCommentByQuestionQuery {
+    + QuestionId : Guid <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class GetCommentByQuestionQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _commentService : ICommentService
+    - <<readonly>> _mapper : IMapper
+    + GetCommentByQuestionQueryHandler(context:IApplicationDbContext, commentService:ICommentService, mapper:IMapper)
+    + <<async>> Handle(request:GetCommentByQuestionQuery, cancellationToken:CancellationToken) : Task<PaginatedList<CommentDto>>
+}
+
+'=====================ENDPOINT========================
+class CommentEndpoints  {
+    + <<async>> GetComment(questionId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<CommentDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetCommentByQuestionQuery ..|> IRequest : <<implements>>
+GetCommentByQuestionQueryHandler ..> GetCommentByQuestionQuery :  <<uses>>
+CommentEndpoints ..> GetCommentByQuestionQuery : <<uses>>
+GetCommentByQuestionQueryHandler ..|> IRequestHandler : <<implements>>
+GetCommentByQuestionQueryHandler ..> PaginatedList : <<uses>>
+GetCommentByQuestionQueryHandler ..> CommentDto : <<uses>>
+
+'=====INJECT
+GetCommentByQuestionQueryHandler ..> IApplicationDbContext : <<inject>>
+GetCommentByQuestionQueryHandler ..> ICommentService : <<inject>>
+GetCommentByQuestionQueryHandler ..> IMapper : <<inject>>
+'=====INJECT
+@enduml

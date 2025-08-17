@@ -1,0 +1,42 @@
+@startuml
+title Comment | ReplyCommentCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ICommentService.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class ReplyCommentCommand {
+    + CommentId : Guid? <<get>> <<set>>
+    + Content : string <<get>> <<set>>
+}
+
+class ReplyCommentCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _commentService : ICommentService
+    - <<readonly>> _user : IUser
+    + ReplyCommentCommandHandler(context:IApplicationDbContext, user:IUser, commentService:ICommentService)
+    + <<async>> Handle(request:ReplyCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class CommentEndpoints  {
+    + <<async>> ReplyComment(commentId:Guid, rq:ReplyCommentCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+ReplyCommentCommand ..|> IRequest : <<implements>>
+ReplyCommentCommandHandler ..> ReplyCommentCommand :  <<uses>>
+CommentEndpoints ..> ReplyCommentCommand : <<uses>>
+ReplyCommentCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+ReplyCommentCommandHandler ..> IApplicationDbContext : <<inject>>
+ReplyCommentCommandHandler ..> ICommentService : <<inject>>
+ReplyCommentCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

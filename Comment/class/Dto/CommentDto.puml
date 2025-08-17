@@ -1,0 +1,10 @@
+@startuml
+class CommentDto {
+    + Id : Guid
+    + Content : string
+    + Created : DateTimeOffset
+    + CreatedBy : string?
+    + ParentId : Guid?
+    + ChildComments : List<CommentDto>
+}
+@enduml

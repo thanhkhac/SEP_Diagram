@@ -1,0 +1,6 @@
+@startuml
+interface ICommentService {
+    + <<async>> CanComment(questionSetId:Guid): Task<bool>
+    + <<async>> CanDelete(commentId:Guid, cancellationToken:CancellationToken): Task<bool>
+}
+@enduml
