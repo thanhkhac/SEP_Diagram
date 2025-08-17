@@ -1,0 +1,75 @@
+@startuml
+actor User
+participant "Edit Test UI" as UI
+participant TestEndpoints
+participant UpdateTestCommandHandler as Handler
+participant TestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Edit info, update questions, click "Save"
+UI -> TestEndpoints : PATCH /api/Test/{TestId}
+TestEndpoints -> Handler : Handle(UpdateTestCommand)
+Handler -> ApplicationDbContext : Query Test by TestId
+ApplicationDbContext -> Database : Query Test
+Database --> ApplicationDbContext : Test
+ApplicationDbContext --> Handler : Test
+alt Test Not Found
+    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+    UI -> User : Error: Test not found
+else Test Found
+    Handler -> TestService : CanViewOrEditTest(classId)
+    TestService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestService : Permission
+    TestService --> Handler : bool
+    alt No permission
+        Handler --> TestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST
+        TestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST)
+        UI -> User : Error: User does not have permission to edit this test
+    else Allowed
+        alt Test Already Open
+            Handler --> TestEndpoints : Error: TEST_ALREADY_OPEN
+            TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_ALREADY_OPEN)
+            UI -> User : Error: Test already open, cannot edit
+        else Test Not Open
+            Handler -> ApplicationDbContext : Update Test Properties (Name, TimeLimit, StartTime, EndTime, etc.)
+            Handler -> ApplicationDbContext : Query existing TestVersions and TestVersionQuestions (Include Questions)
+            ApplicationDbContext -> Database : Query TestVersions, TestVersionQuestions, Questions
+            Database --> ApplicationDbContext : List<TestVersion>, List<TestVersionQuestion>, List<Question>
+            ApplicationDbContext --> Handler : Lists of TestVersions, TestVersionQuestions, Questions
+            alt Questions to Delete Not Found
+                Handler --> TestEndpoints : Error: QUESTION_NOT_FOUND_TO_DELETE
+                TestEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_FOUND_TO_DELETE)
+                UI -> User : Error: Some questions to delete were not found
+            else Questions to Delete Found
+                Handler -> TestService : QuestionAccessAndCompareForTest(newQuestionsFromQuestionSet)
+                TestService --> Handler : List<Guid> (newQuestionIds)
+                alt New Question Access Denied
+                    Handler --> TestEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
+                    TestEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
+                    UI -> User : Error: Some new questions are not accessible or invalid
+                else New Question Access Granted
+                    Handler -> TestService : CheckQuestionsForUpdate(questionsToUpdate, existingQuestions)
+                    TestService --> Handler : CheckUpdateQuestion (UpdateQuestionIds, NotUpdateQuestionIds)
+                    alt NumberOfShuffles Changed
+                        Handler -> ApplicationDbContext : Add/Remove TestVersions and TestVersionQuestions
+                        ApplicationDbContext -> Database : Insert/Delete TestVersions, TestVersionQuestions
+                        Database --> ApplicationDbContext : Success
+                    end
+                    Handler -> ApplicationDbContext : Add new Questions and TestVersionQuestions
+                    Handler -> ApplicationDbContext : Remove deleted/updated TestVersionQuestions
+                    ApplicationDbContext -> Database : Insert/Update/Delete Questions, TestVersionQuestions
+                    Database --> ApplicationDbContext : Success
+                    ApplicationDbContext --> Handler : Guid
+                    Handler --> TestEndpoints : Guid
+                    TestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+                    UI -> User : Info: Test updated successfully
+                end
+            end
+        end
+    end
+end
+@enduml

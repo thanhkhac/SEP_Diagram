@@ -1,0 +1,83 @@
+@startuml
+actor User
+participant "Test Taking UI" as UI
+participant TestEndpoints
+participant SubmitTestAttemptCommandHandler as Handler
+participant TestService
+participant HangFireService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Submit answers / Save progress
+UI -> TestEndpoints : POST /api/Test/Attempt/{AttemptId}/Submit
+TestEndpoints -> Handler : Handle(SubmitTestAttemptCommand)
+Handler -> ApplicationDbContext : Query Attempt (Include Test, TestVersion) by AttemptId
+ApplicationDbContext -> Database : Query Attempt, Test, TestVersion
+Database --> ApplicationDbContext : Attempt, Test, TestVersion
+ApplicationDbContext --> Handler : Attempt
+alt Attempt/Test Not Found
+    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+    UI -> User : Error: Test or attempt not found
+else Attempt Found
+    alt User Mismatch
+        Handler --> TestEndpoints : Error: ERROR_ATTEMPT_USER
+        TestEndpoints --> UI : 400 Bad Request (errorCode: ERROR_ATTEMPT_USER)
+        UI -> User : Error: User mismatch for attempt
+    else User Match
+        Handler -> TestService : TryCheckCanAttemptTest(test)
+        TestService --> Handler : Success/Error (from previous checks)
+        alt Test Not Open / Overdue / Not Student
+            Handler --> TestEndpoints : Error: (Various TestService Errors)
+            TestEndpoints --> UI : 400 Bad Request (errorCode: Various TestService Errors)
+            UI -> User : Error: Cannot submit test (e.g., not open, overdue, not student)
+        else Can Attempt Test
+            alt Attempt Already Submitted
+                Handler --> TestEndpoints : Error: ATTEMPT_ALREADY_SUBMIT
+                TestEndpoints --> UI : 400 Bad Request (errorCode: ATTEMPT_ALREADY_SUBMIT)
+                UI -> User : Error: Attempt already submitted
+            else Attempt Not Submitted
+                Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question)
+                ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+                Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+                ApplicationDbContext --> Handler : List<QuestionResponseDto> (questionsInTest)
+                Handler -> ApplicationDbContext : Query existing AttemptQuestions
+                ApplicationDbContext -> Database : Query AttemptQuestions
+                Database --> ApplicationDbContext : List<AttemptQuestion>
+                ApplicationDbContext --> Handler : List<AttemptQuestion> (attemptedQuestions)
+                loop For each Question in Test
+                    Handler -> Handler : Grade User Answer (based on QuestionType)
+                    alt Invalid Question Type
+                        Handler --> TestEndpoints : Error: INVALID_QUESTION_TYPE
+                        TestEndpoints --> UI : 400 Bad Request (errorCode: INVALID_QUESTION_TYPE)
+                        UI -> User : Error: Invalid question type encountered
+                    else Valid Question Type
+                        Handler -> ApplicationDbContext : Update or Add AttemptQuestion (with score and data)
+                    end
+                    Handler -> Handler : Accumulate totalScore
+                end
+                alt IsSubmit is true
+                    Handler -> Handler : Set Attempt.TimeFinish = DateTime.UtcNow
+                    Handler -> HangFireService : DeleteJobByArgument(attemptId)
+                end
+                Handler -> ApplicationDbContext : Update Attempt Score
+                Handler -> ApplicationDbContext : Query existing TestGrade
+                ApplicationDbContext -> Database : Query TestGrade
+                Database --> ApplicationDbContext : TestGrade
+                ApplicationDbContext --> Handler : TestGrade
+                alt TestGrade Not Found
+                    Handler -> ApplicationDbContext : Add new TestGrade
+                else TestGrade Found
+                    Handler -> Handler : Update TestGrade Score (based on GradeAttemptMethod)
+                end
+                Handler -> ApplicationDbContext : Add/Update AttemptQuestions
+                ApplicationDbContext -> Database : Insert/Update AttemptQuestions, TestGrade, Attempt
+                Database --> ApplicationDbContext : Success
+                ApplicationDbContext --> Handler : TestResultDto
+                TestEndpoints --> UI : 200 OK (ApiResponse<TestResultDto>)
+                UI -> User : Show test result
+            end
+        end
+    end
+end
+@enduml
