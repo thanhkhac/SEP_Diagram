@@ -1,7 +1,7 @@
 @startuml
 title Comment | CreateCommentCommand
 '=====================DEFINE========================
-
+!define COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

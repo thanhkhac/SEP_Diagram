@@ -1,7 +1,7 @@
 @startuml
 title Comment | GetCommentByQuestionQuery
 '=====================DEFINE========================
-
+!define COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -9,7 +9,7 @@ title Comment | GetCommentByQuestionQuery
 !include ../../common/IApplicationDbContext.puml
 !include ../Service/ICommentService.puml
 !include ../../common/Models/PaginatedList.puml
-!include /Dto/CommentDto.puml
+!include ../Dto/CommentDto.puml
 '=====================QUERY========================
 class GetCommentByQuestionQuery {
     + QuestionId : Guid <<get>> <<set>>

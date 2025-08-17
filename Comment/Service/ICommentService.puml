@@ -1,6 +1,30 @@
 @startuml
 interface ICommentService {
+    !ifdef COMMENT_SERVICE_CANCOMMENT_GUID
     + <<async>> CanComment(questionSetId:Guid): Task<bool>
+    !endif
+    !ifdef COMMENT_SERVICE_CANDELETE
     + <<async>> CanDelete(commentId:Guid, cancellationToken:CancellationToken): Task<bool>
+    !endif
+    !ifdef COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
+    + <<async>> CanComment(questionSet:QuestionSet): Task<bool>
+    !endif
 }
+
+class CommentService {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + CommentService(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+    !ifdef COMMENT_SERVICE_CANCOMMENT_GUID
+    + <<async>> CanComment(questionSetId:Guid): Task<bool>
+    !endif
+    !ifdef COMMENT_SERVICE_CANDELETE
+    + <<async>> CanDelete(commentId:Guid, cancellationToken:CancellationToken): Task<bool>
+    !endif
+    !ifdef COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
+    + <<async>> CanComment(questionSet:QuestionSet): Task<bool>
+    !endif
+}
+
+ICommentService <|.. CommentService : <<implements>>
 @enduml
