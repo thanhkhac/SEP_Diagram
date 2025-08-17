@@ -1,0 +1,7 @@
+@startuml
+class FileStreamData {
+    + FileName : string? <<get>> <<set>>
+    + ContentType : string? <<get>> <<set>>
+    + Data : Stream? <<get>> <<set>>
+}
+@enduml

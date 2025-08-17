@@ -31,6 +31,7 @@ ImportFileTestTemplateCommandHandler ..> ImportFileTestTemplateCommand :  <<uses
 TestTemplateEndpoints ..> ImportFileTestTemplateCommand : <<uses>>
 ImportFileTestTemplateCommandHandler ..|> IRequestHandler : <<implements>>
 ImportFileTestTemplateCommandHandler ..> ImportedQuestionDto : <<uses>>
+ImportFileTestTemplateCommand *-- FileStreamData
 
 '=====INJECT
 ImportFileTestTemplateCommandHandler ..> IFileService : <<inject>>
