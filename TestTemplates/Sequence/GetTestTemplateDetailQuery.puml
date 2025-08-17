@@ -1,0 +1,42 @@
+@startuml
+actor User
+participant "Test Template Detail UI" as UI
+participant TestTemplateEndpoints
+participant GetTestTemplateDetailQueryHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Open test template detail
+UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}
+TestTemplateEndpoints -> Handler : Handle(GetTestTemplateDetailQuery)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    Handler -> TestTemplateService : CanViewTesTemplate(testTemplateId)
+    TestTemplateService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestTemplateService : Permission
+    TestTemplateService --> Handler : bool
+    alt No permission
+        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+        UI -> User : Error: User does not have permission to view this test template
+    else Allowed
+        Handler -> ApplicationDbContext : Query TestTemplate with Questions (Include CreatedByUser, TestTemplateQuestions, Question)
+        ApplicationDbContext -> Database : Query TestTemplate, Questions
+        Database --> ApplicationDbContext : TestTemplate, List<Question>
+        ApplicationDbContext --> Handler : TestTemplate, List<Question>
+        Handler --> TestTemplateEndpoints : TestTemplateDetailDto
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplateDetailDto>)
+        UI -> User : Show test template detail
+    end
+end
+@enduml

@@ -1,0 +1,50 @@
+@startuml
+actor User
+participant "Test Template Detail UI" as UI
+participant TestTemplateEndpoints
+participant GetTestTemplatePermissionsQueryHandler as Handler
+participant IdentityService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View permissions
+UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}/Permissions
+TestTemplateEndpoints -> Handler : Handle(GetTestTemplatePermissionsQuery)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    alt User is Anonymous
+        Handler --> TestTemplateEndpoints : TestTemplatePermissionsDto (CanEdit=false, CanDelete=false)
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplatePermissionsDto>)
+        UI -> User : Show no permissions
+    else User is Authenticated
+        Handler -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+        IdentityService --> Handler : bool (isAdmin)
+        alt Is Admin
+            Handler --> TestTemplateEndpoints : TestTemplatePermissionsDto (CanEdit=true, CanDelete=true)
+            TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplatePermissionsDto>)
+            UI -> User : Show full permissions
+        else Not Admin
+            Handler -> ApplicationDbContext : Query TestTemplateUser by TestTemplateId and UserId
+            ApplicationDbContext -> Database : Query TestTemplateUser
+            Database --> ApplicationDbContext : TestTemplateUser
+            ApplicationDbContext --> Handler : TestTemplateUser
+            alt User Not Have Permission
+                Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+                TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+                UI -> User : Error: User does not have permission in test template
+            else User Has Permission
+                Handler --> TestTemplateEndpoints : TestTemplatePermissionsDto (based on ShareMode)
+                TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplatePermissionsDto>)
+                UI -> User : Show specific permissions
+            end
+        end
+    end
+end
+@enduml

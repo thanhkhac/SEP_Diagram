@@ -1,0 +1,59 @@
+@startuml
+actor User
+participant "Edit Test Template UI" as UI
+participant TestTemplateEndpoints
+participant UpdateTestTemplateCommandHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Edit info, update questions, click "Save"
+UI -> TestTemplateEndpoints : PATCH /api/TestTemplate/{TestTemplateId}
+TestTemplateEndpoints -> Handler : Handle(UpdateTestTemplateCommand)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    TestTemplateService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestTemplateService : Permission
+    TestTemplateService --> Handler : bool
+    alt No permission
+        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+        UI -> User : Error: User does not have permission to edit this test template
+    else Allowed
+        Handler -> ApplicationDbContext : Update TestTemplate Name
+        Handler -> ApplicationDbContext : Query existing TestTemplateQuestions (Include Questions)
+        ApplicationDbContext -> Database : Query TestTemplateQuestions, Questions
+        Database --> ApplicationDbContext : List<TestTemplateQuestion>, List<Question>
+        ApplicationDbContext --> Handler : List<TestTemplateQuestion>, List<Question>
+        Handler -> Handler : Filter questions to update/create/delete
+        Handler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(newQuestionsFromQuestionSet)
+        TestTemplateService --> Handler : Success/Error
+        alt Question Access Denied
+            Handler --> TestTemplateEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
+            TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
+            UI -> User : Error: Some new questions are not accessible or invalid
+        else Question Access Granted
+            Handler -> TestTemplateService : CheckQuestionsForUpdate(questionsToUpdate, existingQuestions)
+            TestTemplateService --> Handler : CheckUpdateQuestion (UpdateQuestionIds, NotUpdateQuestionIds)
+            Handler -> ApplicationDbContext : Add new Questions and TestTemplateQuestions
+            Handler -> ApplicationDbContext : Remove deleted/updated TestTemplateQuestions
+            ApplicationDbContext -> Database : Insert/Update/Delete Questions, TestTemplateQuestions
+            Database --> ApplicationDbContext : Success
+            ApplicationDbContext --> Handler : Guid
+            Handler --> TestTemplateEndpoints : Guid
+            TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+            UI -> User : Info: Test template updated successfully
+        end
+    end
+end
+@enduml

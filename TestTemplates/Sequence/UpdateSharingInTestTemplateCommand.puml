@@ -1,0 +1,60 @@
+@startuml
+actor User
+participant "Test Template Sharing UI" as UI
+participant TestTemplateEndpoints
+participant UpdateSharingInTestTemplateCommandHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Update sharing settings
+UI -> TestTemplateEndpoints : PATCH /api/TestTemplate/{TestTemplateId}/Sharing
+TestTemplateEndpoints -> Handler : Handle(UpdateSharingInTestTemplateCommand)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    TestTemplateService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestTemplateService : Permission
+    TestTemplateService --> Handler : bool
+    alt No permission
+        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+        UI -> User : Error: User does not have permission to edit sharing
+    else Allowed
+        Handler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        ApplicationDbContext -> Database : Query DomainUsers
+        Database --> ApplicationDbContext : List<DomainUser>
+        ApplicationDbContext --> Handler : List<DomainUser>
+        alt Invalid SharingUserIds
+            Handler --> TestTemplateEndpoints : Error: USER_NOTFOUND
+            TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOTFOUND)
+            UI -> User : Error: Invalid user(s) in sharing list
+        else Valid SharingUserIds
+            Handler -> ApplicationDbContext : Query existing TestTemplateUsers
+            ApplicationDbContext -> Database : Query TestTemplateUsers
+            Database --> ApplicationDbContext : List<TestTemplateUser>
+            ApplicationDbContext --> Handler : List<TestTemplateUser>
+            loop For each SharingModel
+                Handler -> ApplicationDbContext : Update or Add TestTemplateUser
+                ApplicationDbContext -> Database : Update/Insert TestTemplateUser
+            end
+            Handler -> ApplicationDbContext : Remove TestTemplateUsers for DeleteUserIds
+            ApplicationDbContext -> Database : Delete TestTemplateUsers
+            Database --> ApplicationDbContext : Success
+            ApplicationDbContext --> Handler : Guid
+            Handler --> TestTemplateEndpoints : Guid
+            TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+            UI -> User : Info: Sharing settings updated
+        end
+    end
+end
+@enduml

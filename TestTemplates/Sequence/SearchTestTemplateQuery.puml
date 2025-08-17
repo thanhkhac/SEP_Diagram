@@ -1,0 +1,23 @@
+@startuml
+actor User
+participant "Test Template List UI" as UI
+participant TestTemplateEndpoints
+participant SearchTestTemplateQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for test templates
+UI -> TestTemplateEndpoints : GET /api/TestTemplate?testTemplateName=...&shareMode=...
+TestTemplateEndpoints -> Handler : Handle(SearchTestTemplateQuery)
+Handler -> Handler : Parse ShareMode (if provided)
+Handler -> ApplicationDbContext : Query TestTemplateUsers (Include TestTemplate)
+ApplicationDbContext -> Database : Query TestTemplateUsers, TestTemplate
+Database --> ApplicationDbContext : List<TestTemplateUser>
+ApplicationDbContext --> Handler : List<TestTemplateUser>
+Handler -> Handler : Filter by UserId, TestTemplateName, ShareMode, IsDeleted
+Handler -> Handler : Map to TestTemplateDto
+Handler --> TestTemplateEndpoints : PaginatedList<TestTemplateDto>
+TestTemplateEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<TestTemplateDto>>)
+UI -> User : Show test template search results
+
+@enduml

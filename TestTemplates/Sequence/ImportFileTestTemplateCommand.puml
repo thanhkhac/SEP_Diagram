@@ -1,0 +1,30 @@
+@startuml
+actor User
+participant "Import Test Template UI" as UI
+participant TestTemplateEndpoints
+participant ImportFileTestTemplateCommandHandler as Handler
+participant FileService
+
+User -> UI : Upload Excel file
+UI -> TestTemplateEndpoints : POST /api/TestTemplate/ImportFile
+TestTemplateEndpoints -> Handler : Handle(ImportFileTestTemplateCommand)
+Handler -> Handler : Check FileData and FileData.Data
+alt File Not Found or Empty
+    Handler --> TestTemplateEndpoints : Error: FILE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: FILE_NOT_FOUND)
+    UI -> User : Error: File not found or empty
+else File Found
+    Handler -> Handler : Check File Format
+    alt Invalid File Format
+        Handler --> TestTemplateEndpoints : Error: ERROR_FORMAT_FILE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: ERROR_FORMAT_FILE)
+        UI -> User : Error: Invalid file format (must be .xlsx or .xls)
+    else Valid File Format
+        Handler -> FileService : GetQuestionFromFile(fileData)
+        FileService --> Handler : ImportedQuestionDto (validQuestions, invalidQuestions)
+        Handler --> TestTemplateEndpoints : ImportedQuestionDto
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ImportedQuestionDto>)
+        UI -> User : Show imported questions (valid and invalid)
+    end
+end
+@enduml

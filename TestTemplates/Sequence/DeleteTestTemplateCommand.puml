@@ -1,0 +1,49 @@
+@startuml
+actor User
+participant "Test Template List UI" as UI
+participant TestTemplateEndpoints
+participant DeleteTestTemplateCommandHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+participant IdentityService
+
+User -> UI : Click "Delete"
+UI -> TestTemplateEndpoints : DELETE /api/TestTemplate/{TestTemplateId}
+TestTemplateEndpoints -> Handler : Handle(DeleteTestTemplateCommand)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    Handler -> TestTemplateService : CanDeleteTestTemplate(testTemplateId)
+    TestTemplateService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    IdentityService --> TestTemplateService : bool (isAdmin)
+    alt Is Admin
+        TestTemplateService --> Handler : true
+    else Not Admin
+        TestTemplateService -> ApplicationDbContext : Query TestTemplateUser (Owner)
+        ApplicationDbContext -> Database : Query TestTemplateUser
+        Database --> ApplicationDbContext : TestTemplateUser
+        ApplicationDbContext --> TestTemplateService : TestTemplateUser
+        TestTemplateService --> Handler : bool (isOwner)
+    end
+    alt No permission
+        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+        UI -> User : Error: User does not have permission to delete this test template
+    else Allowed
+        Handler -> ApplicationDbContext : Mark TestTemplate as Deleted
+        ApplicationDbContext -> Database : Update TestTemplate (IsDeleted = true)
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> TestTemplateEndpoints : Guid
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Test template deleted successfully
+    end
+end
+@enduml

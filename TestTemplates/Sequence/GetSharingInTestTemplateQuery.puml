@@ -1,0 +1,43 @@
+@startuml
+actor User
+participant "Test Template Detail UI" as UI
+participant TestTemplateEndpoints
+participant GetSharingInTestTemplateQueryHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View sharing details
+UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}/Sharing
+TestTemplateEndpoints -> Handler : Handle(GetSharingInTestTemplateQuery)
+Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+ApplicationDbContext -> Database : Query TestTemplate
+Database --> ApplicationDbContext : TestTemplate
+ApplicationDbContext --> Handler : TestTemplate
+alt Test Template Not Found
+    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+    UI -> User : Error: Test template not found
+else Test Template Found
+    Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    TestTemplateService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestTemplateService : Permission
+    TestTemplateService --> Handler : bool
+    alt No permission
+        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+        UI -> User : Error: User does not have permission to view sharing
+    else Allowed
+        Handler -> ApplicationDbContext : Query TestTemplateUsers by TestTemplateId
+        ApplicationDbContext -> Database : Query TestTemplateUsers
+        Database --> ApplicationDbContext : List<TestTemplateUser>
+        ApplicationDbContext --> Handler : List<TestTemplateUser>
+        Handler -> Handler : Map to SharingModelDto and Sort
+        Handler --> TestTemplateEndpoints : ResourceShareDto
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
+        UI -> User : Show sharing details
+    end
+end
+@enduml

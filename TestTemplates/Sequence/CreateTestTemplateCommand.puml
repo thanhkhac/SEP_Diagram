@@ -1,0 +1,34 @@
+@startuml
+actor User
+participant "Create Test Template UI" as UI
+participant TestTemplateEndpoints
+participant CreateTestTemplateCommandHandler as Handler
+participant TestTemplateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Fill in info, add questions, click "Create"
+UI -> TestTemplateEndpoints : POST /api/TestTemplate
+TestTemplateEndpoints -> Handler : Handle(CreateTestTemplateCommand)
+Handler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(questions)
+TestTemplateService -> ApplicationDbContext : Query Questions/Permissions (inferred)
+ApplicationDbContext -> Database : Query Questions/Permissions (inferred)
+Database --> ApplicationDbContext : Questions/Permissions (inferred)
+ApplicationDbContext --> TestTemplateService : Questions/Permissions (inferred)
+TestTemplateService --> Handler : Success/Error
+alt Question Access Denied
+    Handler --> TestTemplateEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
+    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
+    UI -> User : Error: Some questions are not accessible or invalid
+else Question Access Granted
+    Handler -> ApplicationDbContext : Add new TestTemplate and TestTemplateUser
+    Handler -> Handler : Create Question entities and TestTemplateQuestion links from DTOs
+    ApplicationDbContext -> Database : Insert TestTemplate, TestTemplateUser, Questions, TestTemplateQuestions
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Guid
+    Handler --> TestTemplateEndpoints : Guid
+    TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    UI -> User : Info: Test template created successfully
+end
+
+@enduml
