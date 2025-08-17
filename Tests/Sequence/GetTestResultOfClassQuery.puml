@@ -1,0 +1,47 @@
+@startuml
+actor User
+participant "Test Result UI" as UI
+participant TestEndpoints
+participant GetTestResultOfClassQueryHandler as Handler
+participant TestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View test results for class
+UI -> TestEndpoints : GET /api/Test/{TestId}/Results?studentName=...&isPassed=...
+TestEndpoints -> Handler : Handle(GetTestResultOfClassQuery)
+Handler -> ApplicationDbContext : Query Test by TestId
+ApplicationDbContext -> Database : Query Test
+Database --> ApplicationDbContext : Test
+ApplicationDbContext --> Handler : Test
+alt Test Not Found
+    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+    UI -> User : Error: Test not found
+else Test Found
+    Handler -> TestService : CanViewOrEditTest(classId)
+    TestService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> TestService : Permission
+    TestService --> Handler : bool
+    alt No permission
+        Handler --> TestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST
+        TestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST)
+        UI -> User : Error: User does not have permission to view results
+    else Allowed
+        Handler -> ApplicationDbContext : Calculate Total Score for Test
+        ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+        Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+        ApplicationDbContext --> Handler : Total Score
+        Handler -> ApplicationDbContext : Query TestGrades (Include User, Test)
+        ApplicationDbContext -> Database : Query TestGrades, User, Test
+        Database --> ApplicationDbContext : List<TestGrade>, User, Test
+        ApplicationDbContext --> Handler : List<ResultTestOfClassDto>
+        Handler -> Handler : Filter by StudentName and IsPassed
+        Handler --> TestEndpoints : PaginatedList<ResultTestOfClassDto>
+        TestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<ResultTestOfClassDto>>)
+        UI -> User : Show test results for class
+    end
+end
+@enduml

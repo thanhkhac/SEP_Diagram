@@ -1,0 +1,89 @@
+@startuml
+actor User
+participant "Test Taking UI" as UI
+participant TestEndpoints
+participant StartAttemptTestCommandHandler as Handler
+participant TestService
+participant PlanService
+participant HangFireService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Click "Start Test"
+UI -> TestEndpoints : POST /api/Test/Attempt/{TestId}/Start
+TestEndpoints -> Handler : Handle(StartAttemptTestCommand)
+Handler -> ApplicationDbContext : Query Test by TestId
+ApplicationDbContext -> Database : Query Test
+Database --> ApplicationDbContext : Test
+ApplicationDbContext --> Handler : Test
+alt Test Not Found
+    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+    UI -> User : Error: Test not found
+else Test Found
+    Handler -> TestService : TryCheckCanAttemptTest(test)
+    TestService --> Handler : Success/Error
+    alt Not Yet Time to Open Test
+        Handler --> TestEndpoints : Error: NOT_YET_TIME_TO_OPEN_TEST
+        TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_YET_TIME_TO_OPEN_TEST)
+        UI -> User : Error: Not yet time to open test
+    else Test Overdue
+        Handler --> TestEndpoints : Error: TEST_IS_OVERDUE
+        TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_IS_OVERDUE)
+        UI -> User : Error: Test is overdue
+    else Not Student in Class
+        Handler --> TestEndpoints : Error: NOT_FOUND_STUDENT_IN_CLASS
+        TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_STUDENT_IN_CLASS)
+        UI -> User : Error: Only students in class can attempt test
+    else Can Attempt Test
+        Handler -> ApplicationDbContext : Query existing unsubmitted Attempt by UserId and TestId
+        ApplicationDbContext -> Database : Query Attempt
+        Database --> ApplicationDbContext : Attempt
+        ApplicationDbContext --> Handler : Attempt (attempted)
+        alt Existing Unsubmitted Attempt Found
+            Handler -> ApplicationDbContext : Query AttemptQuestions by AttemptId
+            ApplicationDbContext -> Database : Query AttemptQuestions
+            Database --> ApplicationDbContext : List<AttemptQuestion>
+            ApplicationDbContext --> Handler : Dictionary<QuestionId, AttemptQuestion> (userAnswerDict)
+            Handler -> Handler : Calculate TimeRemaining
+        else No Existing Unsubmitted Attempt
+            Handler -> ApplicationDbContext : Query Attempts by UserId and TestId (count)
+            ApplicationDbContext -> Database : Query Attempts
+            Database --> ApplicationDbContext : List<Attempt>
+            ApplicationDbContext --> Handler : List<Attempt>
+            alt Max Attempts Exceeded
+                Handler --> TestEndpoints : Error: MAX_ATTEMPT_IN_THIS_TEST
+                TestEndpoints --> UI : 400 Bad Request (errorCode: MAX_ATTEMPT_IN_THIS_TEST)
+                UI -> User : Error: Max attempts exceeded
+            else Max Attempts Not Exceeded
+                Handler -> ApplicationDbContext : Query random TestVersion by TestId
+                ApplicationDbContext -> Database : Query TestVersion
+                Database --> ApplicationDbContext : TestVersion
+                ApplicationDbContext --> Handler : TestVersion
+                alt Test Version Not Found
+                    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+                    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+                    UI -> User : Error: Test version not found
+                else Test Version Found
+                    Handler -> ApplicationDbContext : Add new Attempt
+                    Handler -> HangFireService : AutoSubmitTest(attemptId, timeLimit)
+                    ApplicationDbContext -> Database : Insert Attempt
+                    Database --> ApplicationDbContext : Success
+                    Handler -> Handler : Set TimeRemaining to Test.TimeLimit
+                end
+            end
+        end
+        Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question) by TestVersionId
+        ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+        Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+        ApplicationDbContext --> Handler : List<TestVersionQuestion>
+        Handler -> Handler : Map to AttemptDetailDto (including Questions with user answers)
+        Handler -> ApplicationDbContext : Save Changes
+        ApplicationDbContext -> Database : Update Attempt
+        Database --> ApplicationDbContext : Success
+        Handler --> TestEndpoints : AttemptDetailDto
+        TestEndpoints --> UI : 200 OK (ApiResponse<AttemptDetailDto>)
+        UI -> User : Show test questions
+    end
+end
+@enduml

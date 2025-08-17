@@ -1,0 +1,55 @@
+@startuml
+actor User
+participant "Test Review UI" as UI
+participant TestEndpoints
+participant GetReviewTestQueryHandler as Handler
+participant TestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request to review attempt
+UI -> TestEndpoints : GET /api/Test/Review/{AttemptId}
+TestEndpoints -> Handler : Handle(GetReviewTestQuery)
+Handler -> ApplicationDbContext : Query Attempt (Include User, Test, TestGrades) by AttemptId
+ApplicationDbContext -> Database : Query Attempt, User, Test, TestGrades
+Database --> ApplicationDbContext : Attempt, User, Test, TestGrades
+ApplicationDbContext --> Handler : Attempt
+alt Attempt Not Found or Test Not Found
+    Handler --> TestEndpoints : Error: ATTEMPT_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: ATTEMPT_NOT_FOUND)
+    UI -> User : Error: Attempt or test not found
+else Attempt Found
+    alt Test Not Submitted
+        Handler --> TestEndpoints : Error: NOT_SUBMITTED_CAN_NOT_VIEW
+        TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_SUBMITTED_CAN_NOT_VIEW)
+        UI -> User : Error: Test not submitted, cannot view
+    else Test Submitted
+        Handler -> TestService : GetRoleUserInTest(test)
+        TestService -> ApplicationDbContext : Query ClassUser
+        ApplicationDbContext -> Database : Query ClassUser
+        Database --> ApplicationDbContext : ClassUser
+        ApplicationDbContext --> TestService : ClassUser
+        TestService --> Handler : ClassShareMode? (roleInTest)
+        Handler -> Handler : Determine isShowCorrectAnswer (based on Test setting and role)
+        alt Not Owner/Teacher and Not Allowed to Review or Not Own Attempt
+            Handler --> TestEndpoints : Error: STUDENT_CAN_REVIEW_THIS_TEST
+            TestEndpoints --> UI : 400 Bad Request (errorCode: STUDENT_CAN_REVIEW_THIS_TEST)
+            UI -> User : Error: Student cannot review this test
+        else Allowed to Review
+            Handler -> ApplicationDbContext : Query AttemptQuestions by AttemptId
+            ApplicationDbContext -> Database : Query AttemptQuestions
+            Database --> ApplicationDbContext : List<AttemptQuestion>
+            ApplicationDbContext --> Handler : Dictionary<QuestionId, AttemptQuestion> (userAnswerDict)
+            Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question) by TestVersionId
+            ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+            Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+            ApplicationDbContext --> Handler : List<TestVersionQuestion>
+            Handler -> Handler : Calculate total score
+            Handler -> Handler : Map to ReviewTestDto (including Questions with user answers and correct answers)
+            Handler --> TestEndpoints : ReviewTestDto
+            TestEndpoints --> UI : 200 OK (ApiResponse<ReviewTestDto>)
+            UI -> User : Show test review
+        end
+    end
+end
+@enduml

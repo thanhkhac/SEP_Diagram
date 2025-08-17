@@ -1,0 +1,22 @@
+@startuml
+actor User
+participant "Test Schedule UI" as UI
+participant TestEndpoints
+participant GetTestScheduleQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request test schedule for month/year
+UI -> TestEndpoints : GET /api/Test/Schedule?month=...&year=...
+TestEndpoints -> Handler : Handle(GetTestScheduleQuery)
+Handler -> ApplicationDbContext : Query Tests by Month and Year
+ApplicationDbContext -> Database : Query Tests
+Database --> ApplicationDbContext : List<Test>
+ApplicationDbContext --> Handler : List<Test>
+Handler -> Handler : Map to TestScheduleDto
+Handler -> Handler : Group by Date and Order by Date
+Handler --> TestEndpoints : List<TestScheduleResponse>
+TestEndpoints --> UI : 200 OK (ApiResponse<List<TestScheduleResponse>>)
+UI -> User : Show test schedule
+
+@enduml

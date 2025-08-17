@@ -1,0 +1,52 @@
+@startuml
+actor User
+participant "Test History UI" as UI
+participant TestEndpoints
+participant GetUserTestHistoryQueryHandler as Handler
+participant TestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View test history
+UI -> TestEndpoints : GET /api/Test/{TestId}/History?userId=...&isPassed=...
+TestEndpoints -> Handler : Handle(GetUserTestHistoryQuery)
+Handler -> ApplicationDbContext : Query Test by TestId
+ApplicationDbContext -> Database : Query Test
+Database --> ApplicationDbContext : Test
+ApplicationDbContext --> Handler : Test
+alt Test Not Found
+    Handler --> TestEndpoints : Error: TEST_NOT_FOUND
+    TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
+    UI -> User : Error: Test not found
+else Test Found
+    Handler -> TestService : CanViewHistoryOfTest(classId)
+    TestService -> ApplicationDbContext : Query ClassUser
+    ApplicationDbContext -> Database : Query ClassUser
+    Database --> ApplicationDbContext : ClassUser
+    ApplicationDbContext --> TestService : ClassUser
+    TestService --> Handler : bool
+    alt User Not In Class
+        Handler --> TestEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+        TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
+        UI -> User : Error: User not in class
+    else User In Class
+        Handler -> TestService : CanViewOrEditTest(classId)
+        TestService --> Handler : bool (isLecturerOrOwnerInClass)
+        alt Is Lecturer/Owner and UserId Provided
+            Handler -> Handler : Set target UserId to provided UserId
+        end
+        Handler -> ApplicationDbContext : Calculate Total Score for Test
+        ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+        Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+        ApplicationDbContext --> Handler : Total Score
+        Handler -> ApplicationDbContext : Query Attempts (Include User, Test) by TestId and UserId
+        ApplicationDbContext -> Database : Query Attempts, User, Test
+        Database --> ApplicationDbContext : List<Attempt>, User, Test
+        ApplicationDbContext --> Handler : List<HistoryTestDto>
+        Handler -> Handler : Filter by IsPassed
+        Handler --> TestEndpoints : PaginatedList<HistoryTestDto>
+        TestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<HistoryTestDto>>)
+        UI -> User : Show user test history
+    end
+end
+@enduml
