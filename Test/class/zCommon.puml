@@ -1,0 +1,5 @@
+@startuml
+EndpointGroupBase <|-- QuestionSetEndpoints : <<extends>>
+TestEndpoints ..> ApiResponse : <<uses>>
+TestEndpoints ..> ISender : <<inject>>
+@enduml

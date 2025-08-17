@@ -1,0 +1,12 @@
+@startuml
+class HistoryTestDto {
+    + AttemptId : Guid
+    + StudentName : string?
+    + StudentEmail : string?
+    + Score : float
+    + Status : string?
+    + TimeStart : DateTimeOffset
+    + TimeSubmit : DateTimeOffset
+    + CanReview : bool
+}
+@enduml

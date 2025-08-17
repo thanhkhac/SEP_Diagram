@@ -1,0 +1,46 @@
+@startuml
+title Test | GetTestResultOfClassQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../Dto/ResultTestOfClassDto.puml
+'=====================QUERY========================
+class GetTestResultOfClassQuery {
+    + TestId : Guid <<get>> <<set>>
+    + StudentName : string? <<get>> <<set>>
+    + IsPassed : bool? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class GetTestResultOfClassQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    + GetTestResultOfClassQueryHandler(context:IApplicationDbContext, testService:ITestService)
+    + <<async>> Handle(request:GetTestResultOfClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<ResultTestOfClassDto>>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> GetTestResultOfClass(testId:Guid, sender:ISender, studentName:string?, isPassed:bool?, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<ResultTestOfClassDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestResultOfClassQuery ..|> IRequest : <<implements>>
+GetTestResultOfClassQueryHandler ..> GetTestResultOfClassQuery :  <<uses>>
+TestEndpoints ..> GetTestResultOfClassQuery : <<uses>>
+GetTestResultOfClassQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestResultOfClassQueryHandler ..> PaginatedList : <<uses>>
+GetTestResultOfClassQueryHandler ..> ResultTestOfClassDto : <<uses>>
+
+'=====INJECT
+GetTestResultOfClassQueryHandler ..> IApplicationDbContext : <<inject>>
+GetTestResultOfClassQueryHandler ..> ITestService : <<inject>>
+'=====INJECT
+@enduml

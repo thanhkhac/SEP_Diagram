@@ -1,0 +1,9 @@
+@startuml
+class QuestionAttemptDetailDto {
+    + Id : Guid
+    + QuestionText : string?
+    + Type : string?
+    + Score : float
+    + UserAnswerData : string?
+}
+@enduml

@@ -1,0 +1,49 @@
+@startuml
+title Test | GetUserTestHistoryQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../../common/service/IUser.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../Dto/HistoryTestDto.puml
+'=====================QUERY========================
+class GetUserTestHistoryQuery {
+    + TestId : Guid <<get>> <<set>>
+    + UserId : Guid? <<get>> <<set>>
+    + IsPassed : bool? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+}
+
+class GetUserTestHistoryQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    - <<readonly>> _user : IUser
+    + GetUserTestHistoryQueryHandler(context:IApplicationDbContext, testService:ITestService, user:IUser)
+    + <<async>> Handle(request:GetUserTestHistoryQuery, cancellationToken:CancellationToken) : Task<PaginatedList<HistoryTestDto>>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> GetHistoryTest(testId:Guid, userId:Guid?, isPassed:bool?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<HistoryTestDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetUserTestHistoryQuery ..|> IRequest : <<implements>>
+GetUserTestHistoryQueryHandler ..> GetUserTestHistoryQuery :  <<uses>>
+TestEndpoints ..> GetUserTestHistoryQuery : <<uses>>
+GetUserTestHistoryQueryHandler ..|> IRequestHandler : <<implements>>
+GetUserTestHistoryQueryHandler ..> PaginatedList : <<uses>>
+GetUserTestHistoryQueryHandler ..> HistoryTestDto : <<uses>>
+
+'=====INJECT
+GetUserTestHistoryQueryHandler ..> IApplicationDbContext : <<inject>>
+GetUserTestHistoryQueryHandler ..> ITestService : <<inject>>
+GetUserTestHistoryQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

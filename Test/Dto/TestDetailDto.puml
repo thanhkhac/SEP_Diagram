@@ -1,0 +1,20 @@
+@startuml
+class TestDetailDto {
+    + TestId : Guid
+    + ClassId : Guid
+    + Name : string?
+    + StartTime : DateTimeOffset
+    + EndTime : DateTimeOffset
+    + TimeLimit : int
+    + GradeAttemptMethod : string?
+    + GradeQuestionMethod : string?
+    + MaxAttempt : int
+    + PassingScore : int
+    + IsAllowReviewAfterSubmit : bool
+    + IsShowCorrectAnswerInReview : bool
+    + QuestionCount : int
+    + NumberOfShuffles : int
+    + TotalScore : float
+    + Questions : List<QuestionResponseDto>
+}
+@enduml

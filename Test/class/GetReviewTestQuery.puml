@@ -1,0 +1,45 @@
+@startuml
+title Test | GetReviewTestQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/ReviewTestDto.puml
+!include ../Dto/ReviewQuestionDto.puml
+'=====================QUERY========================
+class GetReviewTestQuery {
+    + AttemptId : Guid <<get>> <<set>>
+}
+
+class GetReviewTestQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    - <<readonly>> _user : IUser
+    + GetReviewTestQueryHandler(context:IApplicationDbContext, testService:ITestService, user:IUser)
+    + <<async>> Handle(request:GetReviewTestQuery, cancellationToken:CancellationToken) : Task<ReviewTestDto>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> GetReviewTest(attemptId:Guid, sender:ISender) : Task<Ok<ApiResponse<ReviewTestDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetReviewTestQuery ..|> IRequest : <<implements>>
+GetReviewTestQueryHandler ..> GetReviewTestQuery :  <<uses>>
+TestEndpoints ..> GetReviewTestQuery : <<uses>>
+GetReviewTestQueryHandler ..|> IRequestHandler : <<implements>>
+GetReviewTestQueryHandler ..> ReviewTestDto : <<uses>>
+GetReviewTestQueryHandler ..> ReviewQuestionDto : <<uses>>
+
+'=====INJECT
+GetReviewTestQueryHandler ..> IApplicationDbContext : <<inject>>
+GetReviewTestQueryHandler ..> ITestService : <<inject>>
+GetReviewTestQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+interface ITestService {
+    + <<async>> CanCreateTest(classId:Guid): Task<bool>
+    + <<async>> CanViewOrEditTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
+    + <<async>> QuestionAccessAndCompareForTest(questions:List<CreateUpdateQuestionDto>, cancellationToken:CancellationToken): Task<List<Guid>>
+    + <<async>> TryCheckCanAttemptTest(test:Test): Task
+    + <<async>> GetRoleUserInTest(test:Test): Task<ClassShareMode>
+    + <<async>> CanViewHistoryOfTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
+    + CheckQuestionsForUpdate(updateQuestionDto:List<CreateUpdateQuestionDto>, updateQuestion:List<Question>): CheckUpdateQuestion
+}
+@enduml

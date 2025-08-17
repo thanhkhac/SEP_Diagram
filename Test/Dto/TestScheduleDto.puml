@@ -1,0 +1,9 @@
+@startuml
+class TestScheduleDto {
+    + TestId : Guid
+    + ClassId : Guid
+    + TestName : string?
+    + Date : DateTime
+    + ClassName : string?
+}
+@enduml

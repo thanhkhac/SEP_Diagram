@@ -1,0 +1,50 @@
+@startuml
+title Test | SubmitTestAttemptCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../../common/service/IUser.puml
+!include ../../common/service/IHangFireService.puml
+!include ../Dto/TestResultDto.puml
+!include ../Dto/UserAnswerDto.puml
+'=====================COMMAND========================
+class SubmitTestAttemptCommand {
+    + AttemptId : Guid <<get>> <<set>>
+    + UserAnswers : List<UserAnswerDto> <<get>> <<set>>
+    + IsSubmit : bool <<get>> <<set>>
+}
+
+class SubmitTestAttemptCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    - <<readonly>> _user : IUser
+    - <<readonly>> _hangFireService : IHangFireService
+    + SubmitTestAttemptCommandHandler(context:IApplicationDbContext, testService:ITestService, user:IUser, hangFireService:IHangFireService)
+    + <<async>> Handle(request:SubmitTestAttemptCommand, cancellationToken:CancellationToken) : Task<TestResultDto>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> SubmitTestAttempt(userAnswer:SubmitTestAttemptCommand, sender:ISender) : Task<Ok<ApiResponse<TestResultDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SubmitTestAttemptCommand ..|> IRequest : <<implements>>
+SubmitTestAttemptCommandHandler ..> SubmitTestAttemptCommand :  <<uses>>
+TestEndpoints ..> SubmitTestAttemptCommand : <<uses>>
+SubmitTestAttemptCommandHandler ..|> IRequestHandler : <<implements>>
+SubmitTestAttemptCommandHandler ..> TestResultDto : <<uses>>
+SubmitTestAttemptCommandHandler ..> UserAnswerDto : <<uses>>
+
+'=====INJECT
+SubmitTestAttemptCommandHandler ..> IApplicationDbContext : <<inject>>
+SubmitTestAttemptCommandHandler ..> ITestService : <<inject>>
+SubmitTestAttemptCommandHandler ..> IUser : <<inject>>
+SubmitTestAttemptCommandHandler ..> IHangFireService : <<inject>>
+'=====INJECT
+@enduml

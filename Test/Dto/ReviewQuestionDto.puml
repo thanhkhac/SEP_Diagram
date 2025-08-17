@@ -1,0 +1,12 @@
+@startuml
+class ReviewQuestionDto {
+    + Id : Guid
+    + QuestionText : string?
+    + Type : string?
+    + Score : float
+    + UserScore : float
+    + UserAnswerData : string?
+    + CorrectAnswerData : string?
+    + ExplainText : string?
+}
+@enduml

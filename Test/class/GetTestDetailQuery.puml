@@ -1,0 +1,43 @@
+@startuml
+title Test | GetTestDetailQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../Dto/TestDetailDto.puml
+!include ../../Questions/Dtos/QuestionResponseDto.puml
+'=====================QUERY========================
+class GetTestDetailQuery {
+    + TestId : Guid <<get>> <<set>>
+    + IsShowQuestion : bool? <<get>> <<set>>
+}
+
+class GetTestDetailQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    + GetTestDetailQueryHandler(context:IApplicationDbContext, testService:ITestService)
+    + <<async>> Handle(request:GetTestDetailQuery, cancellationToken:CancellationToken) : Task<TestDetailDto>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> GetTestDetail(testId:Guid, isShowQuestion:bool?, sender:ISender) : Task<Ok<ApiResponse<TestDetailDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestDetailQuery ..|> IRequest : <<implements>>
+GetTestDetailQueryHandler ..> GetTestDetailQuery :  <<uses>>
+TestEndpoints ..> GetTestDetailQuery : <<uses>>
+GetTestDetailQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestDetailQueryHandler ..> TestDetailDto : <<uses>>
+GetTestDetailQueryHandler ..> QuestionResponseDto : <<uses>>
+
+'=====INJECT
+GetTestDetailQueryHandler ..> IApplicationDbContext : <<inject>>
+GetTestDetailQueryHandler ..> ITestService : <<inject>>
+'=====INJECT
+@enduml

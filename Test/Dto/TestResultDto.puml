@@ -1,0 +1,7 @@
+@startuml
+class TestResultDto {
+    + TimeStart : DateTimeOffset
+    + TimeEnd : DateTimeOffset
+    + Score : float
+}
+@enduml

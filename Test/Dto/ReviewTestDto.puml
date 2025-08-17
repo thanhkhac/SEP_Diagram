@@ -1,0 +1,12 @@
+@startuml
+class ReviewTestDto {
+    + AttemptId : Guid
+    + Name : string?
+    + StudentName : string?
+    + TimeStart : DateTimeOffset
+    + TimeEnd : DateTimeOffset
+    + Score : float
+    + Status : string?
+    + Questions : List<ReviewQuestionDto>
+}
+@enduml

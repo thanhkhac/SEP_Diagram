@@ -1,0 +1,6 @@
+@startuml
+class CheckUpdateQuestion {
+    + NotUpdateQuestionIds : List<Guid>
+    + UpdateQuestionIds : List<Guid>
+}
+@enduml

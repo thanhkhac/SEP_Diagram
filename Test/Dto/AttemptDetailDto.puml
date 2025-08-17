@@ -1,0 +1,12 @@
+@startuml
+class AttemptDetailDto {
+    + AttemptId : Guid
+    + Name : string?
+    + TimeStart : DateTime
+    + TimeEnd : DateTime
+    + TimeLimit : int
+    + TimeRemaining : double
+    + Questions : List<QuestionAttemptDetailDto>
+    + QuestionCount : int
+}
+@enduml

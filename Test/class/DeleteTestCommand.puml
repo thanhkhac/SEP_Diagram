@@ -1,0 +1,38 @@
+@startuml
+title Test | DeleteTestCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+'=====================COMMAND========================
+class DeleteTestCommand {
+    + TestId : Guid <<get>> <<init>>
+}
+
+class DeleteTestCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    + DeleteTestCommandHandler(context:IApplicationDbContext, testService:ITestService)
+    + <<async>> Handle(request:DeleteTestCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> DeleteTest(testId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+DeleteTestCommand ..|> IRequest : <<implements>>
+DeleteTestCommandHandler ..> DeleteTestCommand :  <<uses>>
+TestEndpoints ..> DeleteTestCommand : <<uses>>
+DeleteTestCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+DeleteTestCommandHandler ..> IApplicationDbContext : <<inject>>
+DeleteTestCommandHandler ..> ITestService : <<inject>>
+'=====INJECT
+@enduml

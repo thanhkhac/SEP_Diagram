@@ -1,0 +1,6 @@
+@startuml
+class UserAnswerDto {
+    + QuestionId : Guid
+    + UserAnswerData : string?
+}
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+title Test | CreateTestCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestService.puml
+!include ../../QuestionSets/Dtos/CreateUpdateQuestionDto.puml
+'=====================COMMAND========================
+class CreateTestCommand {
+    + Name : string <<get>> <<set>>
+    + ClassId : Guid <<get>> <<set>>
+    + TimeLimit : int <<get>> <<set>>
+    + StartTime : DateTime <<get>> <<set>>
+    + EndTime : DateTime <<get>> <<set>>
+    + GradeAttemptMethod : string <<get>> <<set>>
+    + GradeQuestionMethod : string <<get>> <<set>>
+    + IsShowCorrectAnswerInReview : bool <<get>> <<set>>
+    + IsAllowReviewAfterSubmit : bool <<get>> <<set>>
+    + NumberOfShuffles : int <<get>> <<set>>
+    + MaxAttempt : int <<get>> <<set>>
+    + PassingScore : int <<get>> <<set>>
+    + Questions : List<CreateUpdateQuestionDto> <<get>> <<set>>
+}
+
+class CreateTestCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testService : ITestService
+    + CreateTestCommandHandler(context:IApplicationDbContext, testService:ITestService)
+    + <<async>> Handle(request:CreateTestCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> CreateTest(rq:CreateTestCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+CreateTestCommand ..|> IRequest : <<implements>>
+CreateTestCommandHandler ..> CreateTestCommand :  <<uses>>
+TestEndpoints ..> CreateTestCommand : <<uses>>
+CreateTestCommandHandler ..|> IRequestHandler : <<implements>>
+CreateTestCommandHandler ..> CreateUpdateQuestionDto : <<uses>>
+
+'=====INJECT
+CreateTestCommandHandler ..> IApplicationDbContext : <<inject>>
+CreateTestCommandHandler ..> ITestService : <<inject>>
+'=====INJECT
+@enduml

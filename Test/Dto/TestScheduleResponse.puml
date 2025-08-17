@@ -1,0 +1,7 @@
+@startuml
+!include TestScheduleDto.puml
+class TestScheduleResponse {
+    + Date : DateTime
+    + TestSchedules : List<TestScheduleDto>
+}
+@enduml

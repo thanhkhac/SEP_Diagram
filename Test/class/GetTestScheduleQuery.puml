@@ -1,0 +1,41 @@
+@startuml
+title Test | GetTestScheduleQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../Classes/Service/IClassService.puml
+!include ../Dto/TestScheduleResponse.puml
+!include ../Dto/TestScheduleDto.puml
+'=====================QUERY========================
+class GetTestScheduleQuery {
+    + Month : int? <<get>> <<set>>
+    + Year : int? <<get>> <<set>>
+}
+
+class GetTestScheduleQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    + GetTestScheduleQueryHandler(context:IApplicationDbContext, classService:IClassService)
+    + <<async>> Handle(request:GetTestScheduleQuery, cancellationToken:CancellationToken) : Task<List<TestScheduleResponse>>
+}
+
+'=====================ENDPOINT========================
+class TestEndpoints  {
+    + <<async>> GetTestSchedule(month:int?, year:int?, sender:ISender) : Task<Ok<ApiResponse<List<TestScheduleResponse>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestScheduleQuery ..|> IRequest : <<implements>>
+GetTestScheduleQueryHandler ..> GetTestScheduleQuery :  <<uses>>
+TestEndpoints ..> GetTestScheduleQuery : <<uses>>
+GetTestScheduleQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestScheduleQueryHandler ..> TestScheduleResponse : <<uses>>
+GetTestScheduleQueryHandler ..> TestScheduleDto : <<uses>>
+
+'=====INJECT
+GetTestScheduleQueryHandler ..> IApplicationDbContext : <<inject>>
+'=====INJECT
+@enduml

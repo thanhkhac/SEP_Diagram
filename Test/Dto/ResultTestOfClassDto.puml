@@ -1,0 +1,9 @@
+@startuml
+class ResultTestOfClassDto {
+    + StudentId : Guid
+    + StudentName : string?
+    + StudentEmail : string?
+    + Score : float
+    + Status : string?
+}
+@enduml
