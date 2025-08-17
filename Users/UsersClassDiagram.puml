@@ -1,0 +1,13 @@
+@startuml
+title Users Module Structure
+
+folder "Users" {
+    folder "class" {
+    }
+    folder "Dto" {
+    }
+    folder "Service" {
+    }
+}
+
+@enduml

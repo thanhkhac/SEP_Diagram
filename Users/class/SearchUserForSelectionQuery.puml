@@ -6,6 +6,7 @@ title Users | SearchUserForSelectionQuery
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/IApplicationDbContext.puml
+!include ../../common/EndpointClasses.puml
 !include ../../Users/Dto/UserForSelectionDto.puml
 
 '=====================CLASSES========================
@@ -20,11 +21,19 @@ class SearchUserForSelectionQueryHandler {
     + <<async>> Handle(request:SearchUserForSelectionQuery, cancellationToken:CancellationToken) : Task<List<UserForSelectionDto>>
 }
 
+'=====================ENDPOINT========================
+class UserEndpoints  {
+    + <<async>> SearchUserForSelection(request:SearchUserForSelectionQuery, sender:ISender) : Task<Ok<ApiResponse<List<UserForSelectionDto>>>>
+}
+
 '=====================RELATIONSHIP========================
 SearchUserForSelectionQuery ..|> IRequest : <<implements>>
 SearchUserForSelectionQueryHandler ..> SearchUserForSelectionQuery : <<uses>>
 SearchUserForSelectionQueryHandler ..|> IRequestHandler : <<implements>>
+UserEndpoints ..> SearchUserForSelectionQuery : <<uses>>
 SearchUserForSelectionQueryHandler ..> IApplicationDbContext : <<inject>>
 SearchUserForSelectionQuery --> UserForSelectionDto : <<returns>>
 SearchUserForSelectionQueryHandler ..> UserForSelectionDto : <<uses>>
+!include zCommon.puml
+
 @enduml

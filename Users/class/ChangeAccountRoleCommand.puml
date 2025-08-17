@@ -6,6 +6,7 @@ title Users | ChangeAccountRoleCommand
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/IApplicationDbContext.puml
+!include ../../common/EndpointClasses.puml
 !include ../../common/service/IUser.puml
 !include ../../common/service/IIdentityService.puml
 !include ../../Domain/Constants/Roles.puml
@@ -29,13 +30,20 @@ class ChangeAccountRoleCommandHandler {
     + <<async>> Handle(rq:ChangeAccountRoleCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
+'=====================ENDPOINT========================
+class UserEndpoints  {
+    + <<async>> ChangeAccountRole(userId:Guid, role:string, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+
 '=====================RELATIONSHIP========================
 ChangeAccountRoleCommand ..|> IRequest : <<implements>>
 ChangeAccountRoleCommandHandler ..> ChangeAccountRoleCommand : <<uses>>
 ChangeAccountRoleCommandHandler ..|> IRequestHandler : <<implements>>
+UserEndpoints ..> ChangeAccountRoleCommand : <<uses>>
 ChangeAccountRoleCommandHandler ..> IApplicationDbContext : <<inject>>
 ChangeAccountRoleCommandHandler ..> IUser : <<inject>>
 ChangeAccountRoleCommandHandler ..> IIdentityService : <<inject>>
 ChangeAccountRoleCommandValidator ..> ChangeAccountRoleCommand : <<validates>>
 ChangeAccountRoleCommand --> Roles : <<uses>>
+!include zCommon.puml
 @enduml

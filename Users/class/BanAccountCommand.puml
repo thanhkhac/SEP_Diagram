@@ -6,6 +6,7 @@ title Users | BanAccountCommand
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/IApplicationDbContext.puml
+!include ../../common/EndpointClasses.puml
 !include ../../common/service/IUser.puml
 !include ../../common/service/IIdentityService.puml
 !include ../../Domain/Constants/Roles.puml
@@ -29,14 +30,21 @@ class BanAccountCommandHandler {
     + <<async>> Handle(rq:BanAccountCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
+'=====================ENDPOINT========================
+class UserEndpoints  {
+    + <<async>> BanAccount(userId:Guid, isBanned:bool, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+
 '=====================RELATIONSHIP========================
 BanAccountCommand ..|> IRequest : <<implements>>
 BanAccountCommandHandler ..> BanAccountCommand : <<uses>>
 BanAccountCommandHandler ..|> IRequestHandler : <<implements>>
+UserEndpoints ..> BanAccountCommand : <<uses>>
 BanAccountCommandHandler ..> IApplicationDbContext : <<inject>>
 BanAccountCommandHandler ..> IUser : <<inject>>
 BanAccountCommandHandler ..> IIdentityService : <<inject>>
 BanAccountCommandValidator ..> BanAccountCommand : <<validates>>
-BanAccountCommandHandler ..> ErrorCodeException : <<uses>>
 BanAccountCommand --> Roles : <<uses>>
+!include zCommon.puml
+
 @enduml

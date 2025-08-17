@@ -1,13 +1,13 @@
 @startuml
 title Users | SearchAllAccountQuery
 '=====================DEFINE========================
-
+!define CHANGE_PASSWORD
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
 !include ../../common/IApplicationDbContext.puml
+!include ../../common/EndpointClasses.puml
 !include ../../common/service/IIdentityService.puml
-!include ../../Domain/Constants/Roles.puml
 
 '=====================CLASSES========================
 
@@ -50,14 +50,22 @@ class GetAllAccountCommandHandler {
     + <<async>> Handle(rq:SearchAllAccountQuery, cancellationToken:CancellationToken) : Task<PaginatedList<UserForListDto>>
 }
 
+'=====================ENDPOINT========================
+class UserEndpoints  {
+    + <<async>> SearchAllAccount(request:SearchAllAccountQuery, sender:ISender) : Task<Ok<ApiResponse<PaginatedList<UserForListDto>>>>
+}
+
 '=====================RELATIONSHIP========================
 SearchAllAccountQuery ..|> IRequest : <<implements>>
 GetAllAccountCommandHandler ..> SearchAllAccountQuery : <<uses>>
 GetAllAccountCommandHandler ..|> IRequestHandler : <<implements>>
+UserEndpoints ..> SearchAllAccountQuery : <<uses>>
 GetAllAccountCommandHandler ..> IApplicationDbContext : <<inject>>
 GetAllAccountCommandHandler ..> IIdentityService : <<inject>>
 SearchAllAccountQueryValidator ..> SearchAllAccountQuery : <<validates>>
 GetAllAccountCommandHandler ..> UserForListDto : <<uses>>
 SearchAllAccountQuery --> UserForListDto : <<returns>>
 SearchAllAccountQuery --> SearchUserDto : <<uses>>
+!include zCommon.puml
+
 @enduml

@@ -5,6 +5,7 @@ title Users | UpdateUserInfoCommand
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
 !include ../../common/IApplicationDbContext.puml
 !include ../../common/service/IUser.puml
 
@@ -25,11 +26,19 @@ class UpdateUserInfoCommandHandler {
     + <<async>> Handle(request:UpdateUserInfoCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
+'=====================ENDPOINT========================
+class UserEndpoints  {
+    + <<async>> UpdateUserInfo(request:UpdateUserInfoCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+
 '=====================RELATIONSHIP========================
 UpdateUserInfoCommand ..|> IRequest : <<implements>>
 UpdateUserInfoCommandHandler ..> UpdateUserInfoCommand : <<uses>>
 UpdateUserInfoCommandHandler ..|> IRequestHandler : <<implements>>
+UserEndpoints ..> UpdateUserInfoCommand : <<uses>>
 UpdateUserInfoCommandHandler ..> IApplicationDbContext : <<inject>>
 UpdateUserInfoCommandHandler ..> IUser : <<inject>>
 UpdateUserInfoCommandValidator ..> UpdateUserInfoCommand : <<validates>>
+!include zCommon.puml
+
 @enduml
