@@ -11,7 +11,7 @@ title TestTemplates | UpdateTestTemplateCommand
 !include ../../common/IApplicationDbContext.puml
 !include ../Service/ITestTemplateService.puml
 !include ../../QuestionSets/Dtos/CreateUpdateQuestionDto.puml
-!include ../Dto/CheckUpdateQuestion.puml
+!include ../../Test/Dto/CheckUpdateQuestion.puml
 '=====================COMMAND========================
 class UpdateTestTemplateCommand {
     + TestTemplateId : Guid <<get>> <<set>>

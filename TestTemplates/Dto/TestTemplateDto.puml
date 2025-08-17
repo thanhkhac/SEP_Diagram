@@ -1,0 +1,12 @@
+@startuml
+class TestTemplateDto {
+    + Id : Guid <<get>> <<set>>
+    + Name : string <<get>> <<set>>
+    + NumberOfQuestions : int <<get>> <<set>>
+    + NumberOfUses : int <<get>> <<set>>
+    + Created : DateTime <<get>> <<set>>
+    + CreatedBy : string <<get>> <<set>>
+    + LastModified : DateTime? <<get>> <<set>>
+    + LastModifiedBy : string? <<get>> <<set>>
+}
+@enduml

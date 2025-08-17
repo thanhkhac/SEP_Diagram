@@ -1,0 +1,6 @@
+@startuml
+class UpsertSharingModelDto {
+    + UserId : string <<get>> <<set>>
+    + Permission : string <<get>> <<set>>
+}
+@enduml
