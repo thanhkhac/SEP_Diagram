@@ -1,0 +1,36 @@
+@startuml
+actor AdminUser
+participant "Admin Dashboard UI" as UI
+participant PlanEndpoints
+participant GetPlatformOverviewQueryHandler as Handler
+participant IdentityService
+participant ApplicationDbContext
+participant Database
+
+AdminUser -> UI : Request platform overview
+UI -> PlanEndpoints : GET /api/Plan/PlatformOverview
+PlanEndpoints -> Handler : Handle(GetPlatformOverviewQuery)
+Handler -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+IdentityService --> Handler : bool (isAdmin)
+alt Not Admin
+    Handler --> PlanEndpoints : Error: USER_NOT_HAVE_PERMISSION
+    PlanEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION)
+    UI -> AdminUser : Error: User does not have permission
+else Is Admin
+    Handler -> ApplicationDbContext : Count DomainUsers
+    ApplicationDbContext -> Database : Query DomainUsers
+    Database --> ApplicationDbContext : Count (Users)
+    Handler -> ApplicationDbContext : Count Classes
+    ApplicationDbContext -> Database : Query Classes
+    Database --> ApplicationDbContext : Count (Classes)
+    Handler -> ApplicationDbContext : Sum UserSubscription Prices (Revenue)
+    ApplicationDbContext -> Database : Query UserSubscriptions
+    Database --> ApplicationDbContext : Sum (Revenue)
+    Handler -> ApplicationDbContext : Count distinct UserIds in UserSubscriptions (UsersHavePlan)
+    ApplicationDbContext -> Database : Query UserSubscriptions
+    Database --> ApplicationDbContext : Count (UsersHavePlan)
+    Handler --> PlanEndpoints : PlatformOverviewDto
+    PlanEndpoints --> UI : 200 OK (ApiResponse<PlatformOverviewDto>)
+    UI -> AdminUser : Show platform overview
+end
+@enduml

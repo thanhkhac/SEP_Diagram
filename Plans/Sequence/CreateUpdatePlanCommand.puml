@@ -1,0 +1,52 @@
+@startuml
+actor AdminUser
+participant "Plan Management UI" as UI
+participant PlanEndpoints
+participant CreatePlanCommandHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+AdminUser -> UI : Create/Update plan details
+UI -> PlanEndpoints : POST /api/Plan (or PUT/PATCH)
+PlanEndpoints -> Handler : Handle(CreateUpdatePlanCommand)
+alt PlanId is provided (Update existing plan)
+    Handler -> ApplicationDbContext : Query Plan by PlanId
+    ApplicationDbContext -> Database : Query Plan
+    Database --> ApplicationDbContext : Plan
+    ApplicationDbContext --> Handler : Plan (existedPlan)
+    alt Plan Not Found
+        Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
+        PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
+        UI -> AdminUser : Error: Plan not found
+    else Plan Found
+        Handler -> ApplicationDbContext : Update Plan properties
+        alt Price Changed
+            Handler -> ApplicationDbContext : Query latest PlanPriceHistory
+            ApplicationDbContext -> Database : Query PlanPriceHistory
+            Database --> ApplicationDbContext : PlanPriceHistory
+            ApplicationDbContext --> Handler : PlanPriceHistory (latestPlanPriceHistory)
+            alt Latest Price History Found
+                Handler -> ApplicationDbContext : Update latest PlanPriceHistory (set DateFinish)
+            end
+            Handler -> ApplicationDbContext : Add new PlanPriceHistory
+            ApplicationDbContext -> Database : Update PlanPriceHistory, Insert PlanPriceHistory
+            Database --> ApplicationDbContext : Success
+        end
+        Handler -> ApplicationDbContext : Update Plan Price
+        ApplicationDbContext -> Database : Update Plan
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> PlanEndpoints : Guid
+        PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> AdminUser : Info: Plan updated successfully
+    end
+else PlanId is null (Create new plan)
+    Handler -> ApplicationDbContext : Add new Plan and PlanPriceHistory
+    ApplicationDbContext -> Database : Insert Plan, PlanPriceHistory
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Guid
+    Handler --> PlanEndpoints : Guid
+    PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    UI -> AdminUser : Info: Plan created successfully
+end
+@enduml

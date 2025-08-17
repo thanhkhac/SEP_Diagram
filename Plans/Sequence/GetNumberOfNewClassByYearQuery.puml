@@ -1,0 +1,32 @@
+@startuml
+actor AdminUser
+participant "Admin Dashboard UI" as UI
+participant PlanEndpoints
+participant GetNumberOfNewClassByYearQueryHandler as Handler
+participant IdentityService
+participant ApplicationDbContext
+participant Database
+
+AdminUser -> UI : Request number of new classes by year
+UI -> PlanEndpoints : GET /api/Plan/NewClassesByYear?year=...
+PlanEndpoints -> Handler : Handle(GetNumberOfNewClassByYearQuery)
+Handler -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+IdentityService --> Handler : bool (isAdmin)
+alt Not Admin
+    Handler --> PlanEndpoints : Error: USER_NOT_HAVE_PERMISSION
+    PlanEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION)
+    UI -> AdminUser : Error: User does not have permission
+else Is Admin
+    Handler -> ApplicationDbContext : Query Classes by Created Year
+    ApplicationDbContext -> Database : Query Classes
+    Database --> ApplicationDbContext : List<Class>
+    ApplicationDbContext --> Handler : List<Class>
+    loop For each month (1 to 12)
+        Handler -> Handler : Count classes created in month
+        Handler -> Handler : Add to result list
+    end
+    Handler --> PlanEndpoints : List<NumberOfNewClassDto>
+    PlanEndpoints --> UI : 200 OK (ApiResponse<List<NumberOfNewClassDto>>)
+    UI -> AdminUser : Show number of new classes by year
+end
+@enduml

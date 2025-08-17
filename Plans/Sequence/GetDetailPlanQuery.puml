@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "Plan Detail UI" as UI
+participant PlanEndpoints
+participant GetDetailPlanQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View plan details
+UI -> PlanEndpoints : GET /api/Plan/{PlanId}
+PlanEndpoints -> Handler : Handle(GetDetailPlanQuery)
+Handler -> ApplicationDbContext : Query Plan by PlanId
+ApplicationDbContext -> Database : Query Plan
+Database --> ApplicationDbContext : Plan
+ApplicationDbContext --> Handler : Plan
+alt Plan Not Found
+    Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
+    PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
+    UI -> User : Error: Plan not found
+else Plan Found
+    Handler --> PlanEndpoints : PlanDetailDto
+    PlanEndpoints --> UI : 200 OK (ApiResponse<PlanDetailDto>)
+    UI -> User : Show plan details
+end
+@enduml

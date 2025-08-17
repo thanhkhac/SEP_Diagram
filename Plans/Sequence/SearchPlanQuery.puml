@@ -1,0 +1,24 @@
+@startuml
+actor User
+participant "Plan List UI" as UI
+participant PlanEndpoints
+participant SearchPlanQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View plans / Search plans
+UI -> PlanEndpoints : GET /api/Plan?isActive=...
+PlanEndpoints -> Handler : Handle(SearchPlanQuery)
+Handler -> ApplicationDbContext : Query Plans (not deleted)
+ApplicationDbContext -> Database : Query Plans
+Database --> ApplicationDbContext : List<Plan>
+ApplicationDbContext --> Handler : List<Plan>
+alt IsActive Filter Provided
+    Handler -> Handler : Filter by IsActive
+end
+Handler -> Handler : Order by Price
+Handler --> PlanEndpoints : List<PlanDetailDto>
+PlanEndpoints --> UI : 200 OK (ApiResponse<List<PlanDetailDto>>)
+UI -> User : Show list of plans
+
+@enduml

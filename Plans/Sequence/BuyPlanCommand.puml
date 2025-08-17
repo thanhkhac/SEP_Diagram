@@ -1,0 +1,41 @@
+@startuml
+actor User
+participant "Plan Purchase UI" as UI
+participant PlanEndpoints
+participant BuyPlanCommandHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Select plan, click "Buy"
+UI -> PlanEndpoints : POST /api/Plan/Buy
+PlanEndpoints -> Handler : Handle(BuyPlanCommand)
+Handler -> ApplicationDbContext : Query Plan by PlanId
+ApplicationDbContext -> Database : Query Plan
+Database --> ApplicationDbContext : Plan
+ApplicationDbContext --> Handler : Plan
+alt Plan Not Found
+    Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
+    PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
+    UI -> User : Error: Plan not found
+else Plan Found
+    Handler -> ApplicationDbContext : Query User (Include UserSubscriptions) by UserId
+    ApplicationDbContext -> Database : Query User, UserSubscriptions
+    Database --> ApplicationDbContext : User, List<UserSubscription>
+    ApplicationDbContext --> Handler : User
+    alt Insufficient Balance
+        Handler --> PlanEndpoints : Error: INSUFFICIENT_BALANCE
+        PlanEndpoints --> UI : 400 Bad Request (errorCode: INSUFFICIENT_BALANCE)
+        UI -> User : Error: Insufficient balance
+    else Sufficient Balance
+        Handler -> Handler : Calculate DateFinish based on Plan Duration and Unit
+        Handler -> ApplicationDbContext : Add new UserSubscription
+        Handler -> ApplicationDbContext : Decrease User Balance
+        ApplicationDbContext -> Database : Insert UserSubscription, Update User
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> PlanEndpoints : Guid
+        PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Plan purchased successfully
+    end
+end
+@enduml
