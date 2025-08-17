@@ -1,0 +1,6 @@
+@startuml
+class TestTemplatePermissionsDto {
+    + CanEdit : bool
+    + CanDelete : bool
+}
+@enduml

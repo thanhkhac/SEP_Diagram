@@ -1,0 +1,11 @@
+@startuml
+class TestTemplateDetailDto {
+    + TestTemplateId : Guid
+    + Name : string?
+    + QuestionCount : int
+    + Description : string?
+    + CreateBy : string?
+    + CreateAt : DateTimeOffset?
+    + Questions : List<QuestionResponseDto>
+}
+@enduml

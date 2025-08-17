@@ -1,0 +1,42 @@
+@startuml
+title TestTemplates | GetTestTemplateDetailQuery
+'=====================DEFINE========================
+!define TEST_TEMPLATE_SERVICE_CANVIEWTEMPLATE
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestTemplateService.puml
+!include ../Dto/TestTemplateDetailDto.puml
+!include ../../QuestionSets/Dtos/QuestionResponseDto.puml
+'=====================QUERY========================
+class GetTestTemplateDetailQuery {
+    + TestTemplateId : Guid <<get>> <<set>>
+}
+
+class GetTestTemplateDetailQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testTemplateService : ITestTemplateService
+    + GetTestTemplateDetailQueryHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
+    + <<async>> Handle(request:GetTestTemplateDetailQuery, cancellationToken:CancellationToken) : Task<TestTemplateDetailDto>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> GetTestTemplateDetail(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplateDetailDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestTemplateDetailQuery ..|> IRequest : <<implements>>
+GetTestTemplateDetailQueryHandler ..> GetTestTemplateDetailQuery :  <<uses>>
+TestTemplateEndpoints ..> GetTestTemplateDetailQuery : <<uses>>
+GetTestTemplateDetailQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestTemplateDetailQueryHandler ..> TestTemplateDetailDto : <<uses>>
+GetTestTemplateDetailQueryHandler ..> QuestionResponseDto : <<uses>>
+
+'=====INJECT
+GetTestTemplateDetailQueryHandler ..> IApplicationDbContext : <<inject>>
+GetTestTemplateDetailQueryHandler ..> ITestTemplateService : <<inject>>
+'=====INJECT
+@enduml

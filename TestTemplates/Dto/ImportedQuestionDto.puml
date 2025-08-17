@@ -1,0 +1,6 @@
+@startuml
+class ImportedQuestionDto {
+    + validQuestions : List<CreateUpdateQuestionDto>?
+    + invalidQuestions : List<CreateUpdateQuestionDto>?
+}
+@enduml

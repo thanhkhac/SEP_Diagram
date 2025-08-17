@@ -1,0 +1,43 @@
+@startuml
+title TestTemplates | GetTestTemplatePermissionsQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../../common/service/IIdentityService.puml
+!include ../Dto/TestTemplatePermissionsDto.puml
+'=====================QUERY========================
+class GetTestTemplatePermissionsQuery {
+    + TestTemplateId : Guid <<get>> <<set>>
+}
+
+class GetTestTemplatePermissionsQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _identityService : IIdentityService
+    + GetTestTemplatePermissionsQueryHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+    + <<async>> Handle(request:GetTestTemplatePermissionsQuery, cancellationToken:CancellationToken) : Task<TestTemplatePermissionsDto>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> GetTestTemplatePermissions(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplatePermissionsDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetTestTemplatePermissionsQuery ..|> IRequest : <<implements>>
+GetTestTemplatePermissionsQueryHandler ..> GetTestTemplatePermissionsQuery :  <<uses>>
+TestTemplateEndpoints ..> GetTestTemplatePermissionsQuery : <<uses>>
+GetTestTemplatePermissionsQueryHandler ..|> IRequestHandler : <<implements>>
+GetTestTemplatePermissionsQueryHandler ..> TestTemplatePermissionsDto : <<uses>>
+
+'=====INJECT
+GetTestTemplatePermissionsQueryHandler ..> IApplicationDbContext : <<inject>>
+GetTestTemplatePermissionsQueryHandler ..> IUser : <<inject>>
+GetTestTemplatePermissionsQueryHandler ..> IIdentityService : <<inject>>
+'=====INJECT
+@enduml

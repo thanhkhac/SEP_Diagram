@@ -1,0 +1,38 @@
+@startuml
+title TestTemplates | ImportFileTestTemplateCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/Interfaces/IFileService.puml
+!include ../../common/Models/FileStreamData.puml
+!include ../Dto/ImportedQuestionDto.puml
+'=====================COMMAND========================
+class ImportFileTestTemplateCommand {
+    + FileData : FileStreamData? <<get>> <<set>>
+}
+
+class ImportFileTestTemplateCommandHandler {
+    - <<readonly>> _file : IFileService
+    + ImportFileTestTemplateCommandHandler(file:IFileService)
+    + <<async>> Handle(request:ImportFileTestTemplateCommand, cancellationToken:CancellationToken) : Task<ImportedQuestionDto>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> ImportFileTestTemplate(file:IFormFile, sender:ISender) : Task<Ok<ApiResponse<ImportedQuestionDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+ImportFileTestTemplateCommand ..|> IRequest : <<implements>>
+ImportFileTestTemplateCommandHandler ..> ImportFileTestTemplateCommand :  <<uses>>
+TestTemplateEndpoints ..> ImportFileTestTemplateCommand : <<uses>>
+ImportFileTestTemplateCommandHandler ..|> IRequestHandler : <<implements>>
+ImportFileTestTemplateCommandHandler ..> ImportedQuestionDto : <<uses>>
+
+'=====INJECT
+ImportFileTestTemplateCommandHandler ..> IFileService : <<inject>>
+'=====INJECT
+@enduml

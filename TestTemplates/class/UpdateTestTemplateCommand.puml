@@ -1,0 +1,47 @@
+@startuml
+title TestTemplates | UpdateTestTemplateCommand
+'=====================DEFINE========================
+!define TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
+!define TEST_TEMPLATE_SERVICE_TRYCHECKQUESTIONACCESSFORTESTTEMPLATE
+!define TEST_TEMPLATE_SERVICE_CHECKQUESTIONSFORUPDATE
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestTemplateService.puml
+!include ../../QuestionSets/Dtos/CreateUpdateQuestionDto.puml
+!include ../Dto/CheckUpdateQuestion.puml
+'=====================COMMAND========================
+class UpdateTestTemplateCommand {
+    + TestTemplateId : Guid <<get>> <<set>>
+    + Name : string <<get>> <<set>>
+    + CreateUpdateQuestions : List<CreateUpdateQuestionDto> <<get>> <<set>>
+    + DeleteQuestionIds : List<Guid> <<get>> <<set>>
+}
+
+class UpdateTestTemplateCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testTemplateService : ITestTemplateService
+    + UpdateTestTemplateCommandHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
+    + <<async>> Handle(request:UpdateTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> UpdateTestTemplate(testTemplateId:Guid, rq:UpdateTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+UpdateTestTemplateCommand ..|> IRequest : <<implements>>
+UpdateTestTemplateCommandHandler ..> UpdateTestTemplateCommand :  <<uses>>
+TestTemplateEndpoints ..> UpdateTestTemplateCommand : <<uses>>
+UpdateTestTemplateCommandHandler ..|> IRequestHandler : <<implements>>
+UpdateTestTemplateCommandHandler ..> CreateUpdateQuestionDto : <<uses>>
+UpdateTestTemplateCommandHandler ..> CheckUpdateQuestion : <<uses>>
+
+'=====INJECT
+UpdateTestTemplateCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateTestTemplateCommandHandler ..> ITestTemplateService : <<inject>>
+'=====INJECT
+@enduml

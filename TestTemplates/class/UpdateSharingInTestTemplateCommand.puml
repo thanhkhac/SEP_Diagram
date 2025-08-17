@@ -1,0 +1,42 @@
+@startuml
+title TestTemplates | UpdateSharingInTestTemplateCommand
+'=====================DEFINE========================
+!define TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestTemplateService.puml
+!include ../../FolderTest/Dto/UpsertSharingModelDto.puml
+'=====================COMMAND========================
+class UpdateSharingInTestTemplateCommand {
+    + TestTemplateId : Guid <<get>> <<set>>
+    + SharingModels : List<UpsertSharingModelDto>? <<get>> <<set>>
+    + DeleteUserIds : List<Guid> <<get>> <<set>>
+}
+
+class UpdateSharingInTestTemplateCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testTemplateService : ITestTemplateService
+    + UpdateSharingInTestTemplateCommandHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
+    + <<async>> Handle(request:UpdateSharingInTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> UpdateSharingInTestTemplate(testTemplateId:Guid, command:UpdateSharingInTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+UpdateSharingInTestTemplateCommand ..|> IRequest : <<implements>>
+UpdateSharingInTestTemplateCommandHandler ..> UpdateSharingInTestTemplateCommand :  <<uses>>
+TestTemplateEndpoints ..> UpdateSharingInTestTemplateCommand : <<uses>>
+UpdateSharingInTestTemplateCommandHandler ..|> IRequestHandler : <<implements>>
+UpdateSharingInTestTemplateCommandHandler ..> UpsertSharingModelDto : <<uses>>
+
+'=====INJECT
+UpdateSharingInTestTemplateCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateSharingInTestTemplateCommandHandler ..> ITestTemplateService : <<inject>>
+'=====INJECT
+@enduml

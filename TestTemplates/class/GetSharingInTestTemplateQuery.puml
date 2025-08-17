@@ -1,0 +1,40 @@
+@startuml
+title TestTemplates | GetSharingInTestTemplateQuery
+'=====================DEFINE========================
+!define TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestTemplateService.puml
+!include ../../FolderTest/Dto/ResourceShareDto.puml
+'=====================QUERY========================
+class GetSharingInTestTemplateQuery {
+    + TestTemplateId : Guid <<get>> <<set>>
+}
+
+class GetSharingInTestTemplateQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _testTemplateService : ITestTemplateService
+    + GetSharingInTestTemplateQueryHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
+    + <<async>> Handle(request:GetSharingInTestTemplateQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> GetSharingInTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetSharingInTestTemplateQuery ..|> IRequest : <<implements>>
+GetSharingInTestTemplateQueryHandler ..> GetSharingInTestTemplateQuery :  <<uses>>
+TestTemplateEndpoints ..> GetSharingInTestTemplateQuery : <<uses>>
+GetSharingInTestTemplateQueryHandler ..|> IRequestHandler : <<implements>>
+GetSharingInTestTemplateQueryHandler ..> ResourceShareDto : <<uses>>
+
+'=====INJECT
+GetSharingInTestTemplateQueryHandler ..> IApplicationDbContext : <<inject>>
+GetSharingInTestTemplateQueryHandler ..> ITestTemplateService : <<inject>>
+'=====INJECT
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+title TestTemplates | DeleteTestTemplateCommand
+'=====================DEFINE========================
+!define TEST_TEMPLATE_SERVICE_CANDELETETESTTEMPLATE
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../Service/ITestTemplateService.puml
+'=====================COMMAND========================
+class DeleteTestTemplateCommand {
+    + TestTemplateId : Guid <<get>> <<set>>
+}
+
+class DeleteTestTemplateCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _templateService : ITestTemplateService
+    + DeleteTestTemplateCommandHandler(context:IApplicationDbContext, templateService:ITestTemplateService)
+    + <<async>> Handle(request:DeleteTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class TestTemplateEndpoints  {
+    + <<async>> DeleteTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+DeleteTestTemplateCommand ..|> IRequest : <<implements>>
+DeleteTestTemplateCommandHandler ..> DeleteTestTemplateCommand :  <<uses>>
+TestTemplateEndpoints ..> DeleteTestTemplateCommand : <<uses>>
+DeleteTestTemplateCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+DeleteTestTemplateCommandHandler ..> IApplicationDbContext : <<inject>>
+DeleteTestTemplateCommandHandler ..> ITestTemplateService : <<inject>>
+'=====INJECT
+@enduml
