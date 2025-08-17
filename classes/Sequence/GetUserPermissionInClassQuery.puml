@@ -7,9 +7,13 @@ participant ClassService
 participant ApplicationDbContext
 participant Database
 
-User -> UI : View class permissions
+User -> UI : View permissions
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Permissions
 ClassEndpoints -> Handler : Handle(GetUserPermissionInClassQuery)
+Handler -> ApplicationDbContext : Query Class by ClassId (for existence check, though not explicitly handled for error)
+ApplicationDbContext -> Database : Query Class
+Database --> ApplicationDbContext : Class
+ApplicationDbContext --> Handler : Class
 Handler -> ClassService : IsUserInClass(classId)
 ClassService -> ApplicationDbContext : Query ClassUser
 ApplicationDbContext -> Database : Query ClassUser
@@ -21,12 +25,12 @@ alt User Not In Class
     ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
     UI -> User : Error: User not in class
 else User In Class
-    Handler -> ApplicationDbContext : Query ClassUser ShareMode by UserId and ClassId
+    Handler -> ApplicationDbContext : Query ClassUser ShareMode for current user
     ApplicationDbContext -> Database : Query ClassUser ShareMode
     Database --> ApplicationDbContext : ShareMode
-    ApplicationDbContext --> Handler : string? (Permission)
+    ApplicationDbContext --> Handler : ShareMode (string)
     Handler --> ClassEndpoints : string? (Permission)
     ClassEndpoints --> UI : 200 OK (ApiResponse<string?>)
-    UI -> User : Show class permissions
+    UI -> User : Show permissions
 end
 @enduml

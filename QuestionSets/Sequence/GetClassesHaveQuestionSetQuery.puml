@@ -1,0 +1,30 @@
+@startuml
+actor User
+participant "Question Set Detail UI" as UI
+participant QuestionSetEndpoints
+participant GetClassesHaveQuestionSetQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View classes with question set
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Classes
+QuestionSetEndpoints -> Handler : Handle(GetClassesHaveQuestionSetQuery)
+Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+ApplicationDbContext -> Database : Query QuestionSet
+Database --> ApplicationDbContext : QuestionSet
+ApplicationDbContext --> Handler : QuestionSet
+alt Question Set Not Found
+    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
+    UI -> User : Error: Question set not found
+else Question Set Found
+    Handler -> ApplicationDbContext : Query ClassUsers (Owner or Teacher) with Class and ClassQuestionSets
+    ApplicationDbContext -> Database : Query ClassUsers, Class, ClassQuestionSets
+    Database --> ApplicationDbContext : List<ClassUser>
+    ApplicationDbContext --> Handler : List<ClassUser>
+    Handler -> Handler : Map to GetClassesHaveQuestionSetDto (including IsAdded status)
+    Handler --> QuestionSetEndpoints : List<GetClassesHaveQuestionSetDto>
+    QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<GetClassesHaveQuestionSetDto>>)
+    UI -> User : Show classes with question set
+end
+@enduml

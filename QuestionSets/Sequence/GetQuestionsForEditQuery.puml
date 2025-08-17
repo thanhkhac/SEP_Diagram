@@ -1,0 +1,44 @@
+@startuml
+actor User
+participant "Edit Question Set UI" as UI
+participant QuestionSetEndpoints
+participant GetQuestionSetQuestionsForEditQueryHandler as Handler
+participant QuestionSetService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request questions for editing
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/QuestionsForEdit
+QuestionSetEndpoints -> Handler : Handle(GetQuestionSetQuestionsForEditQuery)
+Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetService -> ApplicationDbContext : Query QuestionSet
+ApplicationDbContext -> Database : Query QuestionSet
+Database --> ApplicationDbContext : QuestionSet
+ApplicationDbContext --> QuestionSetService : QuestionSet
+QuestionSetService --> Handler : QuestionSet
+alt Question Set Not Found
+    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
+    UI -> User : Error: Question set not found
+else Question Set Found
+    Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    QuestionSetService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> QuestionSetService : Permission
+    QuestionSetService --> Handler : bool
+    alt No permission
+        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
+        UI -> User : Error: You are not allowed to view this question set
+    else Allowed
+        Handler -> ApplicationDbContext : Query Questions by QuestionSetId
+        ApplicationDbContext -> Database : Query Questions
+        Database --> ApplicationDbContext : List<Question>
+        ApplicationDbContext --> Handler : List<Question>
+        Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
+        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+        UI -> User : Show questions for editing
+    end
+end
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+actor User
+participant "Question Set Copy/Import UI" as UI
+participant QuestionSetEndpoints
+participant GetQuestionSetQuestionsForCopyQueryHandler as Handler
+participant QuestionSetService
+participant PlanService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request questions for copy/import
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/QuestionsForCopy
+QuestionSetEndpoints -> Handler : Handle(GetQuestionSetQuestionsForCopyQuery)
+Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetService -> ApplicationDbContext : Query QuestionSet
+ApplicationDbContext -> Database : Query QuestionSet
+Database --> ApplicationDbContext : QuestionSet
+ApplicationDbContext --> QuestionSetService : QuestionSet
+QuestionSetService --> Handler : QuestionSet
+alt Question Set Not Found
+    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
+    UI -> User : Error: Question set not found
+else Question Set Found
+    Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    QuestionSetService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> QuestionSetService : Permission
+    QuestionSetService --> Handler : bool
+    alt No permission
+        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
+        UI -> User : Error: You are not allowed to view this question set
+    else Allowed
+        Handler -> PlanService : CanCopyOrImportQuestionSet(userId)
+        PlanService -> ApplicationDbContext : Query UserSubscription
+        ApplicationDbContext -> Database : Query UserSubscription
+        Database --> ApplicationDbContext : List<UserSubscription>
+        ApplicationDbContext --> PlanService : List<UserSubscription>
+        PlanService --> Handler : bool
+        alt Plan Required
+            Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
+            QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
+            UI -> User : Error: Please buy a plan to copy or import question set
+        else Plan Available
+            Handler -> ApplicationDbContext : Query Questions by QuestionSetId
+            ApplicationDbContext -> Database : Query Questions
+            Database --> ApplicationDbContext : List<Question>
+            ApplicationDbContext --> Handler : List<Question>
+            Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
+            QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+            UI -> User : Show questions for copy/import
+        end
+    end
+end
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+actor User
+participant "Question Set Import UI" as UI
+participant QuestionSetEndpoints
+participant GetLinkDownloadFileImportQueryHandler as Handler
+
+User -> UI : Request import file link
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/DownloadFileImport
+QuestionSetEndpoints -> Handler : Handle(GetLinkDownloadFileImportQuery)
+Handler --> QuestionSetEndpoints : string (Download Link)
+QuestionSetEndpoints --> UI : 200 OK (ApiResponse<string>)
+UI -> User : Provide download link
+
+@enduml

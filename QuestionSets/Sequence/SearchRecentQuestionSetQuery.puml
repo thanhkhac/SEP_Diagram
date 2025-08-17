@@ -1,0 +1,31 @@
+@startuml
+actor User
+participant "Question Set List UI" as UI
+participant QuestionSetEndpoints
+participant SearchRecentQuestionSetQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request recent question sets
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/Recent
+QuestionSetEndpoints -> Handler : Handle(SearchRecentQuestionSetQuery)
+Handler -> ApplicationDbContext : Query UserQuestionSetAccessHistories (by UserId, Group by QuestionSetId, Max LastAccess)
+ApplicationDbContext -> Database : Query UserQuestionSetAccessHistories
+Database --> ApplicationDbContext : List<UserQuestionSetAccessHistory>
+ApplicationDbContext --> Handler : List<UserQuestionSetAccessHistory>
+Handler -> ApplicationDbContext : Join with QuestionSets (Include CreatedByUser, QuestionSetUsers, ClassQuestionSets, QuestionSetTags)
+ApplicationDbContext -> Database : Query QuestionSets
+Database --> ApplicationDbContext : List<QuestionSet>
+ApplicationDbContext --> Handler : List<QuestionSet>
+Handler -> Handler : Filter by VisibilityMode (Public, Private, OnlyClass) and User Permissions
+Handler -> Handler : Order by LastAccess
+Handler -> ApplicationDbContext : Query UserQuestionSetHistories and Questions for CompletedQuestionCount
+ApplicationDbContext -> Database : Query UserQuestionSetHistories, Questions
+Database --> ApplicationDbContext : List<UserQuestionSetHistory>, List<Question>
+ApplicationDbContext --> Handler : Dictionary<QuestionSetId, Count>
+Handler -> Handler : Update CompletedQuestionCount in results
+Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
+UI -> User : Show recent question sets
+
+@enduml

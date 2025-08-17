@@ -1,0 +1,23 @@
+@startuml
+actor User
+participant "Question Set List UI" as UI
+participant QuestionSetEndpoints
+participant SearchPublicQuestionSetByNameQueryHandler as Handler
+participant QuestionSetService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for public question sets
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/Public?name=...&tagIds=...&sortBy=...
+QuestionSetEndpoints -> Handler : Handle(SearchPublicQuestionSetQuery)
+Handler -> QuestionSetService : SearchPublicQuestionSetsAsync(name, tagIds, pageNumber, pageSize, sortBy)
+QuestionSetService -> ApplicationDbContext : Query Public QuestionSets
+ApplicationDbContext -> Database : Query Public QuestionSets
+Database --> ApplicationDbContext : List<QuestionSet>
+ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
+QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
+UI -> User : Show public question set search results
+
+@enduml

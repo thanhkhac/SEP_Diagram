@@ -1,0 +1,23 @@
+@startuml
+actor User
+participant "Question Set List UI" as UI
+participant QuestionSetEndpoints
+participant SearchOwnAndSharedQuestionSetQueryHandler as Handler
+participant QuestionSetService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for owned/shared question sets
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/SharedOrOwned?name=...&filterBy=...&sortBy=...
+QuestionSetEndpoints -> Handler : Handle(SearchOwnAndSharedQuestionSetQuery)
+Handler -> QuestionSetService : SearchOwnAndSharedQuestionSetsAsync(userId, name, pageNumber, pageSize, filterBy, sortBy)
+QuestionSetService -> ApplicationDbContext : Query Owned/Shared QuestionSets
+ApplicationDbContext -> Database : Query Owned/Shared QuestionSets
+Database --> ApplicationDbContext : List<QuestionSet>
+ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
+QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
+UI -> User : Show owned/shared question set search results
+
+@enduml

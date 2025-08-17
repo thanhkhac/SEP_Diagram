@@ -1,0 +1,53 @@
+@startuml
+actor User
+participant "Question Set Detail UI" as UI
+participant QuestionSetEndpoints
+participant CreateRatingCommandHandler as Handler
+participant QuestionSetService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Submit rating
+UI -> QuestionSetEndpoints : POST /api/QuestionSet/{questionSetId}/Rating
+QuestionSetEndpoints -> Handler : Handle(CreateRatingCommand)
+Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+ApplicationDbContext -> Database : Query QuestionSet
+Database --> ApplicationDbContext : QuestionSet
+ApplicationDbContext --> Handler : QuestionSet
+alt Question Set Not Found
+    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
+    UI -> User : Error: Question set not found
+else Question Set Found
+    Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    QuestionSetService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> QuestionSetService : Permission
+    QuestionSetService --> Handler : bool
+    alt User Not Have Access
+        Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
+        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
+        UI -> User : Error: User does not have access to question set
+    else User Has Access
+        Handler -> ApplicationDbContext : Query existing QuestionSetRating by QuestionSetId and UserId
+        ApplicationDbContext -> Database : Query QuestionSetRating
+        Database --> ApplicationDbContext : QuestionSetRating
+        ApplicationDbContext --> Handler : QuestionSetRating
+        alt Existing Rating Found
+            Handler -> ApplicationDbContext : Update existing QuestionSetRating
+            ApplicationDbContext -> Database : Update QuestionSetRating
+        else No Existing Rating
+            Handler -> ApplicationDbContext : Add new QuestionSetRating
+            ApplicationDbContext -> Database : Insert QuestionSetRating
+        end
+        Handler -> ApplicationDbContext : Recalculate QuestionSet Rating (Average, Count, Sum)
+        ApplicationDbContext -> Database : Update QuestionSet
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> QuestionSetEndpoints : Guid
+        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Rating created/updated
+    end
+end
+@enduml

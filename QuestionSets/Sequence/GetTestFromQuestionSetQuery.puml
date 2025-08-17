@@ -1,0 +1,63 @@
+@startuml
+actor User
+participant "Test UI" as UI
+participant QuestionSetEndpoints
+participant GetTestFromQuestionSetQueryHandler as Handler
+participant QuestionSetService
+participant PlanService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request test questions
+UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Test?numberOfQuestion=n&questionTypes=...
+QuestionSetEndpoints -> Handler : Handle(GetTestFromQuestionSetQuery)
+Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId (Include Questions)
+ApplicationDbContext -> Database : Query QuestionSet
+Database --> ApplicationDbContext : QuestionSet
+ApplicationDbContext --> Handler : QuestionSet
+alt Question Set Not Found
+    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
+    UI -> User : Error: Question set not found
+else Question Set Found
+    Handler -> PlanService : CanLearn(userId)
+    PlanService -> ApplicationDbContext : Query UserSubscription
+    ApplicationDbContext -> Database : Query UserSubscription
+    Database --> ApplicationDbContext : List<UserSubscription>
+    ApplicationDbContext --> PlanService : List<UserSubscription>
+    PlanService --> Handler : bool
+    alt Plan Required
+        Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
+        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
+        UI -> User : Error: Please buy a plan
+    else Plan Available
+        Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        QuestionSetService -> ApplicationDbContext : Query Permission
+        ApplicationDbContext -> Database : Query Permission
+        Database --> ApplicationDbContext : Permission
+        ApplicationDbContext --> QuestionSetService : Permission
+        QuestionSetService --> Handler : bool
+        alt No permission
+            Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
+            QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
+            UI -> User : Error: User does not have access to question set
+        else Allowed
+            Handler -> Handler : Organize Questions by Type
+            loop while questions.Count < NumberOfQuestion
+                Handler -> Handler : Select random QuestionType
+                alt QuestionList for Type is Empty
+                    Handler -> Handler : Remove QuestionType from selection
+                    Handler -> Handler : Continue loop
+                else QuestionList for Type has Questions
+                    Handler -> Handler : Select random Question from list
+                    Handler -> Handler : Add Question to result list
+                    Handler -> Handler : Remove Question from list (to avoid duplicates)
+                end
+            end
+            Handler --> QuestionSetEndpoints : List<QuestionResponseDto>
+            QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<QuestionResponseDto>>)
+            UI -> User : Show test questions
+        end
+    end
+end
+@enduml
