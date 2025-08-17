@@ -1,0 +1,7 @@
+@startuml
+class UserForSelectionDto {
+    + Id : Guid <<get>> <<set>>
+    + FullName : string? <<get>> <<set>>
+    + Email : string? <<get>> <<set>>
+}
+@enduml

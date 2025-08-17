@@ -1,0 +1,67 @@
+@startuml
+title Users | SearchAllAccountQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/FluentValidation.puml
+!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../common/Interfaces/IIdentityService.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../../Domain/Constants/Roles.puml
+!include ../../common/Security/Authorize.puml
+
+'=====================CLASSES========================
+
+class UserForListDto {
+    + Id : Guid <<get>> <<set>>
+    + Email : string <<get>> <<set>>
+    + FullName : string? <<get>> <<set>>
+    + Token : long <<get>> <<set>>
+    + Balance : long <<get>> <<set>>
+    + IsBanned : bool <<get>> <<set>>
+    + Role : string? <<get>> <<set>>
+}
+
+class SearchAllAccountQuery {
+    + Keyword : string? <<get>> <<set>>
+    + FieldName : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+    + IsBanned : bool? <<get>> <<set>>
+    + Role : string? <<get>> <<set>>
+}
+
+class SearchUserDto {
+    + Keyword : string? <<get>> <<set>>
+    + FieldName : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+    + IsBanned : bool? <<get>> <<set>>
+    + Role : string? <<get>> <<set>>
+}
+
+class SearchAllAccountQueryValidator {
+    + SearchAllAccountQueryValidator()
+}
+
+class GetAllAccountCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _identityService : IIdentityService
+    + GetAllAccountCommandHandler(context:IApplicationDbContext, identityService:IIdentityService)
+    + <<async>> Handle(rq:SearchAllAccountQuery, cancellationToken:CancellationToken) : Task<PaginatedList<UserForListDto>>
+}
+
+'=====================RELATIONSHIP========================
+SearchAllAccountQuery ..|> IRequest : <<implements>>
+GetAllAccountCommandHandler ..> SearchAllAccountQuery : <<uses>>
+GetAllAccountCommandHandler ..|> IRequestHandler : <<implements>>
+GetAllAccountCommandHandler ..> IApplicationDbContext : <<inject>>
+GetAllAccountCommandHandler ..> IIdentityService : <<inject>>
+SearchAllAccountQueryValidator ..> SearchAllAccountQuery : <<validates>>
+SearchAllAccountQuery --> PaginatedList : <<returns>>
+GetAllAccountCommandHandler ..> UserForListDto : <<uses>>
+SearchAllAccountQuery --> UserForListDto : <<returns>>
+SearchAllAccountQuery --> SearchUserDto : <<uses>>
+@enduml

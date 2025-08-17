@@ -1,0 +1,43 @@
+@startuml
+title Users | ChangeAccountRoleCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/FluentValidation.puml
+!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../common/Interfaces/IUser.puml
+!include ../../common/Interfaces/IIdentityService.puml
+!include ../../Domain/Constants/Roles.puml
+!include ../../common/Security/Authorize.puml
+
+'=====================CLASSES========================
+
+class ChangeAccountRoleCommand {
+    + UserId : Guid <<get>> <<set>>
+    + Role : string <<get>> <<set>>
+}
+
+class ChangeAccountRoleCommandValidator {
+    + ChangeAccountRoleCommandValidator()
+}
+
+class ChangeAccountRoleCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _identityService : IIdentityService
+    + ChangeAccountRoleCommandHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+    + <<async>> Handle(rq:ChangeAccountRoleCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================RELATIONSHIP========================
+ChangeAccountRoleCommand ..|> IRequest : <<implements>>
+ChangeAccountRoleCommandHandler ..> ChangeAccountRoleCommand : <<uses>>
+ChangeAccountRoleCommandHandler ..|> IRequestHandler : <<implements>>
+ChangeAccountRoleCommandHandler ..> IApplicationDbContext : <<inject>>
+ChangeAccountRoleCommandHandler ..> IUser : <<inject>>
+ChangeAccountRoleCommandHandler ..> IIdentityService : <<inject>>
+ChangeAccountRoleCommandValidator ..> ChangeAccountRoleCommand : <<validates>>
+ChangeAccountRoleCommand --> Roles : <<uses>>
+@enduml

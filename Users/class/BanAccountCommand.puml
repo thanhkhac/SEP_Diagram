@@ -1,0 +1,45 @@
+@startuml
+title Users | BanAccountCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/FluentValidation.puml
+!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../common/Interfaces/IUser.puml
+!include ../../common/Interfaces/IIdentityService.puml
+!include ../../Domain/Constants/Roles.puml
+!include ../../common/Security/Authorize.puml
+!include ../../common/Exceptions/ErrorCodeException.puml
+
+'=====================CLASSES========================
+
+class BanAccountCommand {
+    + UserId : Guid <<get>> <<set>>
+    + IsBanned : bool <<get>> <<set>>
+}
+
+class BanAccountCommandValidator {
+    + BanAccountCommandValidator()
+}
+
+class BanAccountCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _identityService : IIdentityService
+    + BanAccountCommandHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+    + <<async>> Handle(rq:BanAccountCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================RELATIONSHIP========================
+BanAccountCommand ..|> IRequest : <<implements>>
+BanAccountCommandHandler ..> BanAccountCommand : <<uses>>
+BanAccountCommandHandler ..|> IRequestHandler : <<implements>>
+BanAccountCommandHandler ..> IApplicationDbContext : <<inject>>
+BanAccountCommandHandler ..> IUser : <<inject>>
+BanAccountCommandHandler ..> IIdentityService : <<inject>>
+BanAccountCommandValidator ..> BanAccountCommand : <<validates>>
+BanAccountCommandHandler ..> ErrorCodeException : <<uses>>
+BanAccountCommand --> Roles : <<uses>>
+@enduml

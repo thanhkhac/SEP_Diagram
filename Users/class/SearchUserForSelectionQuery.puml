@@ -1,0 +1,30 @@
+@startuml
+title Users | SearchUserForSelectionQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../Users/Dto/UserForSelectionDto.puml
+
+'=====================CLASSES========================
+
+class SearchUserForSelectionQuery {
+    + Email : string? <<get>> <<set>>
+}
+
+class SearchUserForSelectionQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    + SearchUserForSelectionQueryHandler(context:IApplicationDbContext)
+    + <<async>> Handle(request:SearchUserForSelectionQuery, cancellationToken:CancellationToken) : Task<List<UserForSelectionDto>>
+}
+
+'=====================RELATIONSHIP========================
+SearchUserForSelectionQuery ..|> IRequest : <<implements>>
+SearchUserForSelectionQueryHandler ..> SearchUserForSelectionQuery : <<uses>>
+SearchUserForSelectionQueryHandler ..|> IRequestHandler : <<implements>>
+SearchUserForSelectionQueryHandler ..> IApplicationDbContext : <<inject>>
+SearchUserForSelectionQuery --> UserForSelectionDto : <<returns>>
+SearchUserForSelectionQueryHandler ..> UserForSelectionDto : <<uses>>
+@enduml

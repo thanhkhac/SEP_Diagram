@@ -1,0 +1,7 @@
+@startuml
+class Roles {
+    + Administrator : string <<get>>
+    + User : string <<get>>
+    + Moderator : string <<get>>
+}
+@enduml

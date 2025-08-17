@@ -1,0 +1,35 @@
+@startuml
+title Users | UpdateUserInfoCommand
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../common/Interfaces/IUser.puml
+
+'=====================CLASSES========================
+
+class UpdateUserInfoCommand {
+    + FullName : string <<get>> <<set>>
+}
+
+class UpdateUserInfoCommandValidator {
+    + UpdateUserInfoCommandValidator()
+}
+
+class UpdateUserInfoCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + UpdateUserInfoCommandHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:UpdateUserInfoCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================RELATIONSHIP========================
+UpdateUserInfoCommand ..|> IRequest : <<implements>>
+UpdateUserInfoCommandHandler ..> UpdateUserInfoCommand : <<uses>>
+UpdateUserInfoCommandHandler ..|> IRequestHandler : <<implements>>
+UpdateUserInfoCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateUserInfoCommandHandler ..> IUser : <<inject>>
+UpdateUserInfoCommandValidator ..> UpdateUserInfoCommand : <<validates>>
+@enduml
