@@ -1,7 +1,9 @@
 @startuml
 title Test | UpdateTestCommand
 '=====================DEFINE========================
-
+!define TEST_SERVICE_CANVIEWOREDITTEST
+!define TEST_SERVICE_QUESTIONACCESSANDCOMPAREFORTEST
+!define TEST_SERVICE_CHECKQUESTIONSFORUPDATE
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

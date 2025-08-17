@@ -1,7 +1,7 @@
 @startuml
 title Test | GetTestResultOfClassQuery
 '=====================DEFINE========================
-
+!define TEST_SERVICE_CANVIEWOREDITTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

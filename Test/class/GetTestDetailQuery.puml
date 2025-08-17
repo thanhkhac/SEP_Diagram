@@ -1,7 +1,6 @@
 @startuml
-title Test | GetTestDetailQuery
 '=====================DEFINE========================
-
+!define TEST_SERVICE_CANVIEWOREDITTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
@@ -9,7 +8,7 @@ title Test | GetTestDetailQuery
 !include ../../common/IApplicationDbContext.puml
 !include ../Service/ITestService.puml
 !include ../Dto/TestDetailDto.puml
-!include ../../Questions/Dtos/QuestionResponseDto.puml
+!include ../../QuestionSets/Dtos/QuestionResponseDto.puml
 '=====================QUERY========================
 class GetTestDetailQuery {
     + TestId : Guid <<get>> <<set>>

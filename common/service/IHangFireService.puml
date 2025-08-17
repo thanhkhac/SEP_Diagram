@@ -1,0 +1,6 @@
+@startuml
+interface IHangFireService {
+    + <<async>> AutoSubmitTest(attemptId:Guid, timeLimit:int): Task
+    + <<async>> DeleteJobByArgument(content:string): Task
+}
+@enduml

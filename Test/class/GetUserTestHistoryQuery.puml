@@ -1,7 +1,8 @@
 @startuml
 title Test | GetUserTestHistoryQuery
 '=====================DEFINE========================
-
+!define TEST_SERVICE_CANVIEWHISTORYOFTEST
+!define TEST_SERVICE_CANVIEWOREDITTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

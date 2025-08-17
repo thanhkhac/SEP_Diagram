@@ -1,7 +1,7 @@
 @startuml
 title Test | SubmitTestAttemptCommand
 '=====================DEFINE========================
-
+!define TEST_SERVICE_TRYCHECKCANATTEMPTTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

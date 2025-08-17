@@ -1,7 +1,7 @@
 @startuml
-title Test | CreateTestCommand
 '=====================DEFINE========================
-
+!define TEST_SERVICE_CANCREATETEST
+!define TEST_SERVICE_QUESTIONACCESSANDCOMPAREFORTEST
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
