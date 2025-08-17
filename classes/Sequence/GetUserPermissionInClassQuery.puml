@@ -1,0 +1,32 @@
+@startuml
+actor User
+participant "Class Detail UI" as UI
+participant ClassEndpoints
+participant GetUserPermissionInClassQueryHandler as Handler
+participant ClassService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View class permissions
+UI -> ClassEndpoints : GET /api/Class/{ClassId}/Permissions
+ClassEndpoints -> Handler : Handle(GetUserPermissionInClassQuery)
+Handler -> ClassService : IsUserInClass(classId)
+ClassService -> ApplicationDbContext : Query ClassUser
+ApplicationDbContext -> Database : Query ClassUser
+Database --> ApplicationDbContext : ClassUser
+ApplicationDbContext --> ClassService : ClassUser
+ClassService --> Handler : bool
+alt User Not In Class
+    Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+    ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
+    UI -> User : Error: User not in class
+else User In Class
+    Handler -> ApplicationDbContext : Query ClassUser ShareMode by UserId and ClassId
+    ApplicationDbContext -> Database : Query ClassUser ShareMode
+    Database --> ApplicationDbContext : ShareMode
+    ApplicationDbContext --> Handler : string? (Permission)
+    Handler --> ClassEndpoints : string? (Permission)
+    ClassEndpoints --> UI : 200 OK (ApiResponse<string?>)
+    UI -> User : Show class permissions
+end
+@enduml

@@ -1,0 +1,79 @@
+@startuml
+actor User
+participant "AI Generate UI" as UI
+participant AiGenerateEndpoints
+participant GenerateQuestionWithAiCommandHandler as Handler
+participant AiGenerateService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Upload file, set options, click "Generate"
+UI -> AiGenerateEndpoints : POST /api/AiGenerate/GenerateQuestion
+AiGenerateEndpoints -> Handler : Handle(GenerateQuestionWithAiCommand)
+Handler -> AiGenerateService : UploadFileAsync(FileData)
+AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+Handler -> ApplicationDbContext : Query Current User
+ApplicationDbContext -> Database : Query User
+Database --> ApplicationDbContext : User
+ApplicationDbContext --> Handler : CurrentUser
+alt User Payment Locked
+    Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
+    AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: PAYMENT_IN_PROGRESS)
+    UI -> User : Error: Payment in progress
+else User Not Locked
+    Handler -> ApplicationDbContext : Set CurrentUser.IsPaymentLocked = true
+    ApplicationDbContext -> Database : Update User
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Unit
+    Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+    AiGenerateService --> Handler : MinimumExpectedTokens
+    alt File Too Large
+        Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
+        AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: AI_FILE_TOO_LARGE)
+        UI -> User : Error: File too large
+    else File Size OK
+        Handler -> Handler : Calculate MinimumTotalPoint
+        alt Insufficient Balance
+            Handler --> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
+            AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: INSUFFICIENT_BALANCE)
+            UI -> User : Error: Insufficient balance
+        else Sufficient Balance
+            Handler -> AiGenerateService : SendPromptWithFileAsync(fileUri, systemInstruction, prompt)
+            AiGenerateService --> Handler : AI_Response_Text
+            Handler -> ApplicationDbContext : Deduct Balance
+            ApplicationDbContext -> Database : Update User
+            Database --> ApplicationDbContext : Success
+            ApplicationDbContext --> Handler : Unit
+            alt AI Response Not Empty
+                Handler -> AiGenerateService : CountToken(AI_Response_Text)
+                AiGenerateService --> Handler : OutputTokenCount
+                Handler -> ApplicationDbContext : Set CurrentUser.IsPaymentLocked = false
+                ApplicationDbContext -> Database : Update User
+                Database --> ApplicationDbContext : Success
+                ApplicationDbContext --> Handler : Unit
+            end
+            Handler -> Handler : Parse AI Response JSON
+            alt No Structure Found in AI Response
+                Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
+                AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: NO_STRUCTURE_FOUND)
+                UI -> User : Error: No structure found in AI response
+            else AI Response JSON Invalid or Deserialization Failed
+                Handler --> AiGenerateEndpoints : Error: GENERATE_CONTENT_FAILED
+                AiGenerateEndpoints --> UI : 500 Internal Server Error (errorCode: GENERATE_CONTENT_FAILED)
+                UI -> User : Error: Failed to generate content
+            else AI Response Valid
+                Handler --> AiGenerateEndpoints : List<CreateUpdateQuestionDto>
+                AiGenerateEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+                UI -> User : Show generated questions
+            end
+        end
+    end
+end
+finally
+    Handler -> ApplicationDbContext : Set CurrentUser.IsPaymentLocked = false
+    ApplicationDbContext -> Database : Update User
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Unit
+    Handler -> AiGenerateService : DeleteFileAsync(FileName)
+end
+@enduml

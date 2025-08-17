@@ -1,0 +1,36 @@
+@startuml
+actor User
+participant "Edit Class UI" as UI
+participant ClassEndpoints
+participant UpdateClassCommandHandler as Handler
+participant ClassService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Edit info, click "Save"
+UI -> ClassEndpoints : PATCH /api/Class/{ClassId}
+ClassEndpoints -> Handler : Handle(UpdateClassCommand)
+Handler -> ClassService : GetClassOwnerAccess(classId)
+ClassService -> ApplicationDbContext : Query Class and ClassUser
+ApplicationDbContext -> Database : Query Class and ClassUser
+Database --> ApplicationDbContext : Class, ClassUser
+ApplicationDbContext --> ClassService : Class, ClassUser
+ClassService --> Handler : (IsOwner, ClassExists)
+alt Class Not Found
+    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
+    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
+    UI -> User : Error: Class not found
+else Not Class Owner
+    Handler --> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
+    ClassEndpoints --> UI : 400 Bad Request (errorCode: ONLY_OWNERS_CAN_UPDATE)
+    UI -> User : Error: Only owners can update
+else Class Found and Is Owner
+    Handler -> ApplicationDbContext : Update Class
+    ApplicationDbContext -> Database : Update Class
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Guid
+    Handler --> ClassEndpoints : Guid
+    ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    UI -> User : Info: Update successful
+end
+@enduml

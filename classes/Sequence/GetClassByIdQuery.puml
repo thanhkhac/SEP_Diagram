@@ -1,0 +1,38 @@
+@startuml
+actor User
+participant "Class Detail UI" as UI
+participant ClassEndpoints
+participant GetClassByIdQueryHandler as Handler
+participant ClassService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Open class detail
+UI -> ClassEndpoints : GET /api/Class/{ClassId}
+ClassEndpoints -> Handler : Handle(GetClassByIdQuery)
+Handler -> ApplicationDbContext : Query Class by ClassId
+ApplicationDbContext -> Database : Query Class
+Database --> ApplicationDbContext : Class
+ApplicationDbContext --> Handler : Class
+alt Class Not Found
+    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
+    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
+    UI -> User : Error: Class not found
+else Class Found
+    Handler -> ClassService : IsUserInClass(classId)
+    ClassService -> ApplicationDbContext : Query ClassUser
+    ApplicationDbContext -> Database : Query ClassUser
+    Database --> ApplicationDbContext : ClassUser
+    ApplicationDbContext --> ClassService : ClassUser
+    ClassService --> Handler : bool
+    alt User Not In Class
+        Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
+        UI -> User : Error: User not in class
+    else User In Class
+        Handler --> ClassEndpoints : ClassDetailDto
+        ClassEndpoints --> UI : 200 OK (ApiResponse<ClassDetailDto>)
+        UI -> User : Show class detail
+    end
+end
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "User Profile UI" as UI
+participant AccountEndpoints
+participant GetProfileQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Request profile data
+UI -> AccountEndpoints : GET /api/Account/Profile
+AccountEndpoints -> Handler : Handle(GetProfileQuery)
+Handler -> ApplicationDbContext : Query User Profile by UserId
+ApplicationDbContext -> Database : Query User
+Database --> ApplicationDbContext : User
+ApplicationDbContext --> Handler : User
+alt User Profile Not Found
+    Handler --> AccountEndpoints : Error: USER_PROFILE_NOT_FOUND
+    AccountEndpoints --> UI : 404 Not Found (errorCode: USER_PROFILE_NOT_FOUND)
+    UI -> User : Error: User profile not found
+else User Profile Found
+    Handler --> AccountEndpoints : UserProfileDto
+    AccountEndpoints --> UI : 200 OK (ApiResponse<UserProfileDto>)
+    UI -> User : Show user profile
+end
+@enduml

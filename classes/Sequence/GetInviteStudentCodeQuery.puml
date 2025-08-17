@@ -1,0 +1,48 @@
+@startuml
+actor User
+participant "Class Detail UI" as UI
+participant ClassEndpoints
+participant GetInviteStudentCodeQueryHandler as Handler
+participant ClassService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View invite code
+UI -> ClassEndpoints : GET /api/Class/{ClassId}/Invitation-Code
+ClassEndpoints -> Handler : Handle(GetInviteStudentCodeQuery)
+Handler -> ApplicationDbContext : Query Class by ClassId
+ApplicationDbContext -> Database : Query Class
+Database --> ApplicationDbContext : Class
+ApplicationDbContext --> Handler : Class
+alt Class Not Found
+    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
+    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
+    UI -> User : Error: Class not found
+else Class Found
+    Handler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    ClassService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> ClassService : Permission
+    ClassService --> Handler : bool
+    alt Not Lecturer or Owner
+        Handler --> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
+        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
+        UI -> User : Error: Not lecturer or owner of class
+    else Is Lecturer or Owner
+        Handler -> ApplicationDbContext : Query active ClassInvitation by ClassId
+        ApplicationDbContext -> Database : Query ClassInvitation
+        Database --> ApplicationDbContext : ClassInvitation
+        ApplicationDbContext --> Handler : ClassInvitation
+        alt No Active Invite Code
+            Handler --> ClassEndpoints : null
+            ClassEndpoints --> UI : 200 OK (ApiResponse<null>)
+            UI -> User : Info: No active invite code
+        else Active Invite Code Found
+            Handler --> ClassEndpoints : string? (Code)
+            ClassEndpoints --> UI : 200 OK (ApiResponse<string?>)
+            UI -> User : Show invite code
+        end
+    end
+end
+@enduml

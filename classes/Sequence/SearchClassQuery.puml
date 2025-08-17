@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "Class List UI" as UI
+participant ClassEndpoints
+participant SearchClassQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for classes
+UI -> ClassEndpoints : GET /api/Class?name=...&shareMode=...
+ClassEndpoints -> Handler : Handle(SearchClassQuery)
+Handler -> ApplicationDbContext : Query Classes (not deleted, with CreatedByUser and ClassUsers)
+ApplicationDbContext -> Database : Query Classes
+Database --> ApplicationDbContext : List<Class>
+ApplicationDbContext --> Handler : List<Class>
+Handler -> Handler : Filter classes where current user is a ClassUser
+Handler -> Handler : Map Class Owners
+alt ShareMode Provided
+    Handler -> Handler : Filter by ShareMode
+end
+Handler --> ClassEndpoints : PaginatedList<ClassSearchResultDto>
+ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<ClassSearchResultDto>>)
+UI -> User : Show class search results
+
+@enduml
