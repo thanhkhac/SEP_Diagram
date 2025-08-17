@@ -5,7 +5,7 @@ title Users | SearchUserForSelectionQuery
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
-!include ../../common/Interfaces/IApplicationDbContext.puml
+!include ../../common/IApplicationDbContext.puml
 !include ../../Users/Dto/UserForSelectionDto.puml
 
 '=====================CLASSES========================

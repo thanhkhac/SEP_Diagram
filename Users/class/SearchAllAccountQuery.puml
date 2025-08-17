@@ -5,12 +5,9 @@ title Users | SearchAllAccountQuery
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
-!include ../../common/FluentValidation.puml
-!include ../../common/Interfaces/IApplicationDbContext.puml
-!include ../../common/Interfaces/IIdentityService.puml
-!include ../../common/Models/PaginatedList.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IIdentityService.puml
 !include ../../Domain/Constants/Roles.puml
-!include ../../common/Security/Authorize.puml
 
 '=====================CLASSES========================
 
@@ -60,7 +57,6 @@ GetAllAccountCommandHandler ..|> IRequestHandler : <<implements>>
 GetAllAccountCommandHandler ..> IApplicationDbContext : <<inject>>
 GetAllAccountCommandHandler ..> IIdentityService : <<inject>>
 SearchAllAccountQueryValidator ..> SearchAllAccountQuery : <<validates>>
-SearchAllAccountQuery --> PaginatedList : <<returns>>
 GetAllAccountCommandHandler ..> UserForListDto : <<uses>>
 SearchAllAccountQuery --> UserForListDto : <<returns>>
 SearchAllAccountQuery --> SearchUserDto : <<uses>>

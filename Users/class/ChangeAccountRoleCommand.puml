@@ -5,12 +5,10 @@ title Users | ChangeAccountRoleCommand
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml
-!include ../../common/FluentValidation.puml
-!include ../../common/Interfaces/IApplicationDbContext.puml
-!include ../../common/Interfaces/IUser.puml
-!include ../../common/Interfaces/IIdentityService.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../../common/service/IIdentityService.puml
 !include ../../Domain/Constants/Roles.puml
-!include ../../common/Security/Authorize.puml
 
 '=====================CLASSES========================
 

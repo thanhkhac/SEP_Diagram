@@ -1,6 +1,6 @@
 @startuml
 !include ../IApplicationDbContext.puml
-!include ../entities/UserAccount.puml
+'!include ../entities/UserAccount.puml
 
 !ifdef JWT
 !include ../settings/JwtSettings.puml
@@ -145,7 +145,7 @@ IdentityService --> TokenDto : <<returns>>
 
 IdentityService ..> ApplicationDbContext : <<inject>>
 IdentityService ..|> IIdentityService : <<implements>>
-IdentityService ..> UserAccount : <<uses>>
+'IdentityService ..> UserAccount : <<uses>>
 
 !ifdef GOOGLE_SERVICE
 IdentityService ..> IGoogleAuthService : <<inject>>
