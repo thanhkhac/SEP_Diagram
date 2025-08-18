@@ -1,0 +1,42 @@
+@startuml
+actor User
+participant "Question Detail UI" as UI
+participant CommentEndpoints
+participant CreateCommentCommandHandler as Handler
+participant CommentService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Enter comment, click "Post"
+UI -> CommentEndpoints : POST /api/Comment
+CommentEndpoints -> Handler : Handle(CreateCommentCommand)
+Handler -> ApplicationDbContext : Query Question (Include QuestionSet) by QuestionId
+ApplicationDbContext -> Database : Query Question, QuestionSet
+Database --> ApplicationDbContext : Question, QuestionSet
+ApplicationDbContext --> Handler : Question
+alt Question Not Found or Cannot Comment
+    Handler --> CommentEndpoints : Error: QUESTION_CAN_NOT_COMMENT
+    CommentEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_CAN_NOT_COMMENT)
+    UI -> User : Error: Question not found or cannot comment
+else Question Found
+    Handler -> CommentService : CanComment(questionSetId)
+    CommentService -> ApplicationDbContext : Query Permission (inferred)
+    ApplicationDbContext -> Database : Query Permission (inferred)
+    Database --> ApplicationDbContext : Permission (inferred)
+    ApplicationDbContext --> CommentService : Permission (inferred)
+    CommentService --> Handler : bool
+    alt No permission
+        Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
+        CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
+        UI -> User : Error: User does not have permission to comment
+    else Allowed
+        Handler -> ApplicationDbContext : Add new Comment
+        ApplicationDbContext -> Database : Insert Comment
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> CommentEndpoints : Guid
+        CommentEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Comment posted successfully
+    end
+end
+@enduml

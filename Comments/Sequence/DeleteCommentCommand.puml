@@ -1,0 +1,49 @@
+@startuml
+actor User
+participant "Comment UI" as UI
+participant CommentEndpoints
+participant DeleteCommentCommandHandler as Handler
+participant CommentService
+participant ApplicationDbContext
+participant Database
+participant IdentityService
+
+User -> UI : Select comment, click "Delete"
+UI -> CommentEndpoints : DELETE /api/Comment/{CommentId}
+CommentEndpoints -> Handler : Handle(DeleteCommentCommand)
+Handler -> ApplicationDbContext : Query Comment (Include Question) by CommentId
+ApplicationDbContext -> Database : Query Comment, Question
+Database --> ApplicationDbContext : Comment, Question
+ApplicationDbContext --> Handler : Comment
+alt Comment Not Found
+    Handler --> CommentEndpoints : Error: COMMENT_NOT_FOUND
+    CommentEndpoints --> UI : 400 Bad Request (errorCode: COMMENT_NOT_FOUND)
+    UI -> User : Error: Comment not found
+else Comment Found
+    Handler -> CommentService : CanDelete(commentId)
+    CommentService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    IdentityService --> CommentService : bool (isAdmin)
+    alt Is Admin
+        CommentService --> Handler : true
+    else Not Admin
+        CommentService -> ApplicationDbContext : Query Comment by Id and CreatedBy
+        ApplicationDbContext -> Database : Query Comment
+        Database --> ApplicationDbContext : Comment
+        ApplicationDbContext --> CommentService : Comment
+        CommentService --> Handler : bool (isCreator)
+    end
+    alt No permission
+        Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
+        CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
+        UI -> User : Error: User does not have permission to delete this comment
+    else Allowed
+        Handler -> ApplicationDbContext : Mark Comment as Deleted
+        ApplicationDbContext -> Database : Update Comment (IsDeleted = true)
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> CommentEndpoints : Guid
+        CommentEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Comment deleted successfully
+    end
+end
+@enduml

@@ -1,0 +1,45 @@
+@startuml
+actor User
+participant "Question Detail UI" as UI
+participant CommentEndpoints
+participant GetCommentByQuestionQueryHandler as Handler
+participant CommentService
+participant ApplicationDbContext
+participant Database
+participant Mapper
+
+User -> UI : View comments for question
+UI -> CommentEndpoints : GET /api/Comment/Question/{QuestionId}?pageNumber=...&pageSize=...
+CommentEndpoints -> Handler : Handle(GetCommentByQuestionQuery)
+Handler -> ApplicationDbContext : Query Question (Include QuestionSet) by QuestionId
+ApplicationDbContext -> Database : Query Question, QuestionSet
+Database --> ApplicationDbContext : Question, QuestionSet
+ApplicationDbContext --> Handler : Question
+alt Question Not Found or Cannot Comment
+    Handler --> CommentEndpoints : Error: QUESTION_CAN_NOT_COMMENT
+    CommentEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_CAN_NOT_COMMENT)
+    UI -> User : Error: Question not found or cannot comment
+else Question Found
+    Handler -> CommentService : CanComment(questionSetId)
+    CommentService -> ApplicationDbContext : Query Permission (inferred)
+    ApplicationDbContext -> Database : Query Permission (inferred)
+    Database --> ApplicationDbContext : Permission (inferred)
+    ApplicationDbContext --> CommentService : Permission (inferred)
+    CommentService --> Handler : bool
+    alt No permission
+        Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
+        CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
+        UI -> User : Error: User does not have permission to view comments
+    else Allowed
+        Handler -> ApplicationDbContext : Query Comments (Include ChildComments, CreatedByUser) by QuestionId
+        ApplicationDbContext -> Database : Query Comments, ChildComments, User
+        Database --> ApplicationDbContext : List<Comment>, List<Comment>, User
+        ApplicationDbContext --> Handler : List<Comment>
+        Handler -> Mapper : Map List<Comment> to List<CommentDto>
+        Mapper --> Handler : List<CommentDto>
+        Handler --> CommentEndpoints : PaginatedList<CommentDto>
+        CommentEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<CommentDto>>)
+        UI -> User : Show comments
+    end
+end
+@enduml

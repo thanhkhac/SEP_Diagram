@@ -1,0 +1,42 @@
+@startuml
+actor User
+participant "Comment UI" as UI
+participant CommentEndpoints
+participant ReplyCommentCommandHandler as Handler
+participant CommentService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Enter reply, click "Reply"
+UI -> CommentEndpoints : POST /api/Comment/Reply
+CommentEndpoints -> Handler : Handle(ReplyCommentCommand)
+Handler -> ApplicationDbContext : Query Parent Comment (Include Question, QuestionSet) by CommentId
+ApplicationDbContext -> Database : Query Comment, Question, QuestionSet
+Database --> ApplicationDbContext : Comment, Question, QuestionSet
+ApplicationDbContext --> Handler : Comment (parentComment)
+alt Parent Comment Not Found or Invalid
+    Handler --> CommentEndpoints : Error: COMMENT_NOT_FOUND
+    CommentEndpoints --> UI : 400 Bad Request (errorCode: COMMENT_NOT_FOUND)
+    UI -> User : Error: Parent comment not found or invalid
+else Parent Comment Found
+    Handler -> CommentService : CanComment(questionSetId)
+    CommentService -> ApplicationDbContext : Query Permission (inferred)
+    ApplicationDbContext -> Database : Query Permission (inferred)
+    Database --> ApplicationDbContext : Permission (inferred)
+    ApplicationDbContext --> CommentService : Permission (inferred)
+    CommentService --> Handler : bool
+    alt No permission
+        Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
+        CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
+        UI -> User : Error: User does not have permission to reply
+    else Allowed
+        Handler -> ApplicationDbContext : Add new Reply Comment
+        ApplicationDbContext -> Database : Insert Comment
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> CommentEndpoints : Guid
+        CommentEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Reply posted successfully
+    end
+end
+@enduml

@@ -2,21 +2,19 @@
 actor User
 participant "AI Generate UI" as UI
 participant AiGenerateEndpoints
-participant GenerateQuestionWithAiCommandHandler as Handler
+participant GenerateDocumentStructureCommandHandler as Handler
 participant AiGenerateService
 participant ApplicationDbContext
 participant Database
 participant PromptProvider
 
-User -> UI : Upload PDF, select parts, types, count, click "Generate Questions"
-UI -> AiGenerateEndpoints : POST /api/AiGenerate/Questions
-AiGenerateEndpoints -> Handler : Handle(GenerateQuestionWithAiCommand)
+User -> UI : Upload PDF, click "Generate Structure"
+UI -> AiGenerateEndpoints : POST /api/AiGenerate/DocumentStructure
+AiGenerateEndpoints -> Handler : Handle(GenerateDocumentStructureCommand)
 Handler -> AiGenerateService : UploadFileAsync(fileData)
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
-Handler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(isGenerateExplain, language)
+Handler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
 PromptProvider --> Handler : SystemInstruction
-Handler -> PromptProvider : GetGenerateQuestionPrompt(documentStructure, selectedParts, selectedQuesiontype, questionCount, isGenerateExplain)
-PromptProvider --> Handler : Prompt
 Handler -> ApplicationDbContext : Query currentUser by UserId
 ApplicationDbContext -> Database : Query DomainUser
 Database --> ApplicationDbContext : DomainUser
@@ -68,15 +66,15 @@ else Payment Not Locked
                 alt AI Response contains "NO_STRUCTURE_FOUND"
                     Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
                     AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: NO_STRUCTURE_FOUND)
-                    UI -> User : Error: No structure found in document
+                    UI -> User : Error: No document structure found
                 else JSON Deserialization Failed
                     Handler --> AiGenerateEndpoints : Error: GENERATE_CONTENT_FAILED
                     AiGenerateEndpoints --> UI : 500 Internal Server Error (errorCode: GENERATE_CONTENT_FAILED)
-                    UI -> User : Error: Failed to generate questions
+                    UI -> User : Error: Failed to generate document structure
                 else JSON Deserialization Success
-                    Handler --> AiGenerateEndpoints : List<CreateUpdateQuestionDto>
-                    AiGenerateEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
-                    UI -> User : Show generated questions
+                    Handler --> AiGenerateEndpoints : DocumentStructureDto
+                    AiGenerateEndpoints --> UI : 200 OK (ApiResponse<DocumentStructureDto>)
+                    UI -> User : Show generated document structure
                 end
             end
         end

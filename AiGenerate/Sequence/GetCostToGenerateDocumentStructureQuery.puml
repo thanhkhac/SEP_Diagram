@@ -1,0 +1,45 @@
+@startuml
+actor User
+participant "AI Generate UI" as UI
+participant AiGenerateEndpoints
+participant CountDocumentTokenQueryHandler as Handler
+participant AiGenerateService
+participant ApplicationDbContext
+participant Database
+participant PromptProvider
+
+User -> UI : Upload PDF, request cost estimation
+UI -> AiGenerateEndpoints : GET /api/AiGenerate/DocumentStructure/Cost
+AiGenerateEndpoints -> Handler : Handle(GetCostToGenerateDocumentStructureQuery)
+Handler -> AiGenerateService : UploadFileAsync(fileData)
+AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+Handler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
+PromptProvider --> Handler : SystemInstruction
+Handler -> ApplicationDbContext : Query SystemSettings
+ApplicationDbContext -> Database : Query SystemSettings
+Database --> ApplicationDbContext : SystemSetting
+ApplicationDbContext --> Handler : SystemSetting
+alt System Setting Not Found
+    Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
+    AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: SYSTEM_SETTING_NOT_FOUND)
+    UI -> User : Error: System settings not found
+else System Setting Found
+    activate Handler
+    Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+    AiGenerateService --> Handler : TokenCount (token)
+    alt File Too Large (Tokens > MaxInputToken)
+        Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
+        AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: AI_FILE_TOO_LARGE)
+        UI -> User : Error: File too large for AI processing
+    else File Size OK
+        Handler -> Handler : Calculate minimumPoint (based on token costs and fixed fee)
+        Handler --> AiGenerateEndpoints : AiMinimumCostDto
+        AiGenerateEndpoints --> UI : 200 OK (ApiResponse<AiMinimumCostDto>)
+        UI -> User : Show estimated cost
+    end
+    deactivate Handler
+finally
+    Handler -> AiGenerateService : DeleteFileAsync(fileName)
+    AiGenerateService --> Handler : Success
+end
+@enduml
