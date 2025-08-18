@@ -11,25 +11,25 @@ title QuestionSet | UpdateQuestionSetHistoryCommand
 !include ../Services/IQuestionSetService.puml
 '=====================COMMAND========================
 class UpdateQuestionSetHistoryCommand {
-    + QuestionSetId : Guid <<get>> <<set>>
-    + Questions : List<QuestionHistoryUpdate> <<get>> <<set>>
+    + QuestionSetId : Guid
+    + Questions : List<QuestionHistoryUpdate>
 }
 
 class QuestionHistoryUpdate {
-    + QuestionId : Guid <<get>> <<set>>
-    + IsCorrect : bool <<get>> <<set>>
+    + QuestionId : Guid
+    + IsCorrect : bool
 }
 
 class UpdateQuestionSetHistoryCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _questionSetService : IQuestionSetService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _questionSetService : IQuestionSetService
     + UpdateQuestionSetHistoryCommandHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
-    + <<async>> Handle(request:UpdateQuestionSetHistoryCommand, cancellationToken:CancellationToken) : Task<Unit>
+    +  Handle(request:UpdateQuestionSetHistoryCommand, cancellationToken:CancellationToken) : Task<Unit>
 }
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> UpdateQuestionSetHistory(questionSetId:Guid, questions:List<QuestionHistoryUpdate>, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
+    +  UpdateQuestionSetHistory(questionSetId:Guid, questions:List<QuestionHistoryUpdate>, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

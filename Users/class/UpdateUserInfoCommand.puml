@@ -12,7 +12,7 @@ title Users | UpdateUserInfoCommand
 '=====================CLASSES========================
 
 class UpdateUserInfoCommand {
-    + FullName : string <<get>> <<set>>
+    + FullName : string
 }
 
 class UpdateUserInfoCommandValidator {
@@ -20,15 +20,15 @@ class UpdateUserInfoCommandValidator {
 }
 
 class UpdateUserInfoCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + UpdateUserInfoCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:UpdateUserInfoCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateUserInfoCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class UserEndpoints  {
-    + <<async>> UpdateUserInfo(request:UpdateUserInfoCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateUserInfo(request:UpdateUserInfoCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 
 '=====================RELATIONSHIP========================

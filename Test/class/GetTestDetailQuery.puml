@@ -11,20 +11,20 @@
 !include ../../QuestionSets/Dtos/QuestionResponseDto.puml
 '=====================QUERY========================
 class GetTestDetailQuery {
-    + TestId : Guid <<get>> <<set>>
-    + IsShowQuestion : bool? <<get>> <<set>>
+    + TestId : Guid
+    + IsShowQuestion : bool?
 }
 
 class GetTestDetailQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
     + GetTestDetailQueryHandler(context:IApplicationDbContext, testService:ITestService)
-    + <<async>> Handle(request:GetTestDetailQuery, cancellationToken:CancellationToken) : Task<TestDetailDto>
+    +  Handle(request:GetTestDetailQuery, cancellationToken:CancellationToken) : Task<TestDetailDto>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> GetTestDetail(testId:Guid, isShowQuestion:bool?, sender:ISender) : Task<Ok<ApiResponse<TestDetailDto>>>
+    +  GetTestDetail(testId:Guid, isShowQuestion:bool?, sender:ISender) : Task<Ok<ApiResponse<TestDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

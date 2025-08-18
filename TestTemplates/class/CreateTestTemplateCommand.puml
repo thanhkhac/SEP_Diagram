@@ -11,22 +11,22 @@ title TestTemplates | CreateTestTemplateCommand
 !include ../../QuestionSets/Dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class CreateTestTemplateCommand {
-    + Name : string <<get>> <<set>>
-    + Description : string? <<get>> <<set>>
-    + Questions : List<CreateUpdateQuestionDto> <<get>> <<set>>
+    + Name : string
+    + Description : string?
+    + Questions : List<CreateUpdateQuestionDto>
 }
 
 class CreateTestTemplateCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _testTemplateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _testTemplateService : ITestTemplateService
     + CreateTestTemplateCommandHandler(context:IApplicationDbContext, user:IUser, testTemplateService:ITestTemplateService)
-    + <<async>> Handle(request:CreateTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> CreateTestTemplate(rq:CreateTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateTestTemplate(rq:CreateTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

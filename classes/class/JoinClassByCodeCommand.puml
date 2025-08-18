@@ -10,19 +10,19 @@ title Class | JoinClassByCodeCommand
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class JoinClassByCodeCommand {
-    + Code : string <<get>> <<set>>
+    + Code : string
 }
 
 class JoinClassByCodeCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + JoinClassByCodeCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:JoinClassByCodeCommand, cancellationToken:CancellationToken) : Task<Unit>
+    +  Handle(request:JoinClassByCodeCommand, cancellationToken:CancellationToken) : Task<Unit>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> JoinClassByCode(rq:JoinClassByCodeCommand, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
+    +  JoinClassByCode(rq:JoinClassByCodeCommand, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

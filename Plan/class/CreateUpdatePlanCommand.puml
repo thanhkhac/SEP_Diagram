@@ -10,27 +10,27 @@ title Plan | CreateUpdatePlanCommand
 !include ../../common/service/IIdentityService.puml
 '=====================COMMAND========================
 class CreateUpdatePlanCommand {
-    + PlanId : Guid? <<get>> <<set>>
-    + Name : string <<get>> <<set>>
-    + Price : int <<get>> <<set>>
-    + Duration : int <<get>> <<set>>
-    + Unit : string <<get>> <<set>>
-    + CanLearn : bool <<get>> <<set>>
-    + CanOpenTest : bool <<get>> <<set>>
-    + CanCopyOrImportQuestionSet : bool <<get>> <<set>>
-    + IsActive : bool <<get>> <<set>>
+    + PlanId : Guid?
+    + Name : string
+    + Price : int
+    + Duration : int
+    + Unit : string
+    + CanLearn : bool
+    + CanOpenTest : bool
+    + CanCopyOrImportQuestionSet : bool
+    + IsActive : bool
 }
 
 class CreatePlanCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _identityService : IIdentityService
+    -  _context : IApplicationDbContext
+    -  _identityService : IIdentityService
     + CreatePlanCommandHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
-    + <<async>> Handle(request:CreateUpdatePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateUpdatePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> CreateUpdatePlan(rq:CreateUpdatePlanCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateUpdatePlan(rq:CreateUpdatePlanCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

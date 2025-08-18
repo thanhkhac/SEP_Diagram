@@ -10,19 +10,19 @@ title FolderTest | DeleteFolderCommand
 !include ../Service/IFolderTestService.puml
 '=====================COMMAND========================
 class DeleteFolderCommand {
-    + FolderId : Guid <<get>> <<set>>
+    + FolderId : Guid
 }
 
 class DeleteFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
     + DeleteFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
-    + <<async>> Handle(request:DeleteFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeleteFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> DeleteFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeleteFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

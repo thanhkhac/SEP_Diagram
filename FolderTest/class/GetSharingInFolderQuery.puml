@@ -11,19 +11,19 @@ title FolderTest | GetSharingInFolderQuery
 !include /Dto/ResourceShareDto.puml
 '=====================QUERY========================
 class GetSharingInFolderQuery {
-    + FolderId : Guid <<get>> <<set>>
+    + FolderId : Guid
 }
 
 class GetSharingInFolderQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
     + GetSharingInFolderQueryHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
-    + <<async>> Handle(request:GetSharingInFolderQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
+    +  Handle(request:GetSharingInFolderQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> GetSharingInFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
+    +  GetSharingInFolder(folderId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -12,22 +12,22 @@ title Comment | GetCommentByQuestionQuery
 !include ../Dto/CommentDto.puml
 '=====================QUERY========================
 class GetCommentByQuestionQuery {
-    + QuestionId : Guid <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + QuestionId : Guid
+    + PageNumber : int
+    + PageSize : int
 }
 
 class GetCommentByQuestionQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _commentService : ICommentService
-    - <<readonly>> _mapper : IMapper
+    -  _context : IApplicationDbContext
+    -  _commentService : ICommentService
+    -  _mapper : IMapper
     + GetCommentByQuestionQueryHandler(context:IApplicationDbContext, commentService:ICommentService, mapper:IMapper)
-    + <<async>> Handle(request:GetCommentByQuestionQuery, cancellationToken:CancellationToken) : Task<PaginatedList<CommentDto>>
+    +  Handle(request:GetCommentByQuestionQuery, cancellationToken:CancellationToken) : Task<PaginatedList<CommentDto>>
 }
 
 '=====================ENDPOINT========================
 class CommentEndpoints  {
-    + <<async>> GetComment(questionId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<CommentDto>>>>
+    +  GetComment(questionId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<CommentDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

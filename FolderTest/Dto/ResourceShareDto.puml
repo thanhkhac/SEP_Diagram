@@ -1,13 +1,13 @@
 @startuml
 class ResourceShareDto {
-    + Id : Guid <<get>> <<set>>
-    + VisibilityMode : string? <<get>> <<set>>
-    + SharingModel : List<SharingModelDto> <<get>> <<set>>
+    + Id : Guid
+    + VisibilityMode : string?
+    + SharingModel : List<SharingModelDto>
 }
 
 class SharingModelDto {
-    + ShareMode : string? <<get>> <<set>>
-    + UserId : Guid <<get>> <<set>>
-    + FullName : string? <<get>> <<set>>
+    + ShareMode : string?
+    + UserId : Guid
+    + FullName : string?
 }
 @enduml

@@ -12,18 +12,18 @@ title Users | SearchUserForSelectionQuery
 '=====================CLASSES========================
 
 class SearchUserForSelectionQuery {
-    + Email : string? <<get>> <<set>>
+    + Email : string?
 }
 
 class SearchUserForSelectionQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + SearchUserForSelectionQueryHandler(context:IApplicationDbContext)
-    + <<async>> Handle(request:SearchUserForSelectionQuery, cancellationToken:CancellationToken) : Task<List<UserForSelectionDto>>
+    +  Handle(request:SearchUserForSelectionQuery, cancellationToken:CancellationToken) : Task<List<UserForSelectionDto>>
 }
 
 '=====================ENDPOINT========================
 class UserEndpoints  {
-    + <<async>> SearchUserForSelection(request:SearchUserForSelectionQuery, sender:ISender) : Task<Ok<ApiResponse<List<UserForSelectionDto>>>>
+    +  SearchUserForSelection(request:SearchUserForSelectionQuery, sender:ISender) : Task<Ok<ApiResponse<List<UserForSelectionDto>>>>
 }
 
 '=====================RELATIONSHIP========================

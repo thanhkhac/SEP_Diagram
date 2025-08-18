@@ -12,20 +12,20 @@ title Plan | GetNumberOfNewClassByYearQuery
 !include ../Dto/NumberOfNewClassDto.puml
 '=====================QUERY========================
 class GetNumberOfNewClassByYearQuery {
-    + Year : int <<get>> <<set>>
+    + Year : int
 }
 
 class GetNumberOfNewClassByYearQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _identityService : IIdentityService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _identityService : IIdentityService
+    -  _user : IUser
     + GetNumberOfNewClassByYearQueryHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
-    + <<async>> Handle(request:GetNumberOfNewClassByYearQuery, cancellationToken:CancellationToken) : Task<List<NumberOfNewClassDto>>
+    +  Handle(request:GetNumberOfNewClassByYearQuery, cancellationToken:CancellationToken) : Task<List<NumberOfNewClassDto>>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> GetNumberOfNewClassByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<NumberOfNewClassDto>>>>
+    +  GetNumberOfNewClassByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<NumberOfNewClassDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

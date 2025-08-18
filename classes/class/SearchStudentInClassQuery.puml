@@ -18,23 +18,23 @@ class StudentSearchResultDto {
 }
 
 class SearchStudentInClassQuery {
-    + ClassId : Guid <<get>> <<set>>
-    + Keyword : string? <<get>> <<set>>
-    + FieldName : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + ClassId : Guid
+    + Keyword : string?
+    + FieldName : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchStudentInClassQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + SearchStudentInClassQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:SearchStudentInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<StudentSearchResultDto>>
+    +  Handle(request:SearchStudentInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<StudentSearchResultDto>>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> SearchStudent(classId:Guid, keyword:string?, fieldName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<StudentSearchResultDto>>>>
+    +  SearchStudent(classId:Guid, keyword:string?, fieldName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<StudentSearchResultDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

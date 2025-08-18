@@ -11,21 +11,21 @@ title TestTemplates | UpdateSharingInTestTemplateCommand
 !include ../../FolderTest/Dto/UpsertSharingModelDto.puml
 '=====================COMMAND========================
 class UpdateSharingInTestTemplateCommand {
-    + TestTemplateId : Guid <<get>> <<set>>
-    + SharingModels : List<UpsertSharingModelDto>? <<get>> <<set>>
-    + DeleteUserIds : List<Guid> <<get>> <<set>>
+    + TestTemplateId : Guid
+    + SharingModels : List<UpsertSharingModelDto>?
+    + DeleteUserIds : List<Guid>
 }
 
 class UpdateSharingInTestTemplateCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testTemplateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _testTemplateService : ITestTemplateService
     + UpdateSharingInTestTemplateCommandHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
-    + <<async>> Handle(request:UpdateSharingInTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateSharingInTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> UpdateSharingInTestTemplate(testTemplateId:Guid, command:UpdateSharingInTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateSharingInTestTemplate(testTemplateId:Guid, command:UpdateSharingInTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -11,19 +11,19 @@ title QuestionSet | GetQuestionSetPermissionsQuery
 !include ../dtos/QuestionSetPermissionsDto.puml
 '=====================COMMAND========================
 class GetQuestionSetPermissionsQuery <<record>> {
-    + QuestionSetId : Guid <<get>> <<init>>
+    + QuestionSetId : Guid  <<init>>
 }
 
 class GetQuestionSetPermissionsQueryHandler {
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _currentUser : IUser
+    -  _questionSetService : IQuestionSetService
+    -  _currentUser : IUser
     + GetQuestionSetPermissionsQueryHandler(questionSetService:IQuestionSetService, currentUser:IUser)
-    + <<async>> Handle(request:GetQuestionSetPermissionsQuery, cancellationToken:CancellationToken) : Task<QuestionSetPermissionsDto>
+    +  Handle(request:GetQuestionSetPermissionsQuery, cancellationToken:CancellationToken) : Task<QuestionSetPermissionsDto>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetPermissions(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<QuestionSetPermissionsDto>>>
+    +  GetPermissions(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<QuestionSetPermissionsDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

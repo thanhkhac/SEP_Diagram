@@ -15,21 +15,21 @@ class UpdatePositionDto {
 }
 
 class UpdatePositionCommand {
-    + ClassId : Guid? <<get>> <<set>>
-    + UserId : Guid? <<get>> <<set>>
-    + Position : string? <<get>> <<set>>
+    + ClassId : Guid?
+    + UserId : Guid?
+    + Position : string?
 }
 
 class UpdatePositionCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + UpdatePositionCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:UpdatePositionCommand, cancellationToken:CancellationToken) : Task<UpdatePositionDto>
+    +  Handle(request:UpdatePositionCommand, cancellationToken:CancellationToken) : Task<UpdatePositionDto>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> UpdatePosition(classId:Guid, userId:Guid, rq:UpdatePositionCommand, sender:ISender) : Task<Ok<ApiResponse<UpdatePositionDto>>>
+    +  UpdatePosition(classId:Guid, userId:Guid, rq:UpdatePositionCommand, sender:ISender) : Task<Ok<ApiResponse<UpdatePositionDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

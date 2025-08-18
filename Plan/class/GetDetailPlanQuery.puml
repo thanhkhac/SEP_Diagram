@@ -10,18 +10,18 @@ title Plan | GetDetailPlanQuery
 !include ../Dto/PlanDetailDto.puml
 '=====================QUERY========================
 class GetDetailPlanQuery {
-    + PlanId : Guid <<get>> <<init>>
+    + PlanId : Guid  <<init>>
 }
 
 class GetDetailPlanQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + GetDetailPlanQueryHandler(context:IApplicationDbContext)
-    + <<async>> Handle(request:GetDetailPlanQuery, cancellationToken:CancellationToken) : Task<PlanDetailDto>
+    +  Handle(request:GetDetailPlanQuery, cancellationToken:CancellationToken) : Task<PlanDetailDto>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> GetDetailPlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<PlanDetailDto>>>
+    +  GetDetailPlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<PlanDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

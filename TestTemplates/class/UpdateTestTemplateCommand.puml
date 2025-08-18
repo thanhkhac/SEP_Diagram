@@ -14,22 +14,22 @@ title TestTemplates | UpdateTestTemplateCommand
 !include ../../Test/Dto/CheckUpdateQuestion.puml
 '=====================COMMAND========================
 class UpdateTestTemplateCommand {
-    + TestTemplateId : Guid <<get>> <<set>>
-    + Name : string <<get>> <<set>>
-    + CreateUpdateQuestions : List<CreateUpdateQuestionDto> <<get>> <<set>>
-    + DeleteQuestionIds : List<Guid> <<get>> <<set>>
+    + TestTemplateId : Guid
+    + Name : string
+    + CreateUpdateQuestions : List<CreateUpdateQuestionDto>
+    + DeleteQuestionIds : List<Guid>
 }
 
 class UpdateTestTemplateCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testTemplateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _testTemplateService : ITestTemplateService
     + UpdateTestTemplateCommandHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
-    + <<async>> Handle(request:UpdateTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> UpdateTestTemplate(testTemplateId:Guid, rq:UpdateTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateTestTemplate(testTemplateId:Guid, rq:UpdateTestTemplateCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

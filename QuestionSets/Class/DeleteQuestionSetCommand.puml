@@ -11,18 +11,18 @@ title QuestionSet | DeleteQuestionSetCommand
 !include ../Services/IQuestionSetService.puml
 '=====================COMMAND========================
 class DeleteQuestionSetCommand {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 class DeleteQuestionSetCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _questionSetService : IQuestionSetService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _questionSetService : IQuestionSetService
     + DeleteQuestionSetCommandHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
-    + <<async>> Handle(request:DeleteQuestionSetCommand, cancellationToken:CancellationToken) : Task<Unit>
+    +  Handle(request:DeleteQuestionSetCommand, cancellationToken:CancellationToken) : Task<Unit>
 }
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> DeleteQuestionSet(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
+    +  DeleteQuestionSet(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -9,19 +9,19 @@
 !include ../Service/ITestService.puml
 '=====================COMMAND========================
 class DeleteTestCommand {
-    + TestId : Guid <<get>> <<init>>
+    + TestId : Guid  <<init>>
 }
 
 class DeleteTestCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
     + DeleteTestCommandHandler(context:IApplicationDbContext, testService:ITestService)
-    + <<async>> Handle(request:DeleteTestCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeleteTestCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> DeleteTest(testId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeleteTest(testId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

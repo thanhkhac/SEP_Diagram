@@ -9,18 +9,18 @@ title Plan | DeletePlanCommand
 !include ../../common/IApplicationDbContext.puml
 '=====================COMMAND========================
 class DeletePlanCommand {
-    + PlanId : Guid <<get>> <<init>>
+    + PlanId : Guid  <<init>>
 }
 
 class DeletePlanCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + DeletePlanCommandHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
-    + <<async>> Handle(request:DeletePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeletePlanCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> DeletePlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeletePlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -13,20 +13,20 @@
 !include ../Dto/ReviewQuestionDto.puml
 '=====================QUERY========================
 class GetReviewTestQuery {
-    + AttemptId : Guid <<get>> <<set>>
+    + AttemptId : Guid
 }
 
 class GetReviewTestQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
+    -  _user : IUser
     + GetReviewTestQueryHandler(context:IApplicationDbContext, testService:ITestService, user:IUser)
-    + <<async>> Handle(request:GetReviewTestQuery, cancellationToken:CancellationToken) : Task<ReviewTestDto>
+    +  Handle(request:GetReviewTestQuery, cancellationToken:CancellationToken) : Task<ReviewTestDto>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> GetReviewTest(attemptId:Guid, sender:ISender) : Task<Ok<ApiResponse<ReviewTestDto>>>
+    +  GetReviewTest(attemptId:Guid, sender:ISender) : Task<Ok<ApiResponse<ReviewTestDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

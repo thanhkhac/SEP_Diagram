@@ -12,18 +12,18 @@ title Authentication | Register
 !include ../dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class GetQuestionSetQuestionsForEditQuery {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 class GetQuestionSetQuestionsForEditQueryHandler {
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _user : IUser
+    -  _questionSetService : IQuestionSetService
+    -  _user : IUser
     + GetQuestionSetQuestionsForEditQueryHandler(questionSetService:IQuestionSetService, user:IUser, planService:IPlanService)
-    + <<async>> Handle(request:GetQuestionSetQuestionsForEditQuery, cancellationToken:CancellationToken) : Task<List<CreateUpdateQuestionDto>>
+    +  Handle(request:GetQuestionSetQuestionsForEditQuery, cancellationToken:CancellationToken) : Task<List<CreateUpdateQuestionDto>>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetQuestionsForEdit(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<CreateUpdateQuestionDto>>>>
+    +  GetQuestionsForEdit(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<CreateUpdateQuestionDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

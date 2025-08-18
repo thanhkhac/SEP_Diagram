@@ -11,21 +11,21 @@
 !include ../Service/IClassService.puml
 '=====================COMMAND========================
 class AddQuestionSetToClassCommand {
-    + ClassId : Guid <<get>> <<set>>
-    + QuestionSetId : Guid <<get>> <<set>>
+    + ClassId : Guid
+    + QuestionSetId : Guid
 }
 
 class AddQuestionSetToClassCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
+    -  _user : IUser
     + AddQuestionSetToClassCommandHandler(context:IApplicationDbContext, classService:IClassService, user:IUser)
-    + <<async>> Handle(request:AddQuestionSetToClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:AddQuestionSetToClassCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> AddQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  AddQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

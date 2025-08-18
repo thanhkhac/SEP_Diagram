@@ -10,21 +10,21 @@
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class UpdateFolderCommand {
-    + FolderId : Guid? <<get>> <<set>>
-    + Name : string <<get>> <<set>>
+    + FolderId : Guid?
+    + Name : string
 }
 
 class UpdateFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
+    -  _user : IUser
     + UpdateFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService, user:IUser)
-    + <<async>> Handle(request:UpdateFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> UpdateFolder(folderId:Guid, rq:UpdateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateFolder(folderId:Guid, rq:UpdateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

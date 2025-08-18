@@ -10,19 +10,19 @@ title Class | DeleteClassCommand
 !include ../Service/IClassService.puml
 '=====================COMMAND========================
 class DeleteClassCommand {
-    + ClassId : Guid <<get>> <<set>>
+    + ClassId : Guid
 }
 
 class DeleteClassHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + DeleteClassHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:DeleteClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeleteClassCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> DeleteClass(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeleteClass(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

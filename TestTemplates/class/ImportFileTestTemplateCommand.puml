@@ -11,18 +11,18 @@ title TestTemplates | ImportFileTestTemplateCommand
 !include ../Dto/ImportedQuestionDto.puml
 '=====================COMMAND========================
 class ImportFileTestTemplateCommand {
-    + FileData : FileStreamData? <<get>> <<set>>
+    + FileData : FileStreamData?
 }
 
 class ImportFileTestTemplateCommandHandler {
-    - <<readonly>> _file : IFileService
+    -  _file : IFileService
     + ImportFileTestTemplateCommandHandler(file:IFileService)
-    + <<async>> Handle(request:ImportFileTestTemplateCommand, cancellationToken:CancellationToken) : Task<ImportedQuestionDto>
+    +  Handle(request:ImportFileTestTemplateCommand, cancellationToken:CancellationToken) : Task<ImportedQuestionDto>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> ImportFileTestTemplate(file:IFormFile, sender:ISender) : Task<Ok<ApiResponse<ImportedQuestionDto>>>
+    +  ImportFileTestTemplate(file:IFormFile, sender:ISender) : Task<Ok<ApiResponse<ImportedQuestionDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

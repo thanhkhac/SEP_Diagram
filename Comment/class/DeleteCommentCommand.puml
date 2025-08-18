@@ -10,19 +10,19 @@ title Comment | DeleteCommentCommand
 !include ../Service/ICommentService.puml
 '=====================COMMAND========================
 class DeleteCommentCommand {
-    + CommentId : Guid <<get>> <<set>>
+    + CommentId : Guid
 }
 
 class DeleteCommentCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _commentService : ICommentService
+    -  _context : IApplicationDbContext
+    -  _commentService : ICommentService
     + DeleteCommentCommandHandler(context:IApplicationDbContext, commentService:ICommentService)
-    + <<async>> Handle(request:DeleteCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeleteCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class CommentEndpoints  {
-    + <<async>> DeleteComment(commentId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeleteComment(commentId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

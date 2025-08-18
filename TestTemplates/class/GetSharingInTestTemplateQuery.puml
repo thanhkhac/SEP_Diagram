@@ -11,19 +11,19 @@ title TestTemplates | GetSharingInTestTemplateQuery
 !include ../../FolderTest/Dto/ResourceShareDto.puml
 '=====================QUERY========================
 class GetSharingInTestTemplateQuery {
-    + TestTemplateId : Guid <<get>> <<set>>
+    + TestTemplateId : Guid
 }
 
 class GetSharingInTestTemplateQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testTemplateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _testTemplateService : ITestTemplateService
     + GetSharingInTestTemplateQueryHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
-    + <<async>> Handle(request:GetSharingInTestTemplateQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
+    +  Handle(request:GetSharingInTestTemplateQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> GetSharingInTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
+    +  GetSharingInTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

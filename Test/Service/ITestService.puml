@@ -1,22 +1,22 @@
 @startuml
 interface ITestService {
     !ifdef TEST_SERVICE_CANCREATETEST
-    + <<async>> CanCreateTest(classId:Guid): Task<bool>
+    +  CanCreateTest(classId:Guid): Task<bool>
     !endif
     !ifdef TEST_SERVICE_CANVIEWOREDITTEST
-    + <<async>> CanViewOrEditTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  CanViewOrEditTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef TEST_SERVICE_QUESTIONACCESSANDCOMPAREFORTEST
-    + <<async>> QuestionAccessAndCompareForTest(questions:List<CreateUpdateQuestionDto>, cancellationToken:CancellationToken): Task<List<Guid>>
+    +  QuestionAccessAndCompareForTest(questions:List<CreateUpdateQuestionDto>, cancellationToken:CancellationToken): Task<List<Guid>>
     !endif
     !ifdef TEST_SERVICE_TRYCHECKCANATTEMPTTEST
-    + <<async>> TryCheckCanAttemptTest(test:Test): Task
+    +  TryCheckCanAttemptTest(test:Test): Task
     !endif
     !ifdef TEST_SERVICE_GETROLEUSERINTEST
-    + <<async>> GetRoleUserInTest(test:Test): Task<ClassShareMode>
+    +  GetRoleUserInTest(test:Test): Task<ClassShareMode>
     !endif
     !ifdef TEST_SERVICE_CANVIEWHISTORYOFTEST
-    + <<async>> CanViewHistoryOfTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  CanViewHistoryOfTest(classId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef TEST_SERVICE_CHECKQUESTIONSFORUPDATE
     + CheckQuestionsForUpdate(updateQuestionDto:List<CreateUpdateQuestionDto>, updateQuestion:List<Question>): CheckUpdateQuestion

@@ -10,19 +10,19 @@ title FolderTest | CreateFolderCommand
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class CreateFolderCommand {
-    + FolderName : string <<get>> <<set>>
+    + FolderName : string
 }
 
 class CreateFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + CreateFolderCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:CreateFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> CreateFolder(rq:CreateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateFolder(rq:CreateFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

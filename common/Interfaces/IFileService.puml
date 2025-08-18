@@ -1,5 +1,5 @@
 @startuml
 interface IFileService {
-    + <<async>> GetQuestionFromFile(fileData:FileStreamData) : Task<ImportedQuestionDto>
+    +  GetQuestionFromFile(fileData:FileStreamData) : Task<ImportedQuestionDto>
 }
 @enduml

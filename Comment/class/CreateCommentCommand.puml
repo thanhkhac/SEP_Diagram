@@ -10,20 +10,20 @@ title Comment | CreateCommentCommand
 !include ../Service/ICommentService.puml
 '=====================COMMAND========================
 class CreateCommentCommand {
-    + QuestionId : Guid? <<get>> <<set>>
-    + Content : string <<get>> <<set>>
+    + QuestionId : Guid?
+    + Content : string
 }
 
 class CreateCommentCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _commentService : ICommentService
+    -  _context : IApplicationDbContext
+    -  _commentService : ICommentService
     + CreateCommentCommandHandler(context:IApplicationDbContext, commentService:ICommentService)
-    + <<async>> Handle(request:CreateCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class CommentEndpoints  {
-    + <<async>> CreateComment(rq:CreateCommentCommand, questionId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateComment(rq:CreateCommentCommand, questionId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

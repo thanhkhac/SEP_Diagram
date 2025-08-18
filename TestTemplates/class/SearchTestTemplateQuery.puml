@@ -12,22 +12,22 @@ title TestTemplates | SearchTestTemplateQuery
 !include ../Dto/TestTemplateDto.puml
 '=====================QUERY========================
 class SearchTestTemplateQuery {
-    + TestTemplateName : string? <<get>> <<set>>
-    + ShareMode : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + TestTemplateName : string?
+    + ShareMode : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchTestTemplateQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + SearchTestTemplateQueryHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:SearchTestTemplateQuery, cancellationToken:CancellationToken) : Task<PaginatedList<TestTemplateDto>>
+    +  Handle(request:SearchTestTemplateQuery, cancellationToken:CancellationToken) : Task<PaginatedList<TestTemplateDto>>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> SearchTestTemplate(name:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<TestTemplateDto>>>>
+    +  SearchTestTemplate(name:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<TestTemplateDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

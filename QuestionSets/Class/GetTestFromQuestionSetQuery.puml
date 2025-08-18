@@ -12,22 +12,22 @@ title QuestionSet | GetTestFromQuestionSetQuery
 !include ../dtos/QuestionResponseDto.puml
 '=====================QUERY========================
 class GetTestFromQuestionSetQuery {
-    + QuestionSetId : Guid? <<get>> <<set>>
-    + NumberOfQuestion : int <<get>> <<set>>
-    + QuestionTypes : List<string> <<get>> <<set>>
+    + QuestionSetId : Guid?
+    + NumberOfQuestion : int
+    + QuestionTypes : List<string>
 }
 
 class GetTestFromQuestionSetQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _questionSetService : IQuestionSetService
+    -  _user : IUser
     + GetTestFromQuestionSetQueryHandler(context:IApplicationDbContext, questionSetService:IQuestionSetService, user:IUser)
-    + <<async>> Handle(request:GetTestFromQuestionSetQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
+    +  Handle(request:GetTestFromQuestionSetQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetTestFromQuestionSet(questionSetId:Guid, numberOfQuestion:int, questionTypes:string, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
+    +  GetTestFromQuestionSet(questionSetId:Guid, numberOfQuestion:int, questionTypes:string, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

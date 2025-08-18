@@ -11,31 +11,31 @@
 !include ../../QuestionSets/Dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class CreateTestCommand {
-    + Name : string <<get>> <<set>>
-    + ClassId : Guid <<get>> <<set>>
-    + TimeLimit : int <<get>> <<set>>
-    + StartTime : DateTime <<get>> <<set>>
-    + EndTime : DateTime <<get>> <<set>>
-    + GradeAttemptMethod : string <<get>> <<set>>
-    + GradeQuestionMethod : string <<get>> <<set>>
-    + IsShowCorrectAnswerInReview : bool <<get>> <<set>>
-    + IsAllowReviewAfterSubmit : bool <<get>> <<set>>
-    + NumberOfShuffles : int <<get>> <<set>>
-    + MaxAttempt : int <<get>> <<set>>
-    + PassingScore : int <<get>> <<set>>
-    + Questions : List<CreateUpdateQuestionDto> <<get>> <<set>>
+    + Name : string
+    + ClassId : Guid
+    + TimeLimit : int
+    + StartTime : DateTime
+    + EndTime : DateTime
+    + GradeAttemptMethod : string
+    + GradeQuestionMethod : string
+    + IsShowCorrectAnswerInReview : bool
+    + IsAllowReviewAfterSubmit : bool
+    + NumberOfShuffles : int
+    + MaxAttempt : int
+    + PassingScore : int
+    + Questions : List<CreateUpdateQuestionDto>
 }
 
 class CreateTestCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
     + CreateTestCommandHandler(context:IApplicationDbContext, testService:ITestService)
-    + <<async>> Handle(request:CreateTestCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateTestCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> CreateTest(rq:CreateTestCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateTest(rq:CreateTestCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

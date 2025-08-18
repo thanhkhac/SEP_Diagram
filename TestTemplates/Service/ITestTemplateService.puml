@@ -1,16 +1,16 @@
 @startuml
 interface ITestTemplateService {
     !ifdef TEST_TEMPLATE_SERVICE_TRYCHECKQUESTIONACCESSFORTESTTEMPLATE
-    + <<async>> TryCheckQuestionAccessForTestTemplate(questions:List<CreateUpdateQuestionDto>, cancellationToken:CancellationToken): Task
+    +  TryCheckQuestionAccessForTestTemplate(questions:List<CreateUpdateQuestionDto>, cancellationToken:CancellationToken): Task
     !endif
     !ifdef TEST_TEMPLATE_SERVICE_CANDELETETESTTEMPLATE
-    + <<async>> CanDeleteTestTemplate(testTemplateId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  CanDeleteTestTemplate(testTemplateId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
-    + <<async>> CanEditTestTemplate(testTemplateId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  CanEditTestTemplate(testTemplateId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef TEST_TEMPLATE_SERVICE_CANVIEWTEMPLATE
-    + <<async>> CanViewTesTemplate(testTemplateId:Guid): Task<bool>
+    +  CanViewTesTemplate(testTemplateId:Guid): Task<bool>
     !endif
     !ifdef TEST_TEMPLATE_SERVICE_CHECKQUESTIONSFORUPDATE
     + CheckQuestionsForUpdate(updateQuestionDto:List<CreateUpdateQuestionDto>, updateQuestion:List<Question>): CheckUpdateQuestion

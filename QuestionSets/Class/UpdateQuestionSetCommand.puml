@@ -12,24 +12,24 @@ title QuestionSet | UpdateQuestionSetCommand
 !include ../dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class UpdateQuestionSetCommand {
-    + QuestionSetId : Guid <<get>> <<set>>
-    + Name : string? <<get>> <<set>>
-    + Description : string? <<get>> <<set>>
-    + CreateUpdateQuestions : List<CreateUpdateQuestionDto> <<get>> <<set>>
-    + DeleteQuestionIds : List<Guid> <<get>> <<set>>
+    + QuestionSetId : Guid
+    + Name : string?
+    + Description : string?
+    + CreateUpdateQuestions : List<CreateUpdateQuestionDto>
+    + DeleteQuestionIds : List<Guid>
 }
 
 class UpdateQuestionSetCommandHandler {
-    - <<readonly>> _dbContext : IApplicationDbContext
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _currentUser : IUser
+    -  _dbContext : IApplicationDbContext
+    -  _questionSetService : IQuestionSetService
+    -  _currentUser : IUser
     + UpdateQuestionSetCommandHandler(dbContext:IApplicationDbContext, questionSetService:IQuestionSetService, currentUser:IUser)
-    + <<async>> Handle(request:UpdateQuestionSetCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateQuestionSetCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> UpdateQuestionSet(questionSetId:Guid, command:UpdateQuestionSetCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateQuestionSet(questionSetId:Guid, command:UpdateQuestionSetCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

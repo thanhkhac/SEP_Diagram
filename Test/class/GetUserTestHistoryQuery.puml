@@ -14,24 +14,24 @@ title Test | GetUserTestHistoryQuery
 !include ../Dto/HistoryTestDto.puml
 '=====================QUERY========================
 class GetUserTestHistoryQuery {
-    + TestId : Guid <<get>> <<set>>
-    + UserId : Guid? <<get>> <<set>>
-    + IsPassed : bool? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + TestId : Guid
+    + UserId : Guid?
+    + IsPassed : bool?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class GetUserTestHistoryQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
+    -  _user : IUser
     + GetUserTestHistoryQueryHandler(context:IApplicationDbContext, testService:ITestService, user:IUser)
-    + <<async>> Handle(request:GetUserTestHistoryQuery, cancellationToken:CancellationToken) : Task<PaginatedList<HistoryTestDto>>
+    +  Handle(request:GetUserTestHistoryQuery, cancellationToken:CancellationToken) : Task<PaginatedList<HistoryTestDto>>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> GetHistoryTest(testId:Guid, userId:Guid?, isPassed:bool?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<HistoryTestDto>>>>
+    +  GetHistoryTest(testId:Guid, userId:Guid?, isPassed:bool?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<HistoryTestDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

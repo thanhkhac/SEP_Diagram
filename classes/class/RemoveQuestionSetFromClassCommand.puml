@@ -10,20 +10,20 @@ title Class | RemoveQuestionSetFromClassCommand
 !include ../Service/IClassService.puml
 '=====================COMMAND========================
 class RemoveQuestionSetFromClassCommand {
-    + ClassId : Guid <<get>> <<set>>
-    + QuestionSetId : Guid <<get>> <<set>>
+    + ClassId : Guid
+    + QuestionSetId : Guid
 }
 
 class RemoveQuestionSetFromClassCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + RemoveQuestionSetFromClassCommandHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:RemoveQuestionSetFromClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:RemoveQuestionSetFromClassCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> RemoveQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  RemoveQuestionSet(classId:Guid, questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

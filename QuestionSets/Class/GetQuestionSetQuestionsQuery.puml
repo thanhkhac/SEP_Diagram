@@ -12,7 +12,7 @@ title QuestionSet | GetQuestionSetQuestionsQuery
 !include ../dtos/QuestionResponseDto.puml
 '=====================COMMAND========================
 class GetQuestionSetQuestionsQuery {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 
 class GetQuestionSetQuestionsQueryHandler {
@@ -20,12 +20,12 @@ class GetQuestionSetQuestionsQueryHandler {
     - _questionService : IQuestionService
     - _user : IUser
     + GetQuestionSetQuestionsQueryHandler(questionSetService:IQuestionSetService, user:IUser, questionService:IQuestionService)
-    + <<async>> Handle(request:GetQuestionSetQuestionsQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
+    +  Handle(request:GetQuestionSetQuestionsQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetQuestions(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
+    +  GetQuestions(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

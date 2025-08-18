@@ -10,22 +10,22 @@ title FolderTest | SearchFolderQuery
 !include /Dto/SearchFolderTestDto.puml
 '=====================QUERY========================
 class SearchFolderQuery {
-    + FolderName : string? <<get>> <<set>>
-    + ShareMode : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + FolderName : string?
+    + ShareMode : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchFolderQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + SearchFolderQueryHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:SearchFolderQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchFolderTestDto>>
+    +  Handle(request:SearchFolderQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchFolderTestDto>>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> SearchFolderTest(folderName:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchFolderTestDto>>>>
+    +  SearchFolderTest(folderName:string?, shareMode:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchFolderTestDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

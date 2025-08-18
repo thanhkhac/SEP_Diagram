@@ -11,21 +11,21 @@ title Comment | ReplyCommentCommand
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class ReplyCommentCommand {
-    + CommentId : Guid? <<get>> <<set>>
-    + Content : string <<get>> <<set>>
+    + CommentId : Guid?
+    + Content : string
 }
 
 class ReplyCommentCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _commentService : ICommentService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _commentService : ICommentService
+    -  _user : IUser
     + ReplyCommentCommandHandler(context:IApplicationDbContext, user:IUser, commentService:ICommentService)
-    + <<async>> Handle(request:ReplyCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:ReplyCommentCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class CommentEndpoints  {
-    + <<async>> ReplyComment(commentId:Guid, rq:ReplyCommentCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  ReplyComment(commentId:Guid, rq:ReplyCommentCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

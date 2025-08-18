@@ -11,18 +11,18 @@ title QuestionSet | GetQuestionSetDetailQuery
 !include ../dtos/QuestionSetDetailDto.puml
 '=====================COMMAND========================
 class GetQuestionSetDetailQuery {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 
 class GetQuestionSetDetailQueryHandler {
     - _questionSetService : IQuestionSetService
     - _user : IUser
     + GetQuestionSetDetailQueryHandler(questionSetService:IQuestionSetService, user:IUser)
-    + <<async>> Handle(request:GetQuestionSetDetailQuery, cancellationToken:CancellationToken) : Task<QuestionSetDetailDto>
+    +  Handle(request:GetQuestionSetDetailQuery, cancellationToken:CancellationToken) : Task<QuestionSetDetailDto>
 }
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetQuestionSetDetail(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<QuestionSetDetailDto>>>
+    +  GetQuestionSetDetail(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<QuestionSetDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

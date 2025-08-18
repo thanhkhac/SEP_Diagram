@@ -12,20 +12,20 @@ title TestTemplates | GetTestTemplatePermissionsQuery
 !include ../Dto/TestTemplatePermissionsDto.puml
 '=====================QUERY========================
 class GetTestTemplatePermissionsQuery {
-    + TestTemplateId : Guid <<get>> <<set>>
+    + TestTemplateId : Guid
 }
 
 class GetTestTemplatePermissionsQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _identityService : IIdentityService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _identityService : IIdentityService
     + GetTestTemplatePermissionsQueryHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
-    + <<async>> Handle(request:GetTestTemplatePermissionsQuery, cancellationToken:CancellationToken) : Task<TestTemplatePermissionsDto>
+    +  Handle(request:GetTestTemplatePermissionsQuery, cancellationToken:CancellationToken) : Task<TestTemplatePermissionsDto>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> GetTestTemplatePermissions(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplatePermissionsDto>>>
+    +  GetTestTemplatePermissions(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplatePermissionsDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

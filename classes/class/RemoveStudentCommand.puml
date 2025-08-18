@@ -10,20 +10,20 @@ title Class | RemoveStudentCommand
 !include ../Service/IClassService.puml
 '=====================COMMAND========================
 class RemoveStudentCommand {
-    + ClassId : Guid <<get>> <<set>>
-    + UserId : Guid <<get>> <<set>>
+    + ClassId : Guid
+    + UserId : Guid
 }
 
 class RemoveStudentCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + RemoveStudentCommandHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:RemoveStudentCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:RemoveStudentCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> RemoveStudent(classId:Guid, userId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  RemoveStudent(classId:Guid, userId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

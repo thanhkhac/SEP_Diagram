@@ -10,19 +10,19 @@ title TestTemplates | DeleteTestTemplateCommand
 !include ../Service/ITestTemplateService.puml
 '=====================COMMAND========================
 class DeleteTestTemplateCommand {
-    + TestTemplateId : Guid <<get>> <<set>>
+    + TestTemplateId : Guid
 }
 
 class DeleteTestTemplateCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _templateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _templateService : ITestTemplateService
     + DeleteTestTemplateCommandHandler(context:IApplicationDbContext, templateService:ITestTemplateService)
-    + <<async>> Handle(request:DeleteTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:DeleteTestTemplateCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> DeleteTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  DeleteTestTemplate(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

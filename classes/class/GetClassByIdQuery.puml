@@ -16,19 +16,19 @@ class ClassDetailDto {
 }
 
 class GetClassByIdQuery {
-    + ClassId : Guid <<get>> <<set>>
+    + ClassId : Guid
 }
 
 class GetClassByIdQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + GetClassByIdQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:GetClassByIdQuery, cancellationToken:CancellationToken) : Task<ClassDetailDto>
+    +  Handle(request:GetClassByIdQuery, cancellationToken:CancellationToken) : Task<ClassDetailDto>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> GetClassById(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<ClassDetailDto>>>
+    +  GetClassById(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<ClassDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

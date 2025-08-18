@@ -11,21 +11,21 @@ title FolderTest | UpdateSharingInFolderCommand
 !include /Dto/UpsertSharingModelDto.puml
 '=====================COMMAND========================
 class UpdateSharingInFolderCommand {
-    + FolderId : Guid <<get>> <<set>>
-    + SharingModels : List<UpsertSharingModelDto> <<get>> <<set>>
-    + DeleteUserIds : List<Guid> <<get>> <<set>>
+    + FolderId : Guid
+    + SharingModels : List<UpsertSharingModelDto>
+    + DeleteUserIds : List<Guid>
 }
 
 class UpdateSharingInFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
     + UpdateSharingInFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
-    + <<async>> Handle(request:UpdateSharingInFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateSharingInFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> UpdateSharingInFolder(folderId:Guid, rq:UpdateSharingInFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateSharingInFolder(folderId:Guid, rq:UpdateSharingInFolderCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

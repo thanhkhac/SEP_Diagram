@@ -12,23 +12,23 @@ title Test | GetTestResultOfClassQuery
 !include ../Dto/ResultTestOfClassDto.puml
 '=====================QUERY========================
 class GetTestResultOfClassQuery {
-    + TestId : Guid <<get>> <<set>>
-    + StudentName : string? <<get>> <<set>>
-    + IsPassed : bool? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + TestId : Guid
+    + StudentName : string?
+    + IsPassed : bool?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class GetTestResultOfClassQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
     + GetTestResultOfClassQueryHandler(context:IApplicationDbContext, testService:ITestService)
-    + <<async>> Handle(request:GetTestResultOfClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<ResultTestOfClassDto>>
+    +  Handle(request:GetTestResultOfClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<ResultTestOfClassDto>>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> GetTestResultOfClass(testId:Guid, sender:ISender, studentName:string?, isPassed:bool?, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<ResultTestOfClassDto>>>>
+    +  GetTestResultOfClass(testId:Guid, sender:ISender, studentName:string?, isPassed:bool?, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<ResultTestOfClassDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

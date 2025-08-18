@@ -10,19 +10,19 @@ title Class | GetInviteStudentCodeQuery
 !include ../Service/IClassService.puml
 '=====================QUERY========================
 class GetInviteStudentCodeQuery {
-    + ClassId : Guid <<get>> <<set>>
+    + ClassId : Guid
 }
 
 class GetInviteStudentCodeQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + GetInviteStudentCodeQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:GetInviteStudentCodeQuery, cancellationToken:CancellationToken) : Task<string?>
+    +  Handle(request:GetInviteStudentCodeQuery, cancellationToken:CancellationToken) : Task<string?>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> GetInviteStudentCode(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<string?>>>
+    +  GetInviteStudentCode(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<string?>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

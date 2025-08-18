@@ -22,23 +22,23 @@ class SearchTestResultDto {
 }
 
 class SearchTestInClassQuery {
-    + ClassId : Guid <<get>> <<set>>
-    + TestName : string? <<get>> <<set>>
-    + Status : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + ClassId : Guid
+    + TestName : string?
+    + Status : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchTestInClassQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + SearchTestInClassQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:SearchTestInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchTestResultDto>>
+    +  Handle(request:SearchTestInClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<SearchTestResultDto>>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> SearchTest(status:string?, testName:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchTestResultDto>>>>
+    +  SearchTest(status:string?, testName:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<SearchTestResultDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

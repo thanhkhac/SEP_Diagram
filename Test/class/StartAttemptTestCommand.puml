@@ -14,21 +14,21 @@ title Test | StartAttemptTestCommand
 !include ../Dto/QuestionAttemptDetailDto.puml
 '=====================COMMAND========================
 class StartAttemptTestCommand {
-    + TestId : Guid <<get>> <<set>>
+    + TestId : Guid
 }
 
 class StartAttemptTestCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
-    - <<readonly>> _user : IUser
-    - <<readonly>> _hangFireService : IHangFireService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
+    -  _user : IUser
+    -  _hangFireService : IHangFireService
     + StartAttemptTestCommandHandler(context:IApplicationDbContext, testService:ITestService, user:IUser, hangFireService:IHangFireService)
-    + <<async>> Handle(request:StartAttemptTestCommand, cancellationToken:CancellationToken) : Task<AttemptDetailDto>
+    +  Handle(request:StartAttemptTestCommand, cancellationToken:CancellationToken) : Task<AttemptDetailDto>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> StartAttemptTestTestAttempt(testId:Guid, sender:ISender) : Task<Ok<ApiResponse<AttemptDetailDto>>>
+    +  StartAttemptTestTestAttempt(testId:Guid, sender:ISender) : Task<Ok<ApiResponse<AttemptDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

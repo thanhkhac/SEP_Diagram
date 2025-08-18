@@ -10,22 +10,22 @@ title QuestionSet | CreateQuestionSetCommand
 !include ../dtos/CreateUpdateQuestionDto.puml
 '=====================COMMAND========================
 class CreateQuestionSetCommand {
-    + Name : string? <<get>> <<set>>
-    + Description : string? <<get>> <<set>>
-    + Questions : List<CreateUpdateQuestionDto> <<get>> <<set>>
+    + Name : string?
+    + Description : string?
+    + Questions : List<CreateUpdateQuestionDto>
 }
 
 
 
 class CreateQuestionSetCommandHandler {
-    - <<readonly>> _dbContext : IApplicationDbContext
+    -  _dbContext : IApplicationDbContext
     + CreateQuestionSetCommandHandler(dbContext:IApplicationDbContext)
-    + <<async>> Handle(request:CreateQuestionSetCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateQuestionSetCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> CreateQuestionSet(command:CreateQuestionSetCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateQuestionSet(command:CreateQuestionSetCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -10,20 +10,20 @@ title FolderTest | RemoveTestTemplateInFolderCommand
 !include ../Service/IFolderTestService.puml
 '=====================COMMAND========================
 class RemoveTestTemplateInFolderCommand {
-    + FolderId : Guid <<get>> <<set>>
-    + TestTemplateId : Guid <<get>> <<set>>
+    + FolderId : Guid
+    + TestTemplateId : Guid
 }
 
 class RemoveTestTemplateInFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
     + RemoveTestTemplateInFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
-    + <<async>> Handle(request:RemoveTestTemplateInFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:RemoveTestTemplateInFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> RemoveTestTestTemplateInFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  RemoveTestTestTemplateInFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

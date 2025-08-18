@@ -13,8 +13,8 @@ title Authentication | Register
 !include ../dtos/QuestionResponseDto.puml
 '=====================COMMAND========================
 class GetQuestionSetLearnQuestionsQuery {
-    + QuestionSetId : Guid <<get>> <<set>>
-    + QuestionCount : int <<get>> <<set>>
+    + QuestionSetId : Guid
+    + QuestionCount : int
 }
 
 class GetQuestionSetLearnQuestionsQueryHandler {
@@ -23,12 +23,12 @@ class GetQuestionSetLearnQuestionsQueryHandler {
     - _planService : IPlanService
     - _user : IUser
     + GetQuestionSetLearnQuestionsQueryHandler(questionSetService:IQuestionSetService, user:IUser, questionService:IQuestionService, planService:IPlanService)
-    + <<async>> Handle(request:GetQuestionSetLearnQuestionsQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
+    +  Handle(request:GetQuestionSetLearnQuestionsQuery, cancellationToken:CancellationToken) : Task<List<QuestionResponseDto>>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetLearnQuestions(questionSetId:Guid, questionCount:int, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
+    +  GetLearnQuestions(questionSetId:Guid, questionCount:int, sender:ISender) : Task<Ok<ApiResponse<List<QuestionResponseDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

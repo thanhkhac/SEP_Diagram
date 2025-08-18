@@ -2,9 +2,9 @@
 !include ../../common/IApplicationDbContext.puml
 
 class UserQuestionSetHistoryService {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + UserQuestionSetHistoryService(context:IApplicationDbContext)
-    + <<async>> DeleteHistoriesByUserAndSetAsync(userId:Guid, questionSetId:Guid, cancellationToken:CancellationToken) : Task
+    +  DeleteHistoriesByUserAndSetAsync(userId:Guid, questionSetId:Guid, cancellationToken:CancellationToken) : Task
 }
 IUserQuestionSetHistoryService <|-- UserQuestionSetHistoryService
 UserQuestionSetHistoryService ..> IApplicationDbContext : <<inject>>

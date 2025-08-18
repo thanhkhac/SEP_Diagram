@@ -11,20 +11,20 @@ title Authentication | Register
 !include ../../Plan/Services/IPlanService.puml
 '=====================COMMAND========================
 class GetQuestionSetQuestionsForCopyQuery {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 
 class GetQuestionSetQuestionsForCopyQueryHandler {
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _user : IUser
-    - <<readonly>> _planService : IPlanService
+    -  _questionSetService : IQuestionSetService
+    -  _user : IUser
+    -  _planService : IPlanService
     + GetQuestionSetQuestionsForCopyQueryHandler(questionSetService:IQuestionSetService, user:IUser, planService:IPlanService)
-    + <<async>> Handle(request:GetQuestionSetQuestionsForCopyQuery, cancellationToken:CancellationToken) : Task<List<CreateUpdateQuestionDto>>
+    +  Handle(request:GetQuestionSetQuestionsForCopyQuery, cancellationToken:CancellationToken) : Task<List<CreateUpdateQuestionDto>>
 }
 
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> GetQuestionsForCopy(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<CreateUpdateQuestionDto>>>>
+    +  GetQuestionsForCopy(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<CreateUpdateQuestionDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

@@ -11,19 +11,19 @@ title QuestionSet | ResetQuestionSetHistoryCommand
 !include ../../UserQuestionSetHistories/Services/IUserQuestionSetHistoryService.puml
 '=====================COMMAND========================
 class ResetQuestionSetHistoryCommand {
-    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionSetId : Guid
 }
 
 class ResetQuestionSetHistoryCommandHandler {
-    - <<readonly>> _user : IUser
-    - <<readonly>> _questionSetService : IQuestionSetService
-    - <<readonly>> _userQuestionSetHistoryService : IUserQuestionSetHistoryService
+    -  _user : IUser
+    -  _questionSetService : IQuestionSetService
+    -  _userQuestionSetHistoryService : IUserQuestionSetHistoryService
     + ResetQuestionSetHistoryCommandHandler(user:IUser, questionSetService:IQuestionSetService, userQuestionSetHistoryService:IUserQuestionSetHistoryService)
-    + <<async>> Handle(request:ResetQuestionSetHistoryCommand, cancellationToken:CancellationToken) : Task<Unit>
+    +  Handle(request:ResetQuestionSetHistoryCommand, cancellationToken:CancellationToken) : Task<Unit>
 }
 '=====================ENDPOINT========================
 class QuestionSetEndpoints  {
-    + <<async>> ResetQuestionSetHistory(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
+    +  ResetQuestionSetHistory(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<Unit>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

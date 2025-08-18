@@ -14,8 +14,8 @@ title Users | ChangeAccountRoleCommand
 '=====================CLASSES========================
 
 class ChangeAccountRoleCommand {
-    + UserId : Guid <<get>> <<set>>
-    + Role : string <<get>> <<set>>
+    + UserId : Guid
+    + Role : string
 }
 
 class ChangeAccountRoleCommandValidator {
@@ -23,16 +23,16 @@ class ChangeAccountRoleCommandValidator {
 }
 
 class ChangeAccountRoleCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _identityService : IIdentityService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _identityService : IIdentityService
     + ChangeAccountRoleCommandHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
-    + <<async>> Handle(rq:ChangeAccountRoleCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(rq:ChangeAccountRoleCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class UserEndpoints  {
-    + <<async>> ChangeAccountRole(userId:Guid, role:string, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  ChangeAccountRole(userId:Guid, role:string, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 
 '=====================RELATIONSHIP========================

@@ -1,13 +1,13 @@
 @startuml
 interface IFolderTestService {
     !ifdef FOLDER_TEST_SERVICE_CANDELETEOREDITFOLDERTEST
-    + <<async>> CanDeleteOrEditFolderTest(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  CanDeleteOrEditFolderTest(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef FOLDER_TEST_SERVICE_ISOWNEROREDITOR
-    + <<async>> IsOwnerOrEditor(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
+    +  IsOwnerOrEditor(folderTestId:Guid, cancellationToken:CancellationToken): Task<bool>
     !endif
     !ifdef FOLDER_TEST_SERVICE_TRYCANUSETESTEMPLATE
-    + <<async>> TryCanUseTesTemplate(testTemplateId:Guid): Task
+    +  TryCanUseTesTemplate(testTemplateId:Guid): Task
     !endif
 }
 @enduml

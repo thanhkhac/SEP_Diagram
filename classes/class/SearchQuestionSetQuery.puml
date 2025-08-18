@@ -12,22 +12,22 @@ title Class | SearchQuestionSetQuery
 !include ../../questionset/dtos/QuestionSetForListResponseDto.puml
 '=====================QUERY========================
 class SearchQuestionSetQuery {
-    + ClassId : Guid <<get>> <<set>>
-    + Name : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + ClassId : Guid
+    + Name : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchQuestionSetQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
     + SearchQuestionSetQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:SearchQuestionSetQuery, cancellationToken:CancellationToken) : Task<PaginatedList<QuestionSetForListResponseDto>>
+    +  Handle(request:SearchQuestionSetQuery, cancellationToken:CancellationToken) : Task<PaginatedList<QuestionSetForListResponseDto>>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> SearchQuestionSet(name:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<QuestionSetForListResponseDto>>>>
+    +  SearchQuestionSet(name:string?, classId:Guid, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<QuestionSetForListResponseDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

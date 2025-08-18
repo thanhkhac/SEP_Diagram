@@ -20,22 +20,22 @@ class ClassSearchResultDto {
 }
 
 class SearchClassQuery {
-    + ShareMode : string? <<get>> <<set>>
-    + Name : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + ShareMode : string?
+    + Name : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchClassQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + SearchClassQueryHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:SearchClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<ClassSearchResultDto>>
+    +  Handle(request:SearchClassQuery, cancellationToken:CancellationToken) : Task<PaginatedList<ClassSearchResultDto>>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> SearchClass(shareMode:string?, name:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<ClassSearchResultDto>>>>
+    +  SearchClass(shareMode:string?, name:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<PaginatedList<ClassSearchResultDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

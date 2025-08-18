@@ -11,20 +11,20 @@ title Class | GetUserPermissionInClassQuery
 !include ../Service/IClassService.puml
 '=====================QUERY========================
 class GetUserPermissionInClassQuery {
-    + ClassId : Guid <<get>> <<set>>
+    + ClassId : Guid
 }
 
 class GetUserPermissionInClassQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _classService : IClassService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _classService : IClassService
     + GetUserPermissionInClassQueryHandler(context:IApplicationDbContext, user:IUser, classService:IClassService)
-    + <<async>> Handle(request:GetUserPermissionInClassQuery, cancellationToken:CancellationToken) : Task<string?>
+    +  Handle(request:GetUserPermissionInClassQuery, cancellationToken:CancellationToken) : Task<string?>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> GetUserPermissionQuery(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<string?>>>
+    +  GetUserPermissionQuery(classId:Guid, sender:ISender) : Task<Ok<ApiResponse<string?>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

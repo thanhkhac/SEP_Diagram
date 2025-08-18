@@ -12,20 +12,20 @@ title Plan | GetRevenueByYearQuery
 !include ../Dto/RevenueDto.puml
 '=====================QUERY========================
 class GetRevenueByYearQuery {
-    + Year : int <<get>> <<set>>
+    + Year : int
 }
 
 class GetRevenueByYearQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _identityService : IIdentityService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _identityService : IIdentityService
+    -  _user : IUser
     + GetRevenueByYearQueryHandler(context:IApplicationDbContext, identityService:IIdentityService, user:IUser)
-    + <<async>> Handle(request:GetRevenueByYearQuery, cancellationToken:CancellationToken) : Task<List<RevenueDto>>
+    +  Handle(request:GetRevenueByYearQuery, cancellationToken:CancellationToken) : Task<List<RevenueDto>>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> GetRevenueByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<RevenueDto>>>>
+    +  GetRevenueByYear(year:int, sender:ISender) : Task<Ok<ApiResponse<List<RevenueDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

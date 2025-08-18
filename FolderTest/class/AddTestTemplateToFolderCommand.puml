@@ -11,20 +11,20 @@ title FolderTest | AddTestTemplateToFolderCommand
 !include ../Service/IFolderTestService.puml
 '=====================COMMAND========================
 class AddTestTemplateToFolderCommand {
-    + FolderId : Guid <<get>> <<set>>
-    + TestTemplateId : Guid <<get>> <<set>>
+    + FolderId : Guid
+    + TestTemplateId : Guid
 }
 
 class AddTestTemplateToFolderCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _folderTestService : IFolderTestService
+    -  _context : IApplicationDbContext
+    -  _folderTestService : IFolderTestService
     + AddTestTemplateToFolderCommandHandler(context:IApplicationDbContext, folderTestService:IFolderTestService)
-    + <<async>> Handle(request:AddTestTemplateToFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:AddTestTemplateToFolderCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> AddTestTemplateToFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  AddTestTemplateToFolder(folderId:Guid, testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

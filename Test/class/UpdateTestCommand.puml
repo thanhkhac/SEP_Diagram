@@ -14,32 +14,32 @@ title Test | UpdateTestCommand
 !include ../Dto/CheckUpdateQuestion.puml
 '=====================COMMAND========================
 class UpdateTestCommand {
-    + TestId : Guid <<get>> <<set>>
-    + Name : string <<get>> <<set>>
-    + TimeLimit : int <<get>> <<set>>
-    + StartTime : DateTime <<get>> <<set>>
-    + EndTime : DateTime <<get>> <<set>>
-    + GradeAttemptMethod : string <<get>> <<set>>
-    + GradeQuestionMethod : string <<get>> <<set>>
-    + IsShowCorrectAnswerInReview : bool <<get>> <<set>>
-    + IsAllowReviewAfterSubmit : bool <<get>> <<set>>
-    + MaxAttempt : int <<get>> <<set>>
-    + NumberOfShuffles : int <<get>> <<set>>
-    + PassingScore : int <<get>> <<set>>
-    + CreateUpdateQuestions : List<CreateUpdateQuestionDto> <<get>> <<set>>
-    + DeleteQuestionIds : List<Guid> <<get>> <<set>>
+    + TestId : Guid
+    + Name : string
+    + TimeLimit : int
+    + StartTime : DateTime
+    + EndTime : DateTime
+    + GradeAttemptMethod : string
+    + GradeQuestionMethod : string
+    + IsShowCorrectAnswerInReview : bool
+    + IsAllowReviewAfterSubmit : bool
+    + MaxAttempt : int
+    + NumberOfShuffles : int
+    + PassingScore : int
+    + CreateUpdateQuestions : List<CreateUpdateQuestionDto>
+    + DeleteQuestionIds : List<Guid>
 }
 
 class UpdateTestCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testService : ITestService
+    -  _context : IApplicationDbContext
+    -  _testService : ITestService
     + UpdateTestCommandHandler(context:IApplicationDbContext, testService:ITestService)
-    + <<async>> Handle(request:UpdateTestCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateTestCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> EditTest(testId:Guid, rq:UpdateTestCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  EditTest(testId:Guid, rq:UpdateTestCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

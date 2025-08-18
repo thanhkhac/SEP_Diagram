@@ -8,7 +8,7 @@ interface IPlanService {
     + CanCopyOrImportQuestionSet(userId:Guid) : Task<bool>
 }
 class PlanService {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + PlanService(context:IApplicationDbContext)
     + CanLearn(userId:Guid) : Task<bool>
     + CanOpenTest(userId:Guid) : Task<bool>

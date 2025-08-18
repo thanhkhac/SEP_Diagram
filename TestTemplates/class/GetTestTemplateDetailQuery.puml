@@ -12,19 +12,19 @@ title TestTemplates | GetTestTemplateDetailQuery
 !include ../../QuestionSets/Dtos/QuestionResponseDto.puml
 '=====================QUERY========================
 class GetTestTemplateDetailQuery {
-    + TestTemplateId : Guid <<get>> <<set>>
+    + TestTemplateId : Guid
 }
 
 class GetTestTemplateDetailQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _testTemplateService : ITestTemplateService
+    -  _context : IApplicationDbContext
+    -  _testTemplateService : ITestTemplateService
     + GetTestTemplateDetailQueryHandler(context:IApplicationDbContext, testTemplateService:ITestTemplateService)
-    + <<async>> Handle(request:GetTestTemplateDetailQuery, cancellationToken:CancellationToken) : Task<TestTemplateDetailDto>
+    +  Handle(request:GetTestTemplateDetailQuery, cancellationToken:CancellationToken) : Task<TestTemplateDetailDto>
 }
 
 '=====================ENDPOINT========================
 class TestTemplateEndpoints  {
-    + <<async>> GetTestTemplateDetail(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplateDetailDto>>>
+    +  GetTestTemplateDetail(testTemplateId:Guid, sender:ISender) : Task<Ok<ApiResponse<TestTemplateDetailDto>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

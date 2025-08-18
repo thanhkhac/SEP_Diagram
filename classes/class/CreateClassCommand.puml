@@ -9,20 +9,20 @@
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class CreateClassCommand {
-    + Name : string <<get>> <<set>>
-    + Topic : string? <<get>> <<set>>
+    + Name : string
+    + Topic : string?
 }
 
 class CreateClassCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + CreateClassCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:CreateClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:CreateClassCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> CreateClass(rq:CreateClassCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  CreateClass(rq:CreateClassCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

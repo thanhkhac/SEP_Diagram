@@ -10,19 +10,19 @@ title Plan | BuyPlanCommand
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class BuyPlanCommand {
-    + PlanId : Guid <<get>> <<set>>
+    + PlanId : Guid
 }
 
 class BuyPlanCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + BuyPlanCommandHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:BuyPlanCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:BuyPlanCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> BuyPlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  BuyPlan(planId:Guid, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

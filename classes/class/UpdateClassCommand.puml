@@ -11,22 +11,22 @@ title Class | UpdateClassCommand
 !include ../../common/service/IUser.puml
 '=====================COMMAND========================
 class UpdateClassCommand {
-    + ClassId : Guid? <<get>> <<set>>
-    + Name : string <<get>> <<set>>
-    + Topic : string? <<get>> <<set>>
+    + ClassId : Guid?
+    + Name : string
+    + Topic : string?
 }
 
 class UpdateClassCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _classService : IClassService
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _classService : IClassService
+    -  _user : IUser
     + UpdateClassCommandHandler(context:IApplicationDbContext, classService:IClassService, user:IUser)
-    + <<async>> Handle(request:UpdateClassCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(request:UpdateClassCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class ClassEndpoints  {
-    + <<async>> UpdateClass(classId:Guid, rq:UpdateClassCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  UpdateClass(classId:Guid, rq:UpdateClassCommand, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

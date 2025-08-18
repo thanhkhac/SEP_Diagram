@@ -9,22 +9,22 @@
 !include /Dto/SearchTestTemplateInFolderDto.puml
 '=====================QUERY========================
 class SearchTestTemplateInFolderQuery {
-    + FolderId : Guid? <<get>> <<set>>
-    + TestTemplateName : string? <<get>> <<set>>
-    + PageNumber : int <<get>> <<set>>
-    + PageSize : int <<get>> <<set>>
+    + FolderId : Guid?
+    + TestTemplateName : string?
+    + PageNumber : int
+    + PageSize : int
 }
 
 class SearchTestTemplateInFolderQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
+    -  _context : IApplicationDbContext
+    -  _user : IUser
     + SearchTestTemplateInFolderQueryHandler(context:IApplicationDbContext, user:IUser)
-    + <<async>> Handle(request:SearchTestTemplateInFolderQuery, cancellationToken:CancellationToken) : Task<SearchTestTemplateInFolderDto>
+    +  Handle(request:SearchTestTemplateInFolderQuery, cancellationToken:CancellationToken) : Task<SearchTestTemplateInFolderDto>
 }
 
 '=====================ENDPOINT========================
 class FolderEndpoints  {
-    + <<async>> SearchTestTemplateInFolder(folderId:Guid, testTemplateName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<SearchTestTemplateInFolderDto>>>
+    +  SearchTestTemplateInFolder(folderId:Guid, testTemplateName:string?, sender:ISender, pageNumber:int, pageSize:int) : Task<Ok<ApiResponse<SearchTestTemplateInFolderDto>>>
 }
 '=====================RELATIONSHIP========================
 !include ./zCommon.puml

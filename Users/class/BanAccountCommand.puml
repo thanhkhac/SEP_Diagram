@@ -14,8 +14,8 @@ title Users | BanAccountCommand
 '=====================CLASSES========================
 
 class BanAccountCommand {
-    + UserId : Guid <<get>> <<set>>
-    + IsBanned : bool <<get>> <<set>>
+    + UserId : Guid
+    + IsBanned : bool
 }
 
 class BanAccountCommandValidator {
@@ -23,16 +23,16 @@ class BanAccountCommandValidator {
 }
 
 class BanAccountCommandHandler {
-    - <<readonly>> _context : IApplicationDbContext
-    - <<readonly>> _user : IUser
-    - <<readonly>> _identityService : IIdentityService
+    -  _context : IApplicationDbContext
+    -  _user : IUser
+    -  _identityService : IIdentityService
     + BanAccountCommandHandler(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
-    + <<async>> Handle(rq:BanAccountCommand, cancellationToken:CancellationToken) : Task<Guid>
+    +  Handle(rq:BanAccountCommand, cancellationToken:CancellationToken) : Task<Guid>
 }
 
 '=====================ENDPOINT========================
 class UserEndpoints  {
-    + <<async>> BanAccount(userId:Guid, isBanned:bool, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+    +  BanAccount(userId:Guid, isBanned:bool, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
 }
 
 '=====================RELATIONSHIP========================

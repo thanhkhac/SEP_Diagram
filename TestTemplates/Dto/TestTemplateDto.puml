@@ -1,10 +1,10 @@
 @startuml
 class TestTemplateDto {
-    + TestTemplateId : Guid <<get>> <<set>>
-    + FolderName : string? <<get>> <<set>>
-    + Name : string? <<get>> <<set>>
-    + NumberOfQuestion : int <<get>> <<set>>
-    + DateCreated : DateTime? <<get>> <<set>>
-    + CreateBy : string? <<get>> <<set>>
+    + TestTemplateId : Guid
+    + FolderName : string?
+    + Name : string?
+    + NumberOfQuestion : int
+    + DateCreated : DateTime?
+    + CreateBy : string?
 }
 @enduml

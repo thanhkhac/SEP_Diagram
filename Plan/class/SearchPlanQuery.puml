@@ -10,18 +10,18 @@ title Plan | SearchPlanQuery
 !include ../Dto/PlanDetailDto.puml
 '=====================QUERY========================
 class SearchPlanQuery {
-    + IsActive : bool? <<get>> <<set>>
+    + IsActive : bool?
 }
 
 class SearchPlanQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + SearchPlanQueryHandler(context:IApplicationDbContext)
-    + <<async>> Handle(request:SearchPlanQuery, cancellationToken:CancellationToken) : Task<List<PlanDetailDto>>
+    +  Handle(request:SearchPlanQuery, cancellationToken:CancellationToken) : Task<List<PlanDetailDto>>
 }
 
 '=====================ENDPOINT========================
 class PlanEndpoints  {
-    + <<async>> SearchPlan(query:SearchPlanQuery, sender:ISender) : Task<Ok<ApiResponse<List<PlanDetailDto>>>>
+    +  SearchPlan(query:SearchPlanQuery, sender:ISender) : Task<Ok<ApiResponse<List<PlanDetailDto>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml

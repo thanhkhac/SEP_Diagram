@@ -12,19 +12,19 @@ title Test | GetTestScheduleQuery
 !include ../Dto/TestScheduleDto.puml
 '=====================QUERY========================
 class GetTestScheduleQuery {
-    + Month : int? <<get>> <<set>>
-    + Year : int? <<get>> <<set>>
+    + Month : int?
+    + Year : int?
 }
 
 class GetTestScheduleQueryHandler {
-    - <<readonly>> _context : IApplicationDbContext
+    -  _context : IApplicationDbContext
     + GetTestScheduleQueryHandler(context:IApplicationDbContext, classService:IClassService)
-    + <<async>> Handle(request:GetTestScheduleQuery, cancellationToken:CancellationToken) : Task<List<TestScheduleResponse>>
+    +  Handle(request:GetTestScheduleQuery, cancellationToken:CancellationToken) : Task<List<TestScheduleResponse>>
 }
 
 '=====================ENDPOINT========================
 class TestEndpoints  {
-    + <<async>> GetTestSchedule(month:int?, year:int?, sender:ISender) : Task<Ok<ApiResponse<List<TestScheduleResponse>>>>
+    +  GetTestSchedule(month:int?, year:int?, sender:ISender) : Task<Ok<ApiResponse<List<TestScheduleResponse>>>>
 }
 '=====================RELATIONSHIP========================
 !include zCommon.puml
