@@ -1,0 +1,43 @@
+@startuml
+title QuestionSet | GetSharingInQuestionSetQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_CANEDITQUESTIONSET
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IQuestionSetService.puml
+!include ../../FolderTest/Dto/ResourceShareDto.puml
+'=====================QUERY========================
+class GetSharingInQuestionSetQuery {
+    + QuestionSetId : Guid <<get>> <<set>>
+}
+
+class GetSharingInQuestionSetQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _questionSetService : IQuestionSetService
+    + GetSharingInQuestionSetQueryHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
+    + <<async>> Handle(request:GetSharingInQuestionSetQuery, cancellationToken:CancellationToken) : Task<ResourceShareDto>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> GetSharingInQuestionSet(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<ResourceShareDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetSharingInQuestionSetQuery ..|> IRequest : <<implements>>
+GetSharingInQuestionSetQueryHandler ..> GetSharingInQuestionSetQuery :  <<uses>>
+QuestionSetEndpoints ..> GetSharingInQuestionSetQuery :  <<uses>>
+GetSharingInQuestionSetQueryHandler ..|> IRequestHandler : <<implements>>
+GetSharingInQuestionSetQueryHandler ..> ResourceShareDto : <<uses>>
+
+'=====INJECT
+GetSharingInQuestionSetQueryHandler ..> IApplicationDbContext : <<inject>>
+GetSharingInQuestionSetQueryHandler ..> IUser : <<inject>>
+GetSharingInQuestionSetQueryHandler ..> IQuestionSetService : <<inject>>
+'=====INJECT
+@enduml

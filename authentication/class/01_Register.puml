@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Register
+
 '=====================DEFINE========================
 !define REGISTER
 '=====================IMPORT========================

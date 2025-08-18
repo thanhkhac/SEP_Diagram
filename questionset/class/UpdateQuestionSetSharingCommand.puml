@@ -1,0 +1,47 @@
+@startuml
+title QuestionSet | UpdateQuestionSetSharingCommand
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_GETACTIVEQUESTIONSET
+!define QUESTIONSET_SERVICE_CANEDITQUESTIONSET
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../../FolderTest/Dto/UpsertSharingModelDto.puml
+!include ../Service/IQuestionSetService.puml
+'=====================COMMAND========================
+class UpdateQuestionSetSharingCommand {
+    + QuestionSetId : Guid <<get>> <<set>>
+    + VisibilityMode : string? <<get>> <<set>>
+    + SharingModels : List<UpsertSharingModelDto> <<get>> <<set>>
+    + DeleteUserIds : List<Guid> <<get>> <<set>>
+}
+
+class UpdateQuestionSetSharingCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _questionSetService : IQuestionSetService
+    - <<readonly>> _user : IUser
+    + UpdateQuestionSetSharingCommandHandler(context:IApplicationDbContext, questionSetService:IQuestionSetService, user:IUser)
+    + <<async>> Handle(request:UpdateQuestionSetSharingCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> UpdateQuestionSetSharing(sender:ISender, questionSetId:Guid, command:UpdateQuestionSetSharingCommand) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+UpdateQuestionSetSharingCommand ..|> IRequest : <<implements>>
+UpdateQuestionSetSharingCommandHandler ..> UpdateQuestionSetSharingCommand :  <<uses>>
+QuestionSetEndpoints ..> UpdateQuestionSetSharingCommand : <<uses>>
+UpdateQuestionSetSharingCommandHandler ..|> IRequestHandler : <<implements>>
+UpdateQuestionSetSharingCommandHandler ..> UpsertSharingModelDto : <<uses>>
+
+'=====INJECT
+UpdateQuestionSetSharingCommandHandler ..> IApplicationDbContext : <<inject>>
+UpdateQuestionSetSharingCommandHandler ..> IQuestionSetService : <<inject>>
+UpdateQuestionSetSharingCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

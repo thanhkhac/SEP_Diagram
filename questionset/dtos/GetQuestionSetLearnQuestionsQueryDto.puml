@@ -1,0 +1,7 @@
+@startuml
+class GetQuestionSetLearnQuestionsQueryDto {
+    + CompletedQuestionCount : int
+    + TotalQuestionCount : int
+    + Questions : List<QuestionResponseDto>
+}
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+interface IQuestionSetService {
+    !ifdef QUESTIONSET_SERVICE_CANCOMMENT_GUID
+    + <<async>> CanComment(questionSetId:Guid): Task<bool>
+    !endif
+    !ifdef QUESTIONSET_SERVICE_CANDELETE
+    + <<async>> CanDelete(commentId:Guid, cancellationToken:CancellationToken): Task<bool>
+    !endif
+    !ifdef QUESTIONSET_SERVICE_CANCOMMENT_QUESTIONSET
+    + <<async>> CanComment(questionSet:QuestionSet): Task<bool>
+    !endif
+    !ifdef QUESTIONSET_SERVICE_GETACTIVEQUESTIONSET
+    + <<async>> GetActiveQuestionSet(questionSetId:Guid, cancellationToken:CancellationToken): Task<QuestionSet?>
+    !endif
+}
+
+class QuestionSetService {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _identityService : IIdentityService
+    + QuestionSetService(context:IApplicationDbContext, user:IUser, identityService:IIdentityService)
+    + <<async>> CanComment(questionSetId:Guid): Task<bool>
+    + <<async>> CanDelete(commentId:Guid, cancellationToken:CancellationToken): Task<bool>
+    + <<async>> CanComment(questionSet:QuestionSet): Task<bool>
+    + <<async>> GetActiveQuestionSet(questionSetId:Guid, cancellationToken:CancellationToken): Task<QuestionSet?>
+}
+
+IQuestionSetService <|.. QuestionSetService : <<implements>>
+@enduml

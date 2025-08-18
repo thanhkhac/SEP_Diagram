@@ -1,0 +1,53 @@
+@startuml
+title QuestionSet | GetQuestionSetLearnQuestionsQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_GETACTIVEQUESTIONSET
+!define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET
+!define PLAN_SERVICE_CANLEARN
+!define QUESTION_SERVICE_GETQUESTIONSBYSETIDFORLEARN
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IQuestionSetService.puml
+!include ../../Plan/Service/IPlanService.puml
+!include ../../Question/Service/IQuestionService.puml
+!include ../dtos/GetQuestionSetLearnQuestionsQueryDto.puml
+!include ../../Questions/Dtos/QuestionResponseDto.puml
+'=====================QUERY========================
+class GetQuestionSetLearnQuestionsQuery {
+    + QuestionSetId : Guid <<get>> <<set>>
+    + QuestionCount : int <<get>> <<set>>
+}
+
+class GetQuestionSetLearnQuestionsQueryHandler {
+    - <<readonly>> _questionSetService : IQuestionSetService
+    - <<readonly>> _questionService : IQuestionService
+    - <<readonly>> _planService : IPlanService
+    - <<readonly>> _user : IUser
+    + GetQuestionSetLearnQuestionsQueryHandler(questionSetService:IQuestionSetService, user:IUser, questionService:IQuestionService, planService:IPlanService)
+    + <<async>> Handle(request:GetQuestionSetLearnQuestionsQuery, cancellationToken:CancellationToken) : Task<GetQuestionSetLearnQuestionsQueryDto>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> GetLearnQuestions(questionSetId:Guid, questionCount:int, sender:ISender) : Task<Ok<ApiResponse<GetQuestionSetLearnQuestionsQueryDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetQuestionSetLearnQuestionsQuery ..|> IRequest : <<implements>>
+GetQuestionSetLearnQuestionsQueryHandler ..> GetQuestionSetLearnQuestionsQuery :  <<uses>>
+QuestionSetEndpoints ..> GetQuestionSetLearnQuestionsQuery : <<uses>>
+GetQuestionSetLearnQuestionsQueryHandler ..|> IRequestHandler : <<implements>>
+GetQuestionSetLearnQuestionsQueryHandler ..> GetQuestionSetLearnQuestionsQueryDto : <<uses>>
+GetQuestionSetLearnQuestionsQueryHandler ..> QuestionResponseDto : <<uses>>
+
+'=====INJECT
+GetQuestionSetLearnQuestionsQueryHandler ..> IQuestionSetService : <<inject>>
+GetQuestionSetLearnQuestionsQueryHandler ..> IQuestionService : <<inject>>
+GetQuestionSetLearnQuestionsQueryHandler ..> IPlanService : <<inject>>
+GetQuestionSetLearnQuestionsQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

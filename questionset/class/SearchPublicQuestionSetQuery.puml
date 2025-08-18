@@ -1,0 +1,43 @@
+@startuml
+title QuestionSet | SearchPublicQuestionSetQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_SEARCHPUBLICQUESTIONSETS
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../dtos/QuestionSetForListResponseDto.puml
+!include ../Service/IQuestionSetService.puml
+'=====================QUERY========================
+class SearchPublicQuestionSetQuery {
+    + Name : string? <<get>> <<set>>
+    + TagIds : List<Guid>? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+    + SortBy : string? <<get>> <<set>>
+}
+
+class SearchPublicQuestionSetByNameQueryHandler {
+    - <<readonly>> _questionSetService : IQuestionSetService
+    + SearchPublicQuestionSetByNameQueryHandler(questionSetService:IQuestionSetService)
+    + <<async>> Handle(request:SearchPublicQuestionSetQuery, cancellationToken:CancellationToken) : Task<PaginatedList<QuestionSetForListResponseDto>>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> SearchQuestionSets(sender:ISender, pageNumber:int, pageSize:int, name:string?, tagIds:Guid[]?, sortBy:string?) : Task<Ok<ApiResponse<PaginatedList<QuestionSetForListResponseDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchPublicQuestionSetQuery ..|> IRequest : <<implements>>
+SearchPublicQuestionSetByNameQueryHandler ..> SearchPublicQuestionSetQuery :  <<uses>>
+QuestionSetEndpoints ..> SearchPublicQuestionSetQuery : <<uses>>
+SearchPublicQuestionSetByNameQueryHandler ..|> IRequestHandler : <<implements>>
+SearchPublicQuestionSetByNameQueryHandler ..> PaginatedList : <<uses>>
+SearchPublicQuestionSetByNameQueryHandler ..> QuestionSetForListResponseDto : <<uses>>
+
+'=====INJECT
+SearchPublicQuestionSetByNameQueryHandler ..> IQuestionSetService : <<inject>>
+'=====INJECT
+@enduml

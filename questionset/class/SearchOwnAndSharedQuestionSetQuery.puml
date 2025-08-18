@@ -1,0 +1,47 @@
+@startuml
+title QuestionSet | SearchOwnAndSharedQuestionSetQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_SEARCHOWNANDSHAREDQUESTIONSETS
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IQuestionSetService.puml
+!include ../../common/Models/PaginatedList.puml
+!include ../dtos/QuestionSetForListResponseDto.puml
+'=====================QUERY========================
+class SearchOwnAndSharedQuestionSetQuery {
+    + Name : string? <<get>> <<set>>
+    + PageNumber : int <<get>> <<set>>
+    + PageSize : int <<get>> <<set>>
+    + FilterBy : string? <<get>> <<set>>
+    + SortBy : string? <<get>> <<set>>
+}
+
+class SearchOwnAndSharedQuestionSetQueryHandler {
+    - <<readonly>> _questionSetService : IQuestionSetService
+    - <<readonly>> _user : IUser
+    + SearchOwnAndSharedQuestionSetQueryHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
+    + <<async>> Handle(request:SearchOwnAndSharedQuestionSetQuery, cancellationToken:CancellationToken) : Task<PaginatedList<QuestionSetForListResponseDto>>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> SearchQuestionSetsOwnedOrSharedWithMe(sender:ISender, pageNumber:int, pageSize:int, name:string?, sortBy:string?, filterBy:string?) : Task<Ok<ApiResponse<PaginatedList<QuestionSetForListResponseDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+SearchOwnAndSharedQuestionSetQuery ..|> IRequest : <<implements>>
+SearchOwnAndSharedQuestionSetQueryHandler ..> SearchOwnAndSharedQuestionSetQuery :  <<uses>>
+QuestionSetEndpoints ..> SearchOwnAndSharedQuestionSetQuery : <<uses>>
+SearchOwnAndSharedQuestionSetQueryHandler ..|> IRequestHandler : <<implements>>
+SearchOwnAndSharedQuestionSetQueryHandler ..> PaginatedList : <<uses>>
+SearchOwnAndSharedQuestionSetQueryHandler ..> QuestionSetForListResponseDto : <<uses>>
+
+'=====INJECT
+SearchOwnAndSharedQuestionSetQueryHandler ..> IQuestionSetService : <<inject>>
+SearchOwnAndSharedQuestionSetQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

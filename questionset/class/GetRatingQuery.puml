@@ -1,0 +1,43 @@
+@startuml
+title QuestionSet | GetRatingQuery
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IQuestionSetService.puml
+!include ../dtos/GetRatingDto.puml
+'=====================QUERY========================
+class GetRatingQuery {
+    + QuestionSetId : Guid? <<get>> <<set>>
+}
+
+class GetRatingQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _questionSetService : IQuestionSetService
+    + GetRatingQueryHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
+    + <<async>> Handle(request:GetRatingQuery, cancellationToken:CancellationToken) : Task<GetRatingDto>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> GetRating(sender:ISender, questionSetId:Guid) : Task<Ok<ApiResponse<GetRatingDto>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetRatingQuery ..|> IRequest : <<implements>>
+GetRatingQueryHandler ..> GetRatingQuery :  <<uses>>
+QuestionSetEndpoints ..> GetRatingQuery : <<uses>>
+GetRatingQueryHandler ..|> IRequestHandler : <<implements>>
+GetRatingQueryHandler ..> GetRatingDto : <<uses>>
+
+'=====INJECT
+GetRatingQueryHandler ..> IApplicationDbContext : <<inject>>
+GetRatingQueryHandler ..> IUser : <<inject>>
+GetRatingQueryHandler ..> IQuestionSetService : <<inject>>
+'=====INJECT
+@enduml

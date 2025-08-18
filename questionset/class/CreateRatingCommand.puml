@@ -1,0 +1,42 @@
+@startuml
+title QuestionSet | CreateRatingCommand
+'=====================DEFINE========================
+!define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Service/IQuestionSetService.puml
+'=====================COMMAND========================
+class CreateRatingCommand {
+    + QuestionSetId : Guid <<get>> <<set>>
+    + Rating : int <<get>> <<set>>
+}
+
+class CreateRatingCommandHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    - <<readonly>> _questionSetService : IQuestionSetService
+    + CreateRatingCommandHandler(context:IApplicationDbContext, user:IUser, questionSetService:IQuestionSetService)
+    + <<async>> Handle(request:CreateRatingCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> CreateRating(sender:ISender, questionSetId:Guid, rq:CreateRatingCommand) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+CreateRatingCommand ..|> IRequest : <<implements>>
+CreateRatingCommandHandler ..> CreateRatingCommand :  <<uses>>
+QuestionSetEndpoints ..> CreateRatingCommand : <<uses>>
+CreateRatingCommandHandler ..|> IRequestHandler : <<implements>>
+
+'=====INJECT
+CreateRatingCommandHandler ..> IApplicationDbContext : <<inject>>
+CreateRatingCommandHandler ..> IUser : <<inject>>
+CreateRatingCommandHandler ..> IQuestionSetService : <<inject>>
+'=====INJECT
+@enduml

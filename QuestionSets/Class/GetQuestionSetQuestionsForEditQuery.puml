@@ -1,8 +1,7 @@
 @startuml
-title Authentication | Register
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSEREDIT
-!define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml
 !include ../../common/Mediatr.puml

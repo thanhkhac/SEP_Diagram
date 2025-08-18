@@ -1,0 +1,40 @@
+@startuml
+title QuestionSet | GetClassesHaveQuestionSetQuery
+'=====================DEFINE========================
+
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+!include ../Dto/GetClassesHaveQuestionSetDto.puml
+'=====================QUERY========================
+class GetClassesHaveQuestionSetQuery {
+    + QuestionSetId : Guid <<get>> <<set>>
+}
+
+class GetClassesHaveQuestionSetQueryHandler {
+    - <<readonly>> _context : IApplicationDbContext
+    - <<readonly>> _user : IUser
+    + GetClassesHaveQuestionSetQueryHandler(context:IApplicationDbContext, user:IUser)
+    + <<async>> Handle(request:GetClassesHaveQuestionSetQuery, cancellationToken:CancellationToken) : Task<List<GetClassesHaveQuestionSetDto>>
+}
+
+'=====================ENDPOINT========================
+class QuestionSetEndpoints  {
+    + <<async>> GetClassesHaveQuestionSet(questionSetId:Guid, sender:ISender) : Task<Ok<ApiResponse<List<GetClassesHaveQuestionSetDto>>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GetClassesHaveQuestionSetQuery ..|> IRequest : <<implements>>
+GetClassesHaveQuestionSetQueryHandler ..> GetClassesHaveQuestionSetQuery :  <<uses>>
+QuestionSetEndpoints ..> GetClassesHaveQuestionSetQuery : <<uses>>
+GetClassesHaveQuestionSetQueryHandler ..|> IRequestHandler : <<implements>>
+GetClassesHaveQuestionSetQueryHandler ..> GetClassesHaveQuestionSetDto : <<uses>>
+
+'=====INJECT
+GetClassesHaveQuestionSetQueryHandler ..> IApplicationDbContext : <<inject>>
+GetClassesHaveQuestionSetQueryHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

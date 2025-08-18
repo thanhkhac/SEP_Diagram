@@ -1,0 +1,6 @@
+@startuml
+class QuestionHistoryUpdate {
+    + QuestionId : Guid
+    + IsCorrect : bool
+}
+@enduml

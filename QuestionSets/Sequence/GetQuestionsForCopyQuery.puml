@@ -1,6 +1,8 @@
 @startuml
 actor User
 participant "Question Set Copy/Import UI" as UI
+participant "Create new question set UI" as CreateUI
+
 participant QuestionSetEndpoints
 participant GetQuestionSetQuestionsForCopyQueryHandler as Handler
 participant QuestionSetService
@@ -49,8 +51,8 @@ else Question Set Found
             Database --> ApplicationDbContext : List<Question>
             ApplicationDbContext --> Handler : List<Question>
             Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
-            QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
-            UI -> User : Show questions for copy/import
+            QuestionSetEndpoints --> CreateUI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+            CreateUI -> User : Show questions for copy/import
         end
     end
 end

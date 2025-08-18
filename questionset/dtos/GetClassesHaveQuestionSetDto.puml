@@ -1,0 +1,7 @@
+@startuml
+class GetClassesHaveQuestionSetDto {
+    + ClassId : Guid
+    + ClassName : string?
+    + IsAdded : bool
+}
+@enduml

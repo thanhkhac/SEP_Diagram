@@ -1,5 +1,4 @@
 @startuml
-title Authentication | Register
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================
