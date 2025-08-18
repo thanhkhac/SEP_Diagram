@@ -1,5 +1,5 @@
 @startuml
-title FolderTest | GetSharingInFolderQuery
+
 '=====================DEFINE========================
 !define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================

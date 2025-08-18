@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | UpdateQuestionSetSharingCommand
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_GETACTIVEQUESTIONSET
 !define QUESTIONSET_SERVICE_CANEDITQUESTIONSET

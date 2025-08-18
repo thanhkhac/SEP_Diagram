@@ -1,5 +1,5 @@
 @startuml
-title Class | RemoveQuestionSetFromClassCommand
+
 '=====================DEFINE========================
 !define CLASS_SERVICE_ISLECTUREROROWNERINCLASS
 '=====================IMPORT========================

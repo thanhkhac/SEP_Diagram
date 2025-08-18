@@ -1,5 +1,5 @@
 @startuml
-title Comment | GetCommentByQuestionQuery
+
 '=====================DEFINE========================
 !define COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
 '=====================IMPORT========================

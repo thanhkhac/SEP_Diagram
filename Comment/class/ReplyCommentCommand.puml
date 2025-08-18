@@ -1,5 +1,5 @@
 @startuml
-title Comment | ReplyCommentCommand
+
 '=====================DEFINE========================
 !define COMMENT_SERVICE_CANCOMMENT_QUESTIONSET
 '=====================IMPORT========================

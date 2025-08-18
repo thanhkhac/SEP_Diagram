@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | GetRatingQuery
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET
 '=====================IMPORT========================

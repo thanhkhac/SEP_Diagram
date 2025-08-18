@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Request email verification
+
 '=====================DEFINE========================
 !define REQUEST_EMAIL_VERIFICATION
 !define EMAIL_SERVICE

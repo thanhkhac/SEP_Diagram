@@ -1,5 +1,5 @@
 @startuml
-title Comment | DeleteCommentCommand
+
 '=====================DEFINE========================
 !define COMMENT_SERVICE_CANDELETE
 '=====================IMPORT========================

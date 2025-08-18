@@ -1,5 +1,5 @@
 @startuml
-title TestTemplates | GetSharingInTestTemplateQuery
+
 '=====================DEFINE========================
 !define TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
 '=====================IMPORT========================

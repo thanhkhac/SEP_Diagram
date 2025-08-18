@@ -1,5 +1,5 @@
 @startuml
-title TestTemplates | GetTestTemplateDetailQuery
+
 '=====================DEFINE========================
 !define TEST_TEMPLATE_SERVICE_CANVIEWTEMPLATE
 '=====================IMPORT========================

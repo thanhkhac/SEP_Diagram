@@ -1,5 +1,5 @@
 @startuml
-title Class | DeleteClassCommand
+
 '=====================DEFINE========================
 !define CLASS_SERVICE_GETCLASSOWNERACCESS
 '=====================IMPORT========================

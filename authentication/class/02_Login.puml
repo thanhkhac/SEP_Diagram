@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Login
+
 '======================DEFINE========================
 !define JWT
 !define LOGIN

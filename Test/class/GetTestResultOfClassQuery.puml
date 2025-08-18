@@ -1,5 +1,5 @@
 @startuml
-title Test | GetTestResultOfClassQuery
+
 '=====================DEFINE========================
 !define TEST_SERVICE_CANVIEWOREDITTEST
 '=====================IMPORT========================

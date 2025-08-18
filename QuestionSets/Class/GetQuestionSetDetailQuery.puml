@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | GetQuestionSetDetailQuery
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEW
 '=====================IMPORT========================

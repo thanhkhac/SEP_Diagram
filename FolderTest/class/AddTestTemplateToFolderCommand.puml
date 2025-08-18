@@ -1,5 +1,5 @@
 @startuml
-title FolderTest | AddTestTemplateToFolderCommand
+
 '=====================DEFINE========================
 !define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 !define FOLDER_TEST_SERVICE_TRYCANUSETESTEMPLATE

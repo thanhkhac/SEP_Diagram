@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | GetQuestionSetLearnQuestionsQuery
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_GETACTIVEQUESTIONSET
 !define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET

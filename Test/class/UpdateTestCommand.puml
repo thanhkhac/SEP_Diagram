@@ -1,5 +1,5 @@
 @startuml
-title Test | UpdateTestCommand
+
 '=====================DEFINE========================
 !define TEST_SERVICE_CANVIEWOREDITTEST
 !define TEST_SERVICE_QUESTIONACCESSANDCOMPAREFORTEST

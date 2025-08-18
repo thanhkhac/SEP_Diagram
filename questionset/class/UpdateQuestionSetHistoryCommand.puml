@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | UpdateQuestionSetHistoryCommand
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANCOMMENT_QUESTIONSET
 '=====================IMPORT========================

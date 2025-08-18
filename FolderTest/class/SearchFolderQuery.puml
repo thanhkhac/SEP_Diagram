@@ -1,5 +1,5 @@
 @startuml
-title FolderTest | SearchFolderQuery
+
 '=====================DEFINE========================
 '=====================IMPORT========================
 !include ../../GlobalSettings.puml

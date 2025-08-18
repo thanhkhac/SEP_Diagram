@@ -1,5 +1,5 @@
 @startuml
-title TestTemplates | DeleteTestTemplateCommand
+
 '=====================DEFINE========================
 !define TEST_TEMPLATE_SERVICE_CANDELETETESTTEMPLATE
 '=====================IMPORT========================

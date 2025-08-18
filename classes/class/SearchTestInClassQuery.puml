@@ -1,5 +1,5 @@
 @startuml
-title Class | SearchTestInClassQuery
+
 '=====================DEFINE========================
 !define CLASS_SERVICE_ISUSERINCLASS
 '=====================IMPORT========================

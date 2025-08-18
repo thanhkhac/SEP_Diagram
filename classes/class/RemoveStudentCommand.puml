@@ -1,5 +1,5 @@
 @startuml
-title Class | RemoveStudentCommand
+
 '=====================DEFINE========================
 !define CLASS_SERVICE_ISLECTUREROROWNERINCLASS
 '=====================IMPORT========================

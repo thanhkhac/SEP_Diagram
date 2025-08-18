@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | SearchOwnAndSharedQuestionSetQuery
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_SEARCHOWNANDSHAREDQUESTIONSETS
 '=====================IMPORT========================

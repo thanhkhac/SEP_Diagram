@@ -1,5 +1,5 @@
 @startuml
-title Class | GetInviteStudentCodeQuery
+
 '=====================DEFINE========================
 !define CLASS_SERVICE_ISLECTUREROROWNERINCLASS
 '=====================IMPORT========================

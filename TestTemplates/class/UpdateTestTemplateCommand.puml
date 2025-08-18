@@ -1,5 +1,5 @@
 @startuml
-title TestTemplates | UpdateTestTemplateCommand
+
 '=====================DEFINE========================
 !define TEST_TEMPLATE_SERVICE_CANEDITTESTTEMPLATE
 !define TEST_TEMPLATE_SERVICE_TRYCHECKQUESTIONACCESSFORTESTTEMPLATE

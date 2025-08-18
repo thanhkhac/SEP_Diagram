@@ -1,5 +1,5 @@
 @startuml
-title FolderTest | RemoveTestTemplateInFolderCommand
+
 '=====================DEFINE========================
 !define FOLDER_TEST_SERVICE_ISOWNEROREDITOR
 '=====================IMPORT========================

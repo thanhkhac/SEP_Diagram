@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | GetSharingInQuestionSetQuery
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANEDITQUESTIONSET
 '=====================IMPORT========================

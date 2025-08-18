@@ -1,5 +1,5 @@
 @startuml
-title Authentication | Google login
+
 '=====================DEFINE========================
 !define GOOGLE_LOGIN
 !define GOOGLE_SERVICE

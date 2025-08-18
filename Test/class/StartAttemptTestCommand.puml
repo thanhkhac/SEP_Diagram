@@ -1,5 +1,5 @@
 @startuml
-title Test | StartAttemptTestCommand
+
 '=====================DEFINE========================
 !define TEST_SERVICE_TRYCHECKCANATTEMPTTEST
 '=====================IMPORT========================

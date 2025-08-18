@@ -1,5 +1,5 @@
 @startuml
-title QuestionSet | CreateRatingCommand
+
 '=====================DEFINE========================
 !define QUESTIONSET_SERVICE_CANUSERVIEWQUESTIONSET
 '=====================IMPORT========================

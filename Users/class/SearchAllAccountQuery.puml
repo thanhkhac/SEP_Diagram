@@ -1,5 +1,5 @@
 @startuml
-title Users | SearchAllAccountQuery
+
 '=====================DEFINE========================
 !define CHANGE_PASSWORD
 '=====================IMPORT========================
