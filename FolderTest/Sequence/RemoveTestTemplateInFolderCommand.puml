@@ -1,0 +1,62 @@
+@startuml
+actor User
+participant "Folder Detail UI" as UI
+participant FolderTestEndpoints
+participant RemoveTestTemplateInFolderCommandHandler as Handler
+participant FolderTestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Select test template, click "Remove from Folder"
+UI -> FolderTestEndpoints : DELETE /api/Folder/{FolderId}/TestTemplates/{TestTemplateId}
+FolderTestEndpoints -> Handler : Handle(RemoveTestTemplateInFolderCommand)
+Handler -> ApplicationDbContext : Query Folder by FolderId
+ApplicationDbContext -> Database : Query Folder
+Database --> ApplicationDbContext : Folder
+ApplicationDbContext --> Handler : Folder
+alt Folder Not Found
+    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
+    UI -> User : Error: Folder not found
+else Folder Found
+    Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+    ApplicationDbContext -> Database : Query TestTemplate
+    Database --> ApplicationDbContext : TestTemplate
+    ApplicationDbContext --> Handler : TestTemplate
+    alt Test Template Not Found
+        Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+        UI -> User : Error: Test template not found
+    else Test Template Found
+        Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+        FolderTestService -> ApplicationDbContext : Query Permission
+        ApplicationDbContext -> Database : Query Permission
+        Database --> ApplicationDbContext : Permission
+        ApplicationDbContext --> FolderTestService : Permission
+        FolderTestService --> Handler : bool
+        alt No permission
+            Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+            UI -> User : Error: User does not have permission in folder
+        else Allowed
+            Handler -> ApplicationDbContext : Query FolderTestTemplate by FolderId and TestTemplateId
+            ApplicationDbContext -> Database : Query FolderTestTemplate
+            Database --> ApplicationDbContext : FolderTestTemplate
+            ApplicationDbContext --> Handler : FolderTestTemplate
+            alt Test Template Not Found in Folder
+                Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND_IN_FOLDER
+                FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND_IN_FOLDER)
+                UI -> User : Error: Test template not found in folder
+            else Test Template Found in Folder
+                Handler -> ApplicationDbContext : Remove FolderTestTemplate
+                ApplicationDbContext -> Database : Delete FolderTestTemplate
+                Database --> ApplicationDbContext : Success
+                ApplicationDbContext --> Handler : Guid
+                Handler --> FolderTestEndpoints : Guid
+                FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+                UI -> User : Info: Test template removed from folder
+            end
+        end
+    end
+end
+@enduml

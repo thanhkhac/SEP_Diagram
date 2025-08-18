@@ -1,0 +1,43 @@
+@startuml
+actor User
+participant "Folder Detail UI" as UI
+participant FolderTestEndpoints
+participant GetSharingInFolderQueryHandler as Handler
+participant FolderTestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : View sharing details
+UI -> FolderTestEndpoints : GET /api/Folder/{FolderId}/Sharing
+FolderTestEndpoints -> Handler : Handle(GetSharingInFolderQuery)
+Handler -> ApplicationDbContext : Query Folder by FolderId
+ApplicationDbContext -> Database : Query Folder
+Database --> ApplicationDbContext : Folder
+ApplicationDbContext --> Handler : Folder
+alt Folder Not Found
+    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
+    UI -> User : Error: Folder not found
+else Folder Found
+    Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    FolderTestService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> FolderTestService : Permission
+    FolderTestService --> Handler : bool
+    alt No permission
+        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+        UI -> User : Error: User does not have permission in folder
+    else Allowed
+        Handler -> ApplicationDbContext : Query FolderUsers by FolderId
+        ApplicationDbContext -> Database : Query FolderUsers
+        Database --> ApplicationDbContext : List<FolderUser>
+        ApplicationDbContext --> Handler : List<FolderUser>
+        Handler -> Handler : Map to SharingModelDto and Sort
+        Handler --> FolderTestEndpoints : ResourceShareDto
+        FolderTestEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
+        UI -> User : Show sharing details
+    end
+end
+@enduml

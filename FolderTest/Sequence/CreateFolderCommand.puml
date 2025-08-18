@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "Create Folder UI" as UI
+participant FolderTestEndpoints
+participant CreateFolderCommandHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Fill in folder name, click "Create"
+UI -> FolderTestEndpoints : POST /api/Folder
+FolderTestEndpoints -> Handler : Handle(CreateFolderCommand)
+alt User ID is null
+    Handler --> FolderTestEndpoints : Error: ACCOUNT_NOTFOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: ACCOUNT_NOTFOUND)
+    UI -> User : Error: User account not found
+else User ID is valid
+    Handler -> ApplicationDbContext : Add new Folder and FolderUser
+    ApplicationDbContext -> Database : Insert Folder, FolderUser
+    Database --> ApplicationDbContext : Success
+    ApplicationDbContext --> Handler : Guid
+    Handler --> FolderTestEndpoints : Guid
+    FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    UI -> User : Info: Folder created successfully
+end
+@enduml

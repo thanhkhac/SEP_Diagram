@@ -1,0 +1,49 @@
+@startuml
+actor User
+participant "Folder List UI" as UI
+participant FolderTestEndpoints
+participant DeleteFolderCommandHandler as Handler
+participant FolderTestService
+participant ApplicationDbContext
+participant Database
+participant IdentityService
+
+User -> UI : Click "Delete"
+UI -> FolderTestEndpoints : DELETE /api/Folder/{FolderId}
+FolderTestEndpoints -> Handler : Handle(DeleteFolderCommand)
+Handler -> ApplicationDbContext : Query Folder by FolderId
+ApplicationDbContext -> Database : Query Folder
+Database --> ApplicationDbContext : Folder
+ApplicationDbContext --> Handler : Folder
+alt Folder Not Found
+    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
+    UI -> User : Error: Folder not found
+else Folder Found
+    Handler -> FolderTestService : CanDeleteOrEditFolderTest(folderId)
+    FolderTestService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    IdentityService --> FolderTestService : bool (isAdmin)
+    alt Is Admin
+        FolderTestService --> Handler : true
+    else Not Admin
+        FolderTestService -> ApplicationDbContext : Query FolderUser (Owner)
+        ApplicationDbContext -> Database : Query FolderUser
+        Database --> ApplicationDbContext : FolderUser
+        ApplicationDbContext --> FolderTestService : FolderUser
+        FolderTestService --> Handler : bool (isOwner)
+    end
+    alt No permission
+        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+        UI -> User : Error: User does not have permission to delete folder
+    else Allowed
+        Handler -> ApplicationDbContext : Mark Folder as Deleted
+        ApplicationDbContext -> Database : Update Folder (IsDeleted = true)
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> FolderTestEndpoints : Guid
+        FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        UI -> User : Info: Folder deleted successfully
+    end
+end
+@enduml

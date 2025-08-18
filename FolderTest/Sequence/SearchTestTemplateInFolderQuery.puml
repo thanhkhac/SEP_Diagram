@@ -1,0 +1,31 @@
+@startuml
+actor User
+participant "Folder Detail UI" as UI
+participant FolderTestEndpoints
+participant SearchTestTemplateInFolderQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for test templates in folder
+UI -> FolderTestEndpoints : GET /api/Folder/{FolderId}/TestTemplates?testTemplateName=...
+FolderTestEndpoints -> Handler : Handle(SearchTestTemplateInFolderQuery)
+Handler -> ApplicationDbContext : Query FolderUsers (Include Folder) by FolderId and UserId
+ApplicationDbContext -> Database : Query FolderUsers, Folder
+Database --> ApplicationDbContext : FolderUser, Folder
+ApplicationDbContext --> Handler : FolderUser (accessUser)
+alt User Not Have Permission in Folder
+    Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+    UI -> User : Error: User does not have permission in folder
+else User Has Permission
+    Handler -> ApplicationDbContext : Query FolderTestTemplates (Include TestTemplate, Questions, CreatedByUser)
+    ApplicationDbContext -> Database : Query FolderTestTemplates, TestTemplate, Questions, User
+    Database --> ApplicationDbContext : List<FolderTestTemplate>, TestTemplate, Questions, User
+    ApplicationDbContext --> Handler : List<FolderTestTemplate>
+    Handler -> Handler : Filter by FolderId, IsDeleted, TestTemplateName
+    Handler -> Handler : Map to TestTemplateDto
+    Handler --> FolderTestEndpoints : SearchTestTemplateInFolderDto (with PaginatedList<TestTemplateDto>)
+    TestTemplateEndpoints --> UI : 200 OK (ApiResponse<SearchTestTemplateInFolderDto>)
+    UI -> User : Show test templates in folder
+end
+@enduml

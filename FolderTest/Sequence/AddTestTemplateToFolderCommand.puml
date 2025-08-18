@@ -1,0 +1,70 @@
+@startuml
+actor User
+participant "Folder Detail UI" as UI
+participant FolderTestEndpoints
+participant AddTestTemplateToFolderCommandHandler as Handler
+participant FolderTestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Select test template, click "Add to Folder"
+UI -> FolderTestEndpoints : POST /api/Folder/{FolderId}/TestTemplates/{TestTemplateId}
+FolderTestEndpoints -> Handler : Handle(AddTestTemplateToFolderCommand)
+Handler -> ApplicationDbContext : Query Folder by FolderId
+ApplicationDbContext -> Database : Query Folder
+Database --> ApplicationDbContext : Folder
+ApplicationDbContext --> Handler : Folder
+alt Folder Not Found
+    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
+    UI -> User : Error: Folder not found
+else Folder Found
+    Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+    ApplicationDbContext -> Database : Query TestTemplate
+    Database --> ApplicationDbContext : TestTemplate
+    ApplicationDbContext --> Handler : TestTemplate
+    alt Test Template Not Found
+        Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
+        UI -> User : Error: Test template not found
+    else Test Template Found
+        Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+        FolderTestService -> ApplicationDbContext : Query Permission
+        ApplicationDbContext -> Database : Query Permission
+        Database --> ApplicationDbContext : Permission
+        ApplicationDbContext --> FolderTestService : Permission
+        FolderTestService --> Handler : bool
+        alt No permission
+            Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+            UI -> User : Error: User does not have permission in folder
+        else Allowed
+            Handler -> ApplicationDbContext : Query FolderTestTemplate by FolderId and TestTemplateId
+            ApplicationDbContext -> Database : Query FolderTestTemplate
+            Database --> ApplicationDbContext : FolderTestTemplate
+            ApplicationDbContext --> Handler : FolderTestTemplate
+            alt Test Template Already Exists in Folder
+                Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_ALREADY_EXISTS_IN_FOLDER
+                FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_ALREADY_EXISTS_IN_FOLDER)
+                UI -> User : Error: Test template already exists in folder
+            else Test Template Not in Folder
+                Handler -> FolderTestService : TryCanUseTesTemplate(testTemplateId)
+                FolderTestService --> Handler : Success/Error (inferred)
+                alt Cannot Use Test Template
+                    Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+                    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
+                    UI -> User : Error: Cannot use this test template
+                else Can Use Test Template
+                    Handler -> ApplicationDbContext : Add new FolderTestTemplate
+                    ApplicationDbContext -> Database : Insert FolderTestTemplate
+                    Database --> ApplicationDbContext : Success
+                    ApplicationDbContext --> Handler : Guid
+                    Handler --> FolderTestEndpoints : Guid
+                    FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+                    UI -> User : Info: Test template added to folder
+                end
+            end
+        end
+    end
+end
+@enduml

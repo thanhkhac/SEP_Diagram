@@ -1,0 +1,27 @@
+@startuml
+actor User
+participant "Folder List UI" as UI
+participant FolderTestEndpoints
+participant SearchFolderQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Search for folders
+UI -> FolderTestEndpoints : GET /api/Folder?folderName=...&shareMode=...
+FolderTestEndpoints -> Handler : Handle(SearchFolderQuery)
+Handler -> ApplicationDbContext : Query FolderUsers (Include Folder, CreatedByUser) for authors
+ApplicationDbContext -> Database : Query FolderUsers, Folder, User
+Database --> ApplicationDbContext : List<FolderUser>, Folder, User
+ApplicationDbContext --> Handler : Dictionary<FolderId, FullName> (authors)
+Handler -> Handler : Parse ShareMode (if provided)
+Handler -> ApplicationDbContext : Query FolderUsers (Include Folder) for folders
+ApplicationDbContext -> Database : Query FolderUsers, Folder
+Database --> ApplicationDbContext : List<FolderUser>, Folder
+ApplicationDbContext --> Handler : List<FolderUser>
+Handler -> Handler : Filter by UserId, IsDeleted, FolderName, ShareMode
+Handler -> Handler : Map to SearchFolderTestDto
+Handler --> FolderTestEndpoints : PaginatedList<SearchFolderTestDto>
+FolderTestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<SearchFolderTestDto>>)
+UI -> User : Show folder search results
+
+@enduml

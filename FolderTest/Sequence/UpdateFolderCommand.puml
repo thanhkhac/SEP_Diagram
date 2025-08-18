@@ -1,0 +1,52 @@
+@startuml
+actor User
+participant "Edit Folder UI" as UI
+participant FolderTestEndpoints
+participant UpdateFolderCommandHandler as Handler
+participant FolderTestService
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Edit folder name, click "Save"
+UI -> FolderTestEndpoints : PATCH /api/Folder/{FolderId}
+FolderTestEndpoints -> Handler : Handle(UpdateFolderCommand)
+Handler -> ApplicationDbContext : Query Folder by FolderId
+ApplicationDbContext -> Database : Query Folder
+Database --> ApplicationDbContext : Folder
+ApplicationDbContext --> Handler : Folder
+alt Folder Not Found
+    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
+    UI -> User : Error: Folder not found
+else Folder Found
+    Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    FolderTestService -> ApplicationDbContext : Query Permission
+    ApplicationDbContext -> Database : Query Permission
+    Database --> ApplicationDbContext : Permission
+    ApplicationDbContext --> FolderTestService : Permission
+    FolderTestService --> Handler : bool
+    alt No permission
+        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
+        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
+        UI -> User : Error: User does not have permission to edit folder
+    else Allowed
+        Handler -> ApplicationDbContext : Query Folder by Name and CreatedBy (for duplicate check)
+        ApplicationDbContext -> Database : Query Folder
+        Database --> ApplicationDbContext : Folder
+        ApplicationDbContext --> Handler : Folder (folderByName)
+        alt Folder Name Already Exists
+            Handler --> FolderTestEndpoints : Error: FOLDER_ALREADY_EXISTS
+            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_ALREADY_EXISTS)
+            UI -> User : Error: Folder name already exists
+        else Folder Name Unique
+            Handler -> ApplicationDbContext : Update Folder Name
+            ApplicationDbContext -> Database : Update Folder
+            Database --> ApplicationDbContext : Success
+            ApplicationDbContext --> Handler : Guid
+            Handler --> FolderTestEndpoints : Guid
+            FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+            UI -> User : Info: Folder updated successfully
+        end
+    end
+end
+@enduml
