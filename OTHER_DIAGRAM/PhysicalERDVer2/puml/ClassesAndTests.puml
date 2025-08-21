@@ -1,0 +1,180 @@
+@startuml
+
+' hide the spot
+hide circle
+skinparam linetype ortho
+
+' avoid problems with angled crows feet
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "Classes" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  Topic : text
+}
+
+entity "ClassUsers" {
+  *ClassId : uuid (PK, FK)
+  *UserId : uuid (PK, FK)
+  --
+  ShareMode : text
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "ClassInvitations" {
+  *Id : uuid (PK)
+  --
+  ClassId : uuid (FK)
+  Code : varchar(50)
+  TimeStart : timestamp with time zone
+  TimeEnd : timestamp with time zone
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "ClassInvitationUsers" {
+  *Id : uuid (PK)
+  --
+  UserId : uuid (FK)
+  ClassInvitationId : uuid (FK)
+  TimeJoin : timestamp with time zone
+}
+
+entity "ClassQuestionSets" {
+    *ClassId: uuid (PK, FK)
+    *QuestionSetId: uuid (PK, FK)
+    --
+    Created: timestamp with time zone
+    CreatedBy: uuid (FK)
+    LastModified: timestamp with time zone
+    LastModifiedBy: uuid
+}
+
+entity "Tests" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  ClassId : uuid (FK)
+  TimeStart : timestamp with time zone
+  TimeFinish : timestamp with time zone
+  TimeLimit : integer
+  QuestionCount : integer
+  GradeAttemptMethod : text
+  GradeQuestionMethod : text
+  IsShowCorrectAnswerInReview : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  PassingScore : numeric(5, 2)
+  MaxAttempt : integer
+  IsAllowReviewAfterSubmit : boolean
+  IsDeleted : boolean
+}
+
+entity "TestVersions" {
+  *Id : uuid (PK)
+  --
+  TestId : uuid (FK)
+  No : integer
+}
+
+entity "TestVersionQuestions" {
+    *Id: uuid (PK)
+    --
+    TestVersionId: uuid (FK)
+    QuestionId: uuid (FK)
+    Order: integer
+}
+
+entity "Attempts" {
+  *Id : uuid (PK)
+  --
+  TestId : uuid (FK)
+  TestVersionId : uuid (FK)
+  UserId : uuid (FK)
+  TimeStart : timestamp with time zone
+  TimeFinish : timestamp with time zone
+  Score : numeric(5, 2)
+}
+
+entity "AttemptQuestions" {
+    *Id: uuid (PK)
+    --
+    AttemptId: uuid (FK)
+    QuestionId: uuid (FK)
+    Order: integer
+    Score: numeric(5, 2)
+    DataJson: json
+}
+
+entity "TestGrades" {
+  *Id : uuid (PK)
+  --
+  TestId : uuid (FK)
+  UserId : uuid (FK)
+  Score : numeric(5, 2)
+}
+
+entity "QuestionSets" {
+  *Id : uuid (PK)
+}
+
+entity "Questions" {
+  *Id : uuid (PK)
+}
+
+"DomainUsers" ||--o{ "Classes" : CreatedBy
+"DomainUsers" ||--o{ "ClassUsers" : UserId
+"DomainUsers" ||--o{ "ClassInvitations" : CreatedBy
+"DomainUsers" ||--o{ "ClassInvitationUsers" : UserId
+"DomainUsers" ||--o{ "Tests" : CreatedBy
+"DomainUsers" ||--o{ "Attempts" : UserId
+"DomainUsers" ||--o{ "TestGrades" : UserId
+
+"Classes" ||--o{ "ClassUsers"
+"Classes" ||--o{ "ClassInvitations"
+"Classes" ||--o{ "Tests"
+"Classes" ||--o{ "ClassQuestionSets"
+
+"ClassInvitations" ||--o{ "ClassInvitationUsers"
+
+"Tests" ||--o{ "TestVersions"
+"Tests" ||--o{ "Attempts"
+"Tests" ||--o{ "TestGrades"
+
+"TestVersions" ||--o{ "Attempts"
+"TestVersions" ||--o{ "TestVersionQuestions"
+
+"Attempts" ||--o{ "AttemptQuestions"
+
+"QuestionSets" ||--o{ "ClassQuestionSets"
+"Questions" ||--o{ "TestVersionQuestions"
+"Questions" ||--o{ "AttemptQuestions"
+
+@enduml

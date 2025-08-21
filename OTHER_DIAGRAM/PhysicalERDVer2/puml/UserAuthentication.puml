@@ -1,0 +1,121 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "AspNetRoles" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(256)
+  NormalizedName : varchar(256)
+  ConcurrencyStamp : text
+}
+
+entity "AspNetUsers" {
+  *Id : uuid (PK)
+  --
+  IsDeleted : boolean
+  IsBanned : boolean
+  UserName : varchar(256)
+  NormalizedUserName : varchar(256)
+  Email : varchar(256)
+  NormalizedEmail : varchar(256)
+  EmailConfirmed : boolean
+  PasswordHash : text
+  SecurityStamp : text
+  ConcurrencyStamp : text
+  PhoneNumber : text
+  PhoneNumberConfirmed : boolean
+  TwoFactorEnabled : boolean
+  LockoutEnd : timestamp with time zone
+  LockoutEnabled : boolean
+  AccessFailedCount : integer
+  EmailVerificationCode : varchar(10)
+  PasswordResetRequestLockoutEnd : timestamp with time zone
+  FailedPasswordResetAttempts : integer
+  PasswordResetCode : varchar(10)
+  PasswordResetCodeExpiryTime : timestamp with time zone
+  PasswordResetRequestAttempts : integer
+  EmailRequestLockout : integer
+  EmailRequestLockoutTime : timestamp with time zone
+  EmailVerificationCodeExpiryTime : timestamp with time zone
+  EmailVerificationLockoutEnd : timestamp with time zone
+  EmailVerificationRequestAttempts : integer
+  EmailVerificationRequestLockoutEnd : timestamp with time zone
+  FailedEmailVerificationAttempts : integer
+  PasswordResetLockoutEnd : timestamp with time zone
+}
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "AspNetRoleClaims" {
+  *Id : integer (PK)
+  --
+  RoleId : uuid (FK)
+  ClaimType : text
+  ClaimValue : text
+}
+
+entity "AspNetUserClaims" {
+  *Id : integer (PK)
+  --
+  UserId : uuid (FK)
+  ClaimType : text
+  ClaimValue : text
+}
+
+entity "AspNetUserLogins" {
+  *LoginProvider : text (PK)
+  *ProviderKey : text (PK)
+  --
+  ProviderDisplayName : text
+  UserId : uuid (FK)
+}
+
+entity "AspNetUserRoles" {
+  *UserId : uuid (PK, FK)
+  *RoleId : uuid (PK, FK)
+}
+
+entity "AspNetUserTokens" {
+  *UserId : uuid (PK, FK)
+  *LoginProvider : text (PK)
+  *Name : text (PK)
+  --
+  Value : text
+}
+
+entity "RefreshTokens" {
+  *Id : varchar(36) (PK)
+  --
+  UserAccountId : uuid (FK)
+  Token : varchar(500)
+  ExpireAt : timestamp with time zone
+}
+
+"AspNetUsers" ||--o{ "AspNetUserClaims"
+"AspNetUsers" ||--o{ "AspNetUserLogins"
+"AspNetUsers" ||--o{ "AspNetUserRoles"
+"AspNetUsers" ||--o{ "AspNetUserTokens"
+"AspNetUsers" ||--o{ "RefreshTokens"
+"AspNetUsers" ||--|| "DomainUsers"
+
+"AspNetRoles" ||--o{ "AspNetRoleClaims"
+"AspNetRoles" ||--o{ "AspNetUserRoles"
+
+@enduml

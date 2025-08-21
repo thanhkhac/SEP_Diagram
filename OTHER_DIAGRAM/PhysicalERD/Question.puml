@@ -1,0 +1,144 @@
+@startuml Question_Test_Management
+!define primary_key(x) <b><color:#b8861b><&key></color> x</b>
+!define foreign_key(x) <color:#aaaaaa><&key></color> x
+!define column(x) <color:#efefef><&media-record></color> x
+!define table(x) entity x << (T, white) >>
+
+table(Tags) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(500)
+  column(QuestionSetCount) : integer
+}
+
+table(QuestionSets) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(100)
+  column(Description) : varchar(500)
+  column(VisibilityMode) : text
+  column(QuestionCount) : integer
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(RatingAverage) : double precision
+  column(RatingCount) : integer
+  column(RatingSum) : integer
+}
+
+table(Questions) {
+  primary_key(Id) : uuid
+  foreign_key(QuestionSetId) : uuid
+  column(Type) : text
+  column(QuestionText) : varchar(1000)
+  column(TextFormat) : text
+  column(ExplainText) : varchar(1000)
+  column(Score) : numeric(5,2)
+  column(DataJson) : json
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(IsDeleted) : boolean
+}
+
+table(QuestionSetTags) {
+  primary_key(TagId) : uuid
+  primary_key(QuestionSetId) : uuid
+}
+
+table(QuestionSetUsers) {
+  primary_key(UserId) : uuid
+  primary_key(QuestionSetId) : uuid
+  column(ShareMode) : text
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(QuestionSetRatings) {
+  primary_key(QuestionSetId) : uuid
+  primary_key(CreatedBy) : uuid
+  column(Rating) : integer
+  column(Created) : timestamp
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(Comments) {
+  primary_key(Id) : uuid
+  foreign_key(ParentId) : uuid
+  foreign_key(QuestionId) : uuid
+  column(Content) : varchar(1000)
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(UserQuestionSetHistories) {
+  primary_key(UserId) : uuid
+  primary_key(QuestionId) : uuid
+  column(IsCorrect) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(UserQuestionSetAccessHistories) {
+  primary_key(UserId) : uuid
+  primary_key(QuestionSetId) : uuid
+  column(LastAccess) : timestamp
+  column(IsSaved) : boolean
+}
+
+table(TestTemplates) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(100)
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(Description) : text
+}
+
+table(TestTemplateQuestions) {
+  primary_key(Id) : uuid
+  foreign_key(TestTemplateId) : uuid
+  foreign_key(QuestionId) : uuid
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(TestTemplateUsers) {
+  primary_key(UserId) : uuid
+  primary_key(TestTemplateId) : uuid
+  column(ShareMode) : text
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(IsViewed) : boolean
+}
+
+' Relationships
+QuestionSets ||--o{ Questions : QuestionSetId
+QuestionSetTags }o--|| Tags : TagId
+QuestionSetTags }o--|| QuestionSets : QuestionSetId
+QuestionSetUsers }o--|| QuestionSets : QuestionSetId
+QuestionSetRatings }o--|| QuestionSets : QuestionSetId
+Comments }o--|| Questions : QuestionId
+Comments }o--o| Comments : ParentId
+UserQuestionSetHistories }o--|| Questions : QuestionId
+UserQuestionSetAccessHistories }o--|| QuestionSets : QuestionSetId
+TestTemplateQuestions }o--|| TestTemplates : TestTemplateId
+TestTemplateQuestions }o--|| Questions : QuestionId
+TestTemplateUsers }o--|| TestTemplates : TestTemplateId
+
+@enduml

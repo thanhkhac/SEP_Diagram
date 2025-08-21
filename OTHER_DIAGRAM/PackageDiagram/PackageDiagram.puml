@@ -1,0 +1,220 @@
+@startuml CleanArchitecturePackageDiagram
+
+!define RECTANGLE class
+
+skinparam packageStyle rectangle
+skinparam component {
+    BackgroundColor<<Domain>> LightBlue
+    BackgroundColor<<Application>> LightGreen
+    BackgroundColor<<Infrastructure>> LightYellow
+    BackgroundColor<<Web>> LightPink
+}
+
+package "Clean Architecture Base" {
+
+    package "Domain Layer" <<Domain>> {
+        package "Entities" {
+            component "User" as UserEntity
+            component "ClassEntities" as ClassEntity
+            component "QuestionEntities" as QuestionEntity
+            component "PlanEntities" as PlanEntity
+            component "SystemSetting" as SystemSettingEntity
+            component "TodoItem" as TodoItemEntity
+            component "TodoList" as TodoListEntity
+        }
+
+        package "Common" {
+            component "BaseEntity" as BaseEntity
+            component "BaseAuditableEntity" as BaseAuditableEntity
+            component "BaseEvent" as BaseEvent
+            component "ValueObject" as ValueObject
+        }
+
+        package "Constants" {
+            component "ErrorCodes" as ErrorCodes
+            component "PermissionConstants" as PermissionConstants
+            component "Roles" as Roles
+            component "Policies" as Policies
+            component "Payment" as PaymentConstants
+        }
+
+        package "Enums" {
+            component "PriorityLevel" as PriorityLevel
+        }
+
+        package "Events" {
+            component "TodoItemCreatedEvent" as TodoItemCreatedEvent
+            component "TodoItemCompletedEvent" as TodoItemCompletedEvent
+            component "TodoItemDeletedEvent" as TodoItemDeletedEvent
+        }
+
+        package "ValueObjects" {
+            component "Colour" as Colour
+        }
+
+        package "Exceptions" {
+            component "UnsupportedColourException" as UnsupportedColourException
+        }
+    }
+
+    package "Application Layer" <<Application>> {
+        package "Common" {
+            component "Interfaces" as AppInterfaces
+            component "Behaviours" as Behaviours
+            component "Models" as AppModels
+            component "Exceptions" as AppExceptions
+            component "Security" as AppSecurity
+            component "Settings" as AppSettings
+        }
+
+        package "Features" {
+            package "Authentication" {
+                component "LoginCommand" as LoginCommand
+                component "RegisterUserCommand" as RegisterCommand
+                component "GoogleLoginCommand" as GoogleLoginCommand
+            }
+
+            package "Classes" {
+                component "CreateClassCommand" as CreateClassCommand
+                component "GetClassByIdQuery" as GetClassQuery
+                component "SearchClassQuery" as SearchClassQuery
+            }
+
+            package "QuestionSets" {
+                component "CreateQuestionSetCommand" as CreateQuestionSetCommand
+                component "GetQuestionSetDetailQuery" as GetQuestionSetQuery
+                component "SearchPublicQuestionSetQuery" as SearchQuestionSetQuery
+            }
+
+            package "Tests" {
+                component "CreateTestCommand" as CreateTestCommand
+                component "GetTestDetailQuery" as GetTestQuery
+                component "SubmitTestAttemptCommand" as SubmitTestCommand
+            }
+
+            package "Users" {
+                component "SearchAllAccountQuery" as SearchAccountQuery
+                component "UpdateUserInfoCommand" as UpdateUserCommand
+            }
+
+            package "AiGenerate" {
+                component "GenerateDocumentStructureCommand" as GenerateDocCommand
+                component "GenerateQuestionWithAiCommand" as GenerateQuestionCommand
+            }
+
+            package "Payments" {
+                component "BuyPointCommand" as BuyPointCommand
+                component "GetQrCodeQuery" as GetQrCodeQuery
+            }
+        }
+    }
+
+    package "Infrastructure Layer" <<Infrastructure>> {
+        package "Data" {
+            component "ApplicationDbContext" as DbContext
+            component "Configurations" as Configurations
+            component "Migrations" as Migrations
+            component "Interceptors" as Interceptors
+        }
+
+        package "Identity" {
+            component "IdentityService" as IdentityService
+            component "GoogleAuthService" as GoogleAuthService
+            component "CustomSignInManager" as CustomSignInManager
+        }
+
+        package "Services" {
+            component "EmailService" as EmailService
+            component "FileService" as FileService
+            component "PdfService" as PdfService
+            component "RedisService" as RedisService
+            component "HangFireService" as HangFireService
+            component "AiGenerateService" as AiGenerateService
+        }
+
+        package "Google" {
+            component "GoogleAccessTokenProvider" as GoogleTokenProvider
+        }
+    }
+
+    package "Web Layer (Presentation)" <<Web>> {
+        package "Endpoints" {
+            component "AuthenticationEndpoints" as AuthEndpoints
+            component "ClassEndpoints" as ClassEndpoints
+            component "QuestionSetEndpoints" as QuestionSetEndpoints
+            component "TestEndpoints" as TestEndpoints
+            component "UserEndpoints" as UserEndpoints
+            component "PaymentEndpoint" as PaymentEndpoints
+            component "AiGenerateEndpoints" as AiGenerateEndpoints
+        }
+
+        package "Infrastructure" {
+            component "CustomExceptionHandler" as ExceptionHandler
+            component "EndpointGroupBase" as EndpointGroupBase
+            component "WebApplicationExtensions" as WebExtensions
+        }
+
+        package "Services" {
+            component "CurrentUser" as CurrentUser
+        }
+    }
+}
+
+' Dependencies - Clean Architecture Rules
+Application ..> Domain : depends on
+Infrastructure ..> Application : depends on
+Infrastructure ..> Domain : depends on
+Web ..> Application : depends on
+Web ..> Infrastructure : depends on
+
+' Internal Dependencies
+UserEntity --> BaseAuditableEntity
+ClassEntity --> BaseAuditableEntity
+QuestionEntity --> BaseAuditableEntity
+PlanEntity --> BaseAuditableEntity
+
+TodoItemCreatedEvent --> BaseEvent
+TodoItemCompletedEvent --> BaseEvent
+TodoItemDeletedEvent --> BaseEvent
+
+LoginCommand --> AppInterfaces
+CreateClassCommand --> AppInterfaces
+CreateQuestionSetCommand --> AppInterfaces
+
+DbContext --> AppInterfaces
+IdentityService --> AppInterfaces
+EmailService --> AppInterfaces
+
+AuthEndpoints --> LoginCommand
+ClassEndpoints --> CreateClassCommand
+QuestionSetEndpoints --> CreateQuestionSetCommand
+
+note right of Domain
+  Core business logic
+  No external dependencies
+  Entities, Value Objects, Enums
+  Domain Events
+end note
+
+note right of Application
+  Use cases and business rules
+  Depends only on Domain
+  Commands, Queries, DTOs
+  Interfaces for external services
+end note
+
+note right of Infrastructure
+  External services implementation
+  Database, Email, File services
+  Third-party integrations
+  Implements Application interfaces
+end note
+
+note right of Web
+  API endpoints and controllers
+  User interface concerns
+  Depends on Application
+  Entry point of the application
+end note
+
+@enduml

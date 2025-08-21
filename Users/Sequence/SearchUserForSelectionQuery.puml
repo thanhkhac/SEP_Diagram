@@ -1,0 +1,21 @@
+@startuml
+actor User
+participant "User Selection UI" as UI
+participant UserEndpoints
+participant SearchUserForSelectionQueryHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Enter email to search for user
+UI -> UserEndpoints : GET /api/User/SearchForSelection?email=...
+UserEndpoints -> Handler : Handle(SearchUserForSelectionQuery)
+Handler -> ApplicationDbContext : Query DomainUsers by Email
+ApplicationDbContext -> Database : Query DomainUsers
+Database --> ApplicationDbContext : List<DomainUser>
+ApplicationDbContext --> Handler : List<DomainUser>
+Handler -> Handler : Map to UserForSelectionDto
+Handler --> UserEndpoints : List<UserForSelectionDto>
+UserEndpoints --> UI : 200 OK (ApiResponse<List<UserForSelectionDto>>)
+UI -> User : Show user selection results
+
+@enduml

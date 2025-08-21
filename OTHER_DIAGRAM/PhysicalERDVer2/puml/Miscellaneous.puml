@@ -1,0 +1,95 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "TodoLists" {
+  *Id : integer (PK)
+  --
+  Title : varchar(200)
+  Colour_Code : text
+  UserId : uuid (FK)
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "TodoItems" {
+  *Id : integer (PK)
+  --
+  ListId : integer (FK)
+  Title : varchar(200)
+  Note : text
+  Priority : integer
+  Reminder : timestamp with time zone
+  Done : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "Transactions" {
+  *Id : uuid (PK)
+  --
+  UserId : uuid (FK)
+  PaymentId : text
+  Code : varchar(255)
+  Gateway : text
+  TransferType : text
+  TransferAmount : numeric
+  TransactionDate : timestamp with time zone
+  AccountNumber : text
+  SubAccount : text
+  Accumulated : numeric
+  Content : text
+  Description : text
+  Created : timestamp with time zone
+}
+
+entity "SystemSettings" {
+  *Id : uuid (PK)
+  --
+  InputCostPerMillionTokens : integer
+  OutputCostPerMillionTokens : integer
+  FixedSystemFee : integer
+  MaxInputToken : integer
+  MaxOutputToken : integer
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "__EFMigrationsHistory" {
+    *MigrationId: varchar(150) (PK)
+    --
+    ProductVersion: varchar(32)
+}
+
+"DomainUsers" ||--o{ "TodoLists" : UserId
+"DomainUsers" ||--o{ "TodoItems" : CreatedBy
+"DomainUsers" ||--o{ "Transactions" : UserId
+"DomainUsers" ||--o{ "SystemSettings" : CreatedBy
+
+"TodoLists" ||--o{ "TodoItems"
+
+@enduml

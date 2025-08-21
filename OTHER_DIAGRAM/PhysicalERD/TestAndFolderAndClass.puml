@@ -1,0 +1,162 @@
+@startuml Class_Folder_Management
+!define primary_key(x) <b><color:#b8861b><&key></color> x</b>
+!define foreign_key(x) <color:#aaaaaa><&key></color> x
+!define column(x) <color:#efefef><&media-record></color> x
+!define table(x) entity x << (T, white) >>
+
+table(Classes) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(100)
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(Topic) : text
+}
+
+table(ClassUsers) {
+  primary_key(ClassId) : uuid
+  primary_key(UserId) : uuid
+  column(ShareMode) : text
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(ClassQuestionSets) {
+  primary_key(ClassId) : uuid
+  primary_key(QuestionSetId) : uuid
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(ClassInvitations) {
+  primary_key(Id) : uuid
+  foreign_key(ClassId) : uuid
+  column(Code) : varchar(50)
+  column(TimeStart) : timestamp
+  column(TimeEnd) : timestamp
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(ClassInvitationUsers) {
+  primary_key(Id) : uuid
+  foreign_key(UserId) : uuid
+  foreign_key(ClassInvitationId) : uuid
+  column(TimeJoin) : timestamp
+}
+
+table(Tests) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(100)
+  foreign_key(ClassId) : uuid
+  column(TimeStart) : timestamp
+  column(TimeFinish) : timestamp
+  column(TimeLimit) : integer
+  column(QuestionCount) : integer
+  column(GradeAttemptMethod) : text
+  column(GradeQuestionMethod) : text
+  column(IsShowCorrectAnswerInReview) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(PassingScore) : numeric(5,2)
+  column(MaxAttempt) : integer
+  column(IsAllowReviewAfterSubmit) : boolean
+  column(IsDeleted) : boolean
+}
+
+table(TestVersions) {
+  primary_key(Id) : uuid
+  foreign_key(TestId) : uuid
+  column(No) : integer
+}
+
+table(TestVersionQuestions) {
+  primary_key(Id) : uuid
+  foreign_key(TestVersionId) : uuid
+  foreign_key(QuestionId) : uuid
+  column(Order) : integer
+}
+
+table(Attempts) {
+  primary_key(Id) : uuid
+  foreign_key(TestId) : uuid
+  foreign_key(TestVersionId) : uuid
+  foreign_key(UserId) : uuid
+  column(TimeStart) : timestamp
+  column(TimeFinish) : timestamp
+  column(Score) : numeric(5,2)
+}
+
+table(AttemptQuestions) {
+  primary_key(Id) : uuid
+  foreign_key(AttemptId) : uuid
+  foreign_key(QuestionId) : uuid
+  column(Order) : integer
+  column(Score) : numeric(5,2)
+  column(DataJson) : json
+}
+
+table(TestGrades) {
+  primary_key(Id) : uuid
+  foreign_key(TestId) : uuid
+  foreign_key(UserId) : uuid
+  column(Score) : numeric(5,2)
+}
+
+table(Folders) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(100)
+  column(IsDeleted) : boolean
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+table(FolderUsers) {
+  primary_key(UserId) : uuid
+  primary_key(FolderId) : uuid
+  column(ShareMode) : text
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+  column(IsViewed) : boolean
+}
+
+table(FolderTestTemplates) {
+  primary_key(FolderId) : uuid
+  primary_key(TestTemplateId) : uuid
+  column(Created) : timestamp
+  foreign_key(CreatedBy) : uuid
+  column(LastModified) : timestamp
+  column(LastModifiedBy) : uuid
+}
+
+' Relationships
+ClassUsers }o--|| Classes : ClassId
+ClassQuestionSets }o--|| Classes : ClassId
+ClassInvitations }o--|| Classes : ClassId
+ClassInvitationUsers }o--|| ClassInvitations : ClassInvitationId
+Tests }o--|| Classes : ClassId
+TestVersions }o--|| Tests : TestId
+TestVersionQuestions }o--|| TestVersions : TestVersionId
+Attempts }o--|| Tests : TestId
+Attempts }o--|| TestVersions : TestVersionId
+AttemptQuestions }o--|| Attempts : AttemptId
+TestGrades }o--|| Tests : TestId
+FolderUsers }o--|| Folders : FolderId
+FolderTestTemplates }o--|| Folders : FolderId
+
+@enduml

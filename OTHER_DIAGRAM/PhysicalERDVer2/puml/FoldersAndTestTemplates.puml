@@ -1,0 +1,110 @@
+@startuml
+
+
+hide circle
+
+
+skinparam linetype ortho
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "Folders" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "TestTemplates" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  Description : text
+}
+
+entity "FolderUsers" {
+  *UserId : uuid (PK, FK)
+  *FolderId : uuid (PK, FK)
+  --
+  ShareMode : text
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  IsViewed : boolean
+}
+
+entity "FolderTestTemplates" {
+  *FolderId : uuid (PK, FK)
+  *TestTemplateId : uuid (PK, FK)
+  --
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "TestTemplateUsers" {
+  *UserId : uuid (PK, FK)
+  *TestTemplateId : uuid (PK, FK)
+  --
+  ShareMode : text
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  IsViewed : boolean
+}
+
+entity "TestTemplateQuestions" {
+    *Id: uuid (PK)
+    --
+    TestTemplateId: uuid (FK)
+    QuestionId: uuid (FK)
+    Created: timestamp with time zone
+    CreatedBy: uuid (FK)
+    LastModified: timestamp with time zone
+    LastModifiedBy: uuid
+}
+
+entity "Questions" {
+  *Id : uuid (PK)
+}
+
+"DomainUsers" ||--o{ "Folders" : CreatedBy
+"DomainUsers" ||--o{ "TestTemplates" : CreatedBy
+"DomainUsers" ||--o{ "FolderUsers" : UserId
+"DomainUsers" ||--o{ "TestTemplateUsers" : UserId
+"DomainUsers" ||--o{ "TestTemplateQuestions" : CreatedBy
+
+"Folders" ||--o{ "FolderUsers"
+"Folders" ||--o{ "FolderTestTemplates"
+
+"TestTemplates" ||--o{ "FolderTestTemplates"
+"TestTemplates" ||--o{ "TestTemplateUsers"
+"TestTemplates" ||--o{ "TestTemplateQuestions"
+
+"Questions" ||--o{ "TestTemplateQuestions"
+
+@enduml

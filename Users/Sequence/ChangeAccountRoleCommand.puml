@@ -1,0 +1,28 @@
+@startuml
+actor AdminUser
+participant "Admin UI" as UI
+participant UserEndpoints
+participant ChangeAccountRoleCommandHandler as Handler
+participant IdentityService
+
+AdminUser -> UI : Select user, choose new role, click "Change Role"
+UI -> UserEndpoints : PATCH /api/User/{UserId}/Role
+UserEndpoints -> Handler : Handle(ChangeAccountRoleCommand)
+Handler -> IdentityService : ChangeRoleAsync(userId, role)
+alt User Not Found
+    IdentityService --> Handler : Error: USER_NOT_FOUND
+    Handler --> UserEndpoints : Error: USER_NOT_FOUND
+    UserEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_FOUND)
+    UI -> AdminUser : Error: User not found
+else Invalid Role
+    IdentityService --> Handler : Error: INVALID_ROLE
+    Handler --> UserEndpoints : Error: INVALID_ROLE
+    UserEndpoints --> UI : 400 Bad Request (errorCode: INVALID_ROLE)
+    UI -> AdminUser : Error: Invalid role provided
+else Role Change Success
+    IdentityService --> Handler : Guid (userId)
+    Handler --> UserEndpoints : Guid
+    UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    UI -> AdminUser : Info: User role updated successfully
+end
+@enduml

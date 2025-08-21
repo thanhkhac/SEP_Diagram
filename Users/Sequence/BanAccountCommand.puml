@@ -1,0 +1,39 @@
+@startuml
+actor AdminUser
+participant "Admin UI" as UI
+participant UserEndpoints
+participant BanAccountCommandHandler as Handler
+participant IdentityService
+participant ApplicationDbContext
+participant Database
+
+AdminUser -> UI : Select user, click "Ban/Unban"
+UI -> UserEndpoints : PATCH /api/User/{UserId}/Ban
+UserEndpoints -> Handler : Handle(BanAccountCommand)
+alt Target User is Current User
+    Handler --> UserEndpoints : Error: COMMON_FORBIDDEN
+    UserEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
+    UI -> AdminUser : Error: You cannot ban your own account
+else Target User is Different
+    Handler -> IdentityService : GetUsersInRoleAsync() (for Administrators)
+    IdentityService --> Handler : List<Guid> (adminIds)
+    Handler -> ApplicationDbContext : Query DomainUser by UserId (IgnoreQueryFilters, not deleted, not admin)
+    ApplicationDbContext -> Database : Query DomainUser
+    Database --> ApplicationDbContext : DomainUser
+    ApplicationDbContext --> Handler : DomainUser (bannedUsers)
+    alt User Not Found or Is Admin
+        Handler --> UserEndpoints : Error: ACCOUNT_NOTFOUND
+        UserEndpoints --> UI : 400 Bad Request (errorCode: ACCOUNT_NOTFOUND)
+        UI -> AdminUser : Error: User not found or cannot be banned
+    else User Found and Can Be Banned
+        Handler -> IdentityService : BanUser(userId, isBanned)
+        IdentityService --> Handler : Success
+        Handler -> ApplicationDbContext : Update DomainUser IsBanned status
+        ApplicationDbContext -> Database : Update DomainUser
+        Database --> ApplicationDbContext : Success
+        ApplicationDbContext --> Handler : Guid
+        Handler --> UserEndpoints : 200 OK (ApiResponse<Guid>)
+        UI -> AdminUser : Info: User ban status updated
+    end
+end
+@enduml

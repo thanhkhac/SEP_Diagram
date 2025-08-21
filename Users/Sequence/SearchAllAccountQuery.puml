@@ -1,0 +1,23 @@
+@startuml
+actor AdminUser
+participant "Admin UI" as UI
+participant UserEndpoints
+participant GetAllAccountCommandHandler as Handler
+participant IdentityService
+
+AdminUser -> UI : Search for accounts (by keyword, field, banned status, role)
+UI -> UserEndpoints : GET /api/User/AllAccounts?keyword=...&fieldName=...&isBanned=...&role=...
+UserEndpoints -> Handler : Handle(SearchAllAccountQuery)
+Handler -> IdentityService : SearchUserWithRole(searchUserDto)
+alt Invalid Role
+    IdentityService --> Handler : Error: INVALID_ROLE
+    Handler --> UserEndpoints : Error: INVALID_ROLE
+    UserEndpoints --> UI : 400 Bad Request (errorCode: INVALID_ROLE)
+    UI -> AdminUser : Error: Invalid role provided
+else Search Success
+    IdentityService --> Handler : PaginatedList<UserForListDto>
+    Handler --> UserEndpoints : PaginatedList<UserForListDto>
+    UserEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<UserForListDto>>)
+    UI -> AdminUser : Show search results
+end
+@enduml

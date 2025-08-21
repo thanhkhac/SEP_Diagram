@@ -1,0 +1,24 @@
+@startuml
+actor User
+participant "User Profile UI" as UI
+participant UserEndpoints
+participant UpdateUserInfoCommandHandler as Handler
+participant ApplicationDbContext
+participant Database
+
+User -> UI : Update full name, click "Save"
+UI -> UserEndpoints : PATCH /api/User/Info
+UserEndpoints -> Handler : Handle(UpdateUserInfoCommand)
+Handler -> ApplicationDbContext : Query DomainUser by UserId
+ApplicationDbContext -> Database : Query DomainUser
+Database --> ApplicationDbContext : DomainUser
+ApplicationDbContext --> Handler : DomainUser (user)
+Handler -> ApplicationDbContext : Update user FullName
+ApplicationDbContext -> Database : Update DomainUser
+Database --> ApplicationDbContext : Success
+ApplicationDbContext --> Handler : Guid
+Handler --> UserEndpoints : Guid
+UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+UI -> User : Info: User info updated successfully
+
+@enduml

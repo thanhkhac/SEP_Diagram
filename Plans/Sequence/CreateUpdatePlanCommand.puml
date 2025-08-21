@@ -1,5 +1,5 @@
 @startuml
-actor AdminUser
+actor Moderator
 participant "Plan Management UI" as UI
 participant PlanEndpoints
 participant CreatePlanCommandHandler as Handler

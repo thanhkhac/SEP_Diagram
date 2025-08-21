@@ -1,0 +1,112 @@
+@startuml Authentication_User_Management
+!define primary_key(x) <b><color:#b8861b><&key></color> x</b>
+!define foreign_key(x) <color:#aaaaaa><&key></color> x
+!define column(x) <color:#efefef><&media-record></color> x
+!define table(x) entity x << (T, white) >>
+
+
+table(AspNetRoles) {
+  primary_key(Id) : uuid
+  column(Name) : varchar(256)
+  column(NormalizedName) : varchar(256)
+  column(ConcurrencyStamp) : text
+}
+
+table(AspNetUsers) {
+  primary_key(Id) : uuid
+  column(IsDeleted) : boolean
+  column(IsBanned) : boolean
+  column(UserName) : varchar(256)
+  column(NormalizedUserName) : varchar(256)
+  column(Email) : varchar(256)
+  column(NormalizedEmail) : varchar(256)
+  column(EmailConfirmed) : boolean
+  column(PasswordHash) : text
+  column(SecurityStamp) : text
+  column(ConcurrencyStamp) : text
+  column(PhoneNumber) : text
+  column(PhoneNumberConfirmed) : boolean
+  column(TwoFactorEnabled) : boolean
+  column(LockoutEnd) : timestamp
+  column(LockoutEnabled) : boolean
+  column(AccessFailedCount) : integer
+  column(EmailVerificationCode) : varchar(10)
+  column(PasswordResetRequestLockoutEnd) : timestamp
+  column(FailedPasswordResetAttempts) : integer
+  column(PasswordResetCode) : varchar(10)
+  column(PasswordResetCodeExpiryTime) : timestamp
+  column(PasswordResetRequestAttempts) : integer
+  column(EmailRequestLockout) : integer
+  column(EmailRequestLockoutTime) : timestamp
+  column(EmailVerificationCodeExpiryTime) : timestamp
+  column(EmailVerificationLockoutEnd) : timestamp
+  column(EmailVerificationRequestAttempts) : integer
+  column(EmailVerificationRequestLockoutEnd) : timestamp
+  column(FailedEmailVerificationAttempts) : integer
+  column(PasswordResetLockoutEnd) : timestamp
+}
+
+table(DomainUsers) {
+  primary_key(Id) : uuid
+  column(FullName) : varchar(500)
+  column(Email) : varchar(500)
+  column(IsDeleted) : boolean
+  column(IsBanned) : boolean
+  column(TokenCount) : bigint
+  column(Balance) : bigint
+  column(PaymentCode) : varchar(100)
+  column(IsPaymentLocked) : boolean
+  column(Created) : timestamp
+}
+
+table(AspNetRoleClaims) {
+  primary_key(Id) : integer
+  foreign_key(RoleId) : uuid
+  column(ClaimType) : text
+  column(ClaimValue) : text
+}
+
+table(AspNetUserClaims) {
+  primary_key(Id) : integer
+  foreign_key(UserId) : uuid
+  column(ClaimType) : text
+  column(ClaimValue) : text
+}
+
+table(AspNetUserLogins) {
+  primary_key(LoginProvider) : text
+  primary_key(ProviderKey) : text
+  column(ProviderDisplayName) : text
+  foreign_key(UserId) : uuid
+}
+
+table(AspNetUserRoles) {
+  primary_key(UserId) : uuid
+  primary_key(RoleId) : uuid
+}
+
+table(AspNetUserTokens) {
+  primary_key(UserId) : uuid
+  primary_key(LoginProvider) : text
+  primary_key(Name) : text
+  column(Value) : text
+}
+
+table(RefreshTokens) {
+  primary_key(Id) : varchar(36)
+  foreign_key(UserAccountId) : uuid
+  column(Token) : varchar(500)
+  column(ExpireAt) : timestamp
+}
+
+' Relationships
+DomainUsers ||--|| AspNetUsers : Id
+AspNetRoleClaims }o--|| AspNetRoles : RoleId
+AspNetUserClaims }o--|| AspNetUsers : UserId
+AspNetUserLogins }o--|| AspNetUsers : UserId
+AspNetUserRoles }o--|| AspNetUsers : UserId
+AspNetUserRoles }o--|| AspNetRoles : RoleId
+AspNetUserTokens }o--|| AspNetUsers : UserId
+RefreshTokens }o--|| AspNetUsers : UserAccountId
+
+@enduml

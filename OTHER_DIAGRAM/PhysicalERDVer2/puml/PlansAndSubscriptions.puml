@@ -1,0 +1,74 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "Plans" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  Price : numeric(18, 2)
+  Duration : integer
+  CanLearn : boolean
+  CanOpenTest : boolean
+  CanCopyOrImportQuestionSet : boolean
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  IsActive : boolean
+  Unit : text
+}
+
+entity "UserSubscriptions" {
+  *Id : uuid (PK)
+  --
+  UserId : uuid (FK)
+  PlanId : uuid (FK)
+  DateStart : timestamp with time zone
+  DateFinish : timestamp with time zone
+  IsActive : boolean
+  Duration : integer
+  Price : integer
+  Unit : text
+}
+
+entity "PlanPriceHistories" {
+  *Id : uuid (PK)
+  --
+  PlanId : uuid (FK)
+  Price : integer
+  DateStart : timestamp with time zone
+  DateFinish : timestamp with time zone
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+"DomainUsers" ||--o{ "Plans" : CreatedBy
+"DomainUsers" ||--o{ "UserSubscriptions" : UserId
+"DomainUsers" ||--o{ "PlanPriceHistories" : CreatedBy
+
+"Plans" ||--o{ "UserSubscriptions"
+"Plans" ||--o{ "PlanPriceHistories"
+
+@enduml

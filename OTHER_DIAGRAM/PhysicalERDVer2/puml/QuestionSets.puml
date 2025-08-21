@@ -1,0 +1,143 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "DomainUsers" {
+  *Id : uuid (PK)
+  --
+  FullName : varchar(500)
+  Email : varchar(500)
+  IsDeleted : boolean
+  IsBanned : boolean
+  TokenCount : bigint
+  Balance : bigint
+  PaymentCode : varchar(100)
+  IsPaymentLocked : boolean
+  Created : timestamp with time zone
+}
+
+entity "QuestionSets" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(100)
+  Description : varchar(500)
+  VisibilityMode : text
+  QuestionCount : integer
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  RatingAverage : double precision
+  RatingCount : integer
+  RatingSum : integer
+}
+
+entity "Questions" {
+  *Id : uuid (PK)
+  --
+  QuestionSetId : uuid (FK)
+  Type : text
+  QuestionText : varchar(1000)
+  TextFormat : text
+  ExplainText : varchar(1000)
+  Score : numeric(5, 2)
+  DataJson : json
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+  IsDeleted : boolean
+}
+
+entity "Tags" {
+  *Id : uuid (PK)
+  --
+  Name : varchar(500)
+  QuestionSetCount : integer
+}
+
+entity "QuestionSetTags" {
+  *TagId : uuid (PK, FK)
+  *QuestionSetId : uuid (PK, FK)
+}
+
+entity "QuestionSetUsers" {
+  *UserId : uuid (PK, FK)
+  *QuestionSetId : uuid (PK, FK)
+  --
+  ShareMode : text
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "UserQuestionSetHistories" {
+  *UserId : uuid (PK, FK)
+  *QuestionId : uuid (PK, FK)
+  --
+  IsCorrect : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "UserQuestionSetAccessHistories" {
+  *UserId : uuid (PK, FK)
+  *QuestionSetId : uuid (PK, FK)
+  --
+  LastAccess : timestamp with time zone
+  IsSaved : boolean
+}
+
+entity "QuestionSetRatings" {
+  *QuestionSetId : uuid (PK, FK)
+  *CreatedBy : uuid (PK, FK)
+  --
+  Rating : integer
+  Created : timestamp with time zone
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+entity "Comments" {
+  *Id : uuid (PK)
+  --
+  ParentId : uuid (FK)
+  QuestionId : uuid (FK)
+  Content : varchar(1000)
+  IsDeleted : boolean
+  Created : timestamp with time zone
+  CreatedBy : uuid (FK)
+  LastModified : timestamp with time zone
+  LastModifiedBy : uuid
+}
+
+"DomainUsers" ||--o{ "QuestionSets" : CreatedBy
+"DomainUsers" ||--o{ "Questions" : CreatedBy
+"DomainUsers" ||--o{ "QuestionSetUsers" : UserId
+"DomainUsers" ||--o{ "UserQuestionSetHistories" : UserId
+"DomainUsers" ||--o{ "UserQuestionSetAccessHistories" : UserId
+"DomainUsers" ||--o{ "QuestionSetRatings" : CreatedBy
+"DomainUsers" ||--o{ "Comments" : CreatedBy
+
+"QuestionSets" ||--o{ "Questions"
+"QuestionSets" ||--o{ "QuestionSetTags"
+"QuestionSets" ||--o{ "QuestionSetUsers"
+"QuestionSets" ||--o{ "UserQuestionSetAccessHistories"
+"QuestionSets" ||--o{ "QuestionSetRatings"
+
+"Questions" ||--o{ "UserQuestionSetHistories"
+"Questions" ||--o{ "Comments"
+
+"Tags" ||--o{ "QuestionSetTags"
+
+"Comments" }o--|| "Comments" : ParentId
+
+@enduml

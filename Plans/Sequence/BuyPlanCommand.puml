@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor Moderator
 participant "Plan Purchase UI" as UI
 participant PlanEndpoints
 participant BuyPlanCommandHandler as Handler
