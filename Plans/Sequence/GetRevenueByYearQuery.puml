@@ -8,19 +8,28 @@ participant ApplicationDbContext
 participant Database
 
 AdminUser -> UI : Request revenue by year
+activate UI
 UI -> PlanEndpoints : GET /api/Plan/RevenueByYear?year=...
+activate PlanEndpoints
 PlanEndpoints -> Handler : Handle(GetRevenueByYearQuery)
+activate Handler
 Handler -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+activate IdentityService
 IdentityService --> Handler : bool (isAdmin)
+deactivate IdentityService
 alt Not Admin
     Handler --> PlanEndpoints : Error: USER_NOT_HAVE_PERMISSION
     PlanEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION)
     UI -> AdminUser : Error: User does not have permission
 else Is Admin
     Handler -> ApplicationDbContext : Query UserSubscriptions by DateStart Year
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query UserSubscriptions
+    activate Database
     Database --> ApplicationDbContext : List<UserSubscription>
+deactivate Database
     ApplicationDbContext --> Handler : List<UserSubscription>
+deactivate ApplicationDbContext
     loop For each month (1 to 12)
         Handler -> Handler : Sum revenue for month
         Handler -> Handler : Add to result list
@@ -29,4 +38,7 @@ else Is Admin
     PlanEndpoints --> UI : 200 OK (ApiResponse<List<RevenueDto>>)
     UI -> AdminUser : Show revenue by year
 end
+deactivate Handler
+deactivate PlanEndpoints
+deactivate UI
 @enduml
