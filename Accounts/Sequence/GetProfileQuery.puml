@@ -25,20 +25,12 @@ deactivate Database
 
 ApplicationDbContext --> Handler : User
 deactivate ApplicationDbContext
-
-alt User Profile Not Found
-    Handler --> AccountEndpoints : Error: USER_PROFILE_NOT_FOUND
-    deactivate Handler
-    AccountEndpoints --> UI : 404 Not Found (errorCode: USER_PROFILE_NOT_FOUND)
-    deactivate AccountEndpoints
-    UI -> User : Error: User profile not found
-else User Profile Found
     Handler --> AccountEndpoints : UserProfileDto
     deactivate Handler
     AccountEndpoints --> UI : 200 OK (ApiResponse<UserProfileDto>)
-    deactivate AccountEndpoints
+    deactivate AccousntEndpoints
     UI -> User : Show user profile
-end
+
 deactivate UI
 
 @enduml
