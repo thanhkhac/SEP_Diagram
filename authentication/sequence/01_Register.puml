@@ -8,32 +8,53 @@ participant UserManager
 Database Database
 
 User -> UI : Enter email, password
+activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/Register
+activate AuthenticationEndpoints
 AuthenticationEndpoints -> RegisterUserHandler : Send RegisterUserCommand
+activate RegisterUserHandler
 RegisterUserHandler -> IdentityService : CreateUserAsync(email, password)
+activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
-UserManager -> Database : Query UserAccount
-Database --> UserManager : UserAccount/null
+activate UserManager
+UserManager -> Database : Query User
+activate Database
+Database --> UserManager : User/null
+deactivate Database
+deactivate UserManager
 alt User exists
     alt User is banned
+        UserManager --> IdentityService : Error: ACCOUNT_EMAIL_BANNED
+
         IdentityService --> RegisterUserHandler : Error: ACCOUNT_EMAIL_BANNED
         RegisterUserHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_BANNED)
-        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_EMAIL_BANNED)
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_EMAIL_BANNED" }
         UI -> User : Error message: Email is banned
     else User is not banned
+        UserManager --> IdentityService : Error: IDENTITY_DUPLICATE_EMAIL
+        deactivate UserManager
         IdentityService --> RegisterUserHandler : Error: IDENTITY_DUPLICATE_EMAIL
         RegisterUserHandler --> AuthenticationEndpoints : Error (IDENTITY_DUPLICATE_EMAIL)
-        AuthenticationEndpoints --> UI : 400 Bad Request (IDENTITY_DUPLICATE_EMAIL)
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "IDENTITY_DUPLICATE_EMAIL" }
         UI -> User : Error message: Email already exists
     end
 else User doesn't exist
-    IdentityService -> UserManager : CreateAsync(userAccount, password)
-    UserManager -> Database : Insert UserAccount + User
+    IdentityService -> UserManager : CreateAsync(user, password)
+    activate UserManager
+    UserManager -> Database : Insert User
+    activate Database
     Database --> UserManager : Success
+    deactivate Database
     UserManager --> IdentityService : Success
+    deactivate UserManager
     IdentityService --> RegisterUserHandler : Return userId
     RegisterUserHandler --> AuthenticationEndpoints : Return userId
-    AuthenticationEndpoints --> UI : Return 200 + UserId
+    AuthenticationEndpoints --> UI : 200 OK { "userId": <id> }
     UI -> User : Redirect to login page
+    note right: User is redirected to login page after successful registration
 end
+deactivate IdentityService
+deactivate RegisterUserHandler
+deactivate AuthenticationEndpoints
+deactivate UI
 @enduml

@@ -9,13 +9,22 @@ participant EmailService
 participant Database
 
 User -> UI : Enter email, click "Send verification code"
+activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/RequestEmailVerification
+activate AuthenticationEndpoints
 AuthenticationEndpoints -> RequestEmailVerificationHandler : SendRequestEmailVerificationCommand
+activate RequestEmailVerificationHandler
 RequestEmailVerificationHandler -> IdentityService : RequestEmailVerificationAsync(email)
+activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+activate UserManager
 UserManager -> Database : Query UserAccount
+activate Database
 Database --> UserManager : UserAccount/null
+deactivate Database
 alt User not found
+    UserManager --> IdentityService : Error: ACCOUNT_NOTFOUND
+    deactivate UserManager
     IdentityService --> RequestEmailVerificationHandler : Error: ACCOUNT_NOTFOUND
     RequestEmailVerificationHandler --> AuthenticationEndpoints : Error ACCOUNT_NOTFOUND
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
@@ -23,6 +32,8 @@ alt User not found
 else User found
     IdentityService -> IdentityService : Check lockout
     alt Lockout active
+        UserManager --> IdentityService : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
+        deactivate UserManager
         IdentityService --> RequestEmailVerificationHandler : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
         AuthenticationEndpoints --> UI : 400 Bad Request (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
@@ -30,14 +41,25 @@ else User found
     else Allowed to send
         IdentityService -> IdentityService : Generate random code
         IdentityService -> UserManager : UpdateAsync(user)
+        activate UserManager
         UserManager -> Database : Update UserAccount
+        activate Database
         Database --> UserManager : Success
+        deactivate Database
+        UserManager --> IdentityService : Success
+        deactivate UserManager
         IdentityService -> EmailService : SendEmailAsync(email, subject, body)
+        activate EmailService
         EmailService --> IdentityService : Success
+        deactivate EmailService
         IdentityService --> RequestEmailVerificationHandler : Success
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Success
         AuthenticationEndpoints --> UI : 200 OK
         UI -> User : Info: Verification code sent to your email
     end
 end
+deactivate IdentityService
+deactivate RequestEmailVerificationHandler
+deactivate AuthenticationEndpoints
+deactivate UI
 @enduml
