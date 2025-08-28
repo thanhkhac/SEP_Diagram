@@ -9,18 +9,29 @@ participant Database
 participant PromptProvider
 
 User -> UI : Upload PDF, select parts, types, count, click "Generate Questions"
+activate UI
 UI -> AiGenerateEndpoints : POST /api/AiGenerate/Questions
+activate AiGenerateEndpoints
 AiGenerateEndpoints -> Handler : Handle(GenerateQuestionWithAiCommand)
+activate Handler
 Handler -> AiGenerateService : UploadFileAsync(fileData)
+activate AiGenerateService
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+deactivate AiGenerateService
 Handler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(...)
+activate PromptProvider
 PromptProvider --> Handler : SystemInstruction
 Handler -> PromptProvider : GetGenerateQuestionPrompt(...)
 PromptProvider --> Handler : Prompt
+deactivate PromptProvider
 Handler -> ApplicationDbContext : Query currentUser by UserId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUser
+activate Database
 Database --> ApplicationDbContext : DomainUser
 ApplicationDbContext --> Handler : DomainUser (currentUser)
+deactivate Database
+deactivate ApplicationDbContext
 
 alt Payment Locked
     Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
@@ -29,20 +40,25 @@ alt Payment Locked
 else Payment Not Locked
     Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
     ApplicationDbContext -> Database : Update DomainUser
+    activate Database
     Database --> ApplicationDbContext : Success
+    deactivate Database
     Handler -> ApplicationDbContext : Query SystemSettings
     ApplicationDbContext -> Database : Query SystemSettings
+    activate Database
     Database --> ApplicationDbContext : SystemSetting
     ApplicationDbContext --> Handler : SystemSetting
+    deactivate Database
 
     alt System Setting Not Found
         Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
         AiGenerateEndpoints --> UI : 400 Bad Request (SYSTEM_SETTING_NOT_FOUND)
         UI -> User : Error: System settings not found
     else System Setting Found
-        activate Handler
         Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+        activate AiGenerateService
         AiGenerateService --> Handler : TokenCount
+        deactivate AiGenerateService
 
         alt File Too Large
             Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
@@ -57,22 +73,30 @@ else Payment Not Locked
                 UI -> User : Error: Insufficient balance
             else Sufficient Balance
                 Handler -> AiGenerateService : SendPromptWithFileAsync(...)
+                activate AiGenerateService
                 AiGenerateService --> Handler : AI_Response
+                deactivate AiGenerateService
                 Handler -> ApplicationDbContext : Decrease Balance
                 ApplicationDbContext -> Database : Update DomainUser
+                activate Database
                 ApplicationDbContext -> Database : SaveChanges()
                 Database --> ApplicationDbContext : Success
+                deactivate Database
 
                 Handler -> AiGenerateService : CountToken(result)
+                activate AiGenerateService
                 AiGenerateService --> Handler : OutputTokenCount
+                deactivate AiGenerateService
 
                 Handler -> Handler : Calculate output cost
                 Handler -> ApplicationDbContext : Decrease Balance (output cost)
                 ApplicationDbContext -> Database : Update DomainUser
                 Handler -> ApplicationDbContext : Set IsPaymentLocked = false
                 ApplicationDbContext -> Database : Update DomainUser
+                activate Database
                 ApplicationDbContext -> Database : SaveChanges()
                 Database --> ApplicationDbContext : Success
+                deactivate Database
 
                 Handler -> Handler : Extract JSON from AI Response
                 alt NO_STRUCTURE_FOUND
@@ -90,13 +114,17 @@ else Payment Not Locked
                 end
             end
         end
-        deactivate Handler
     end
 end
 
 Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Update DomainUser
+activate Database
 Database --> ApplicationDbContext : Success
+deactivate Database
 Handler -> AiGenerateService : DeleteFileAsync(fileName)
+activate AiGenerateService
 AiGenerateService --> Handler : Success
+deactivate AiGenerateService
 @enduml

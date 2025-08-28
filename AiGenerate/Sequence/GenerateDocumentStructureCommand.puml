@@ -10,34 +10,26 @@ participant PromptProvider
 
 User -> UI : Upload PDF, click "Generate Structure"
 activate UI
-
 UI -> AiGenerateEndpoints : POST /api/AiGenerate/DocumentStructure
 activate AiGenerateEndpoints
-
 AiGenerateEndpoints -> Handler : Handle(GenerateDocumentStructureCommand)
 activate Handler
-
 Handler -> AiGenerateService : UploadFileAsync(fileData)
 activate AiGenerateService
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
 deactivate AiGenerateService
-
 Handler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
 activate PromptProvider
 PromptProvider --> Handler : SystemInstruction
 deactivate PromptProvider
-
 Handler -> ApplicationDbContext : Query currentUser by UserId
 activate ApplicationDbContext
-
 ApplicationDbContext -> Database : Query DomainUser
 activate Database
 Database --> ApplicationDbContext : DomainUser
 deactivate Database
-
 ApplicationDbContext --> Handler : DomainUser (currentUser)
 deactivate ApplicationDbContext
-
 alt Payment Locked
     Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
     AiGenerateEndpoints --> UI : 400 Bad Request (PAYMENT_IN_PROGRESS)
@@ -48,19 +40,17 @@ else Payment Not Locked
     ApplicationDbContext -> Database : Update DomainUser
     activate Database
     Database --> ApplicationDbContext : Success
-    deactivate Database
+deactivate Database
     ApplicationDbContext --> Handler : Success
-    deactivate ApplicationDbContext
-
+deactivate ApplicationDbContext
     Handler -> ApplicationDbContext : Query SystemSettings
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query SystemSettings
     activate Database
     Database --> ApplicationDbContext : SystemSetting
-    deactivate Database
+deactivate Database
     ApplicationDbContext --> Handler : SystemSetting
-    deactivate ApplicationDbContext
-
+deactivate ApplicationDbContext
     alt System Setting Not Found
         Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
         AiGenerateEndpoints --> UI : 400 Bad Request (SYSTEM_SETTING_NOT_FOUND)
@@ -69,15 +59,13 @@ else Payment Not Locked
         Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
         activate AiGenerateService
         AiGenerateService --> Handler : TokenCount
-        deactivate AiGenerateService
-
+deactivate AiGenerateService
         alt File Too Large
             Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
             AiGenerateEndpoints --> UI : 400 Bad Request (AI_FILE_TOO_LARGE)
             UI -> User : Error: File too large
         else File Size OK
             Handler -> Handler : Calculate minimumTotalPoint
-
             alt Insufficient Balance
                 Handler --> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
                 AiGenerateEndpoints --> UI : 400 Bad Request (INSUFFICIENT_BALANCE)
@@ -86,45 +74,40 @@ else Payment Not Locked
                 Handler -> AiGenerateService : SendPromptWithFileAsync(...)
                 activate AiGenerateService
                 AiGenerateService --> Handler : AI_Response
-                deactivate AiGenerateService
-
+deactivate AiGenerateService
                 Handler -> ApplicationDbContext : Decrease Balance
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
                 activate Database
                 Database --> ApplicationDbContext : Success
-                deactivate Database
+deactivate Database
                 ApplicationDbContext --> Handler : Success
-                deactivate ApplicationDbContext
-
+deactivate ApplicationDbContext
                 Handler -> AiGenerateService : CountToken(result)
                 activate AiGenerateService
                 AiGenerateService --> Handler : OutputTokenCount
-                deactivate AiGenerateService
-
+deactivate AiGenerateService
                 Handler -> Handler : Calculate output cost
                 Handler -> ApplicationDbContext : Decrease Balance (output cost)
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
                 activate Database
                 Database --> ApplicationDbContext : Success
-                deactivate Database
+deactivate Database
                 ApplicationDbContext --> Handler : Success
-                deactivate ApplicationDbContext
-
+deactivate ApplicationDbContext
                 Handler -> ApplicationDbContext : Set IsPaymentLocked = false
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
                 activate Database
                 Database --> ApplicationDbContext : Success
-                deactivate Database
+deactivate Database
                 ApplicationDbContext -> Database : SaveChanges()
                 activate Database
                 Database --> ApplicationDbContext : Success
-                deactivate Database
+deactivate Database
                 ApplicationDbContext --> Handler : Success
-                deactivate ApplicationDbContext
-
+deactivate ApplicationDbContext
                 Handler -> Handler : Extract JSON from AI Response
                 alt NO_STRUCTURE_FOUND
                     Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
@@ -143,8 +126,7 @@ else Payment Not Locked
         end
     end
 end
-
-... Always cleanup ...
+'... Always cleanup ...
 Handler -> ApplicationDbContext : Set IsPaymentLocked = false
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Update DomainUser
@@ -153,12 +135,10 @@ Database --> ApplicationDbContext : Success
 deactivate Database
 ApplicationDbContext --> Handler : Success
 deactivate ApplicationDbContext
-
 Handler -> AiGenerateService : DeleteFileAsync(fileName)
 activate AiGenerateService
 AiGenerateService --> Handler : Success
 deactivate AiGenerateService
-
 deactivate Handler
 deactivate AiGenerateEndpoints
 deactivate UI

@@ -7,14 +7,23 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Fill in info, click "Create"
+activate UI
 UI -> QuestionSetEndpoints : POST /api/QuestionSet
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(CreateQuestionSetCommand)
+activate Handler
 Handler -> ApplicationDbContext : Add new QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Insert new QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSetId
+deactivate Database
 ApplicationDbContext --> Handler : Guid
+deactivate ApplicationDbContext
 Handler --> QuestionSetEndpoints : Guid
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
 UI -> User : Info: Question set created successfully
-
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml 

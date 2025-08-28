@@ -9,24 +9,36 @@ participant Database
 participant PromptProvider
 
 User -> UI : Upload PDF, request cost estimation
+activate UI
 UI -> AiGenerateEndpoints : GET /api/AiGenerate/GetCostToGenerateQuestion
+activate AiGenerateEndpoints
 AiGenerateEndpoints -> Handler : Handle(GetCostToGenerateDocumentStructureQuery)
+activate Handler
 Handler -> AiGenerateService : UploadFileAsync(fileData)
+activate AiGenerateService
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+deactivate AiGenerateService
 Handler -> PromptProvider : GetGenerateQuestionSystemInstructionPrompt()
+activate PromptProvider
 PromptProvider --> Handler : SystemInstruction
+deactivate PromptProvider
 Handler -> ApplicationDbContext : Query SystemSettings
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query SystemSettings
+activate Database
 Database --> ApplicationDbContext : SystemSetting
 ApplicationDbContext --> Handler : SystemSetting
+deactivate Database
+deactivate ApplicationDbContext
 alt System Setting Not Found
     Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
     AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: SYSTEM_SETTING_NOT_FOUND)
     UI -> User : Error: System settings not found
 else System Setting Found
-    activate Handler
     Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+    activate AiGenerateService
     AiGenerateService --> Handler : TokenCount (token)
+    deactivate AiGenerateService
     alt File Too Large (Tokens > MaxInputToken)
         Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
         AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: AI_FILE_TOO_LARGE)
@@ -39,6 +51,8 @@ else System Setting Found
     end
     deactivate Handler
     Handler -> AiGenerateService : DeleteFileAsync(fileName)
+    activate AiGenerateService
     AiGenerateService --> Handler : Success
+    deactivate AiGenerateService
 end
 @enduml
