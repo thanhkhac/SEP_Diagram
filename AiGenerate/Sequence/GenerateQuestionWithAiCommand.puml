@@ -13,18 +13,19 @@ UI -> AiGenerateEndpoints : POST /api/AiGenerate/Questions
 AiGenerateEndpoints -> Handler : Handle(GenerateQuestionWithAiCommand)
 Handler -> AiGenerateService : UploadFileAsync(fileData)
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
-Handler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(isGenerateExplain, language)
+Handler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(...)
 PromptProvider --> Handler : SystemInstruction
-Handler -> PromptProvider : GetGenerateQuestionPrompt(documentStructure, selectedParts, selectedQuesiontype, questionCount, isGenerateExplain)
+Handler -> PromptProvider : GetGenerateQuestionPrompt(...)
 PromptProvider --> Handler : Prompt
 Handler -> ApplicationDbContext : Query currentUser by UserId
 ApplicationDbContext -> Database : Query DomainUser
 Database --> ApplicationDbContext : DomainUser
 ApplicationDbContext --> Handler : DomainUser (currentUser)
+
 alt Payment Locked
     Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
-    AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: PAYMENT_IN_PROGRESS)
-    UI -> User : Error: Payment in progress, please wait
+    AiGenerateEndpoints --> UI : 400 Bad Request (PAYMENT_IN_PROGRESS)
+    UI -> User : Error: Payment in progress
 else Payment Not Locked
     Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
     ApplicationDbContext -> Database : Update DomainUser
@@ -33,60 +34,69 @@ else Payment Not Locked
     ApplicationDbContext -> Database : Query SystemSettings
     Database --> ApplicationDbContext : SystemSetting
     ApplicationDbContext --> Handler : SystemSetting
+
     alt System Setting Not Found
         Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
-        AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: SYSTEM_SETTING_NOT_FOUND)
+        AiGenerateEndpoints --> UI : 400 Bad Request (SYSTEM_SETTING_NOT_FOUND)
         UI -> User : Error: System settings not found
     else System Setting Found
         activate Handler
         Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
-        AiGenerateService --> Handler : TokenCount (minimumExpectedTokens)
-        alt File Too Large (Tokens > MaxInputToken)
+        AiGenerateService --> Handler : TokenCount
+
+        alt File Too Large
             Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
-            AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: AI_FILE_TOO_LARGE)
-            UI -> User : Error: File too large for AI processing
+            AiGenerateEndpoints --> UI : 400 Bad Request (AI_FILE_TOO_LARGE)
+            UI -> User : Error: File too large
         else File Size OK
-            Handler -> Handler : Calculate minimumTotalPoint (based on token costs and fixed fee)
+            Handler -> Handler : Calculate minimumTotalPoint
+
             alt Insufficient Balance
                 Handler --> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
-                AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: INSUFFICIENT_BALANCE)
+                AiGenerateEndpoints --> UI : 400 Bad Request (INSUFFICIENT_BALANCE)
                 UI -> User : Error: Insufficient balance
             else Sufficient Balance
-                Handler -> AiGenerateService : SendPromptWithFileAsync(fileUri, systemInstruction, prompt)
-                AiGenerateService --> Handler : AI_Response (result string)
-                Handler -> ApplicationDbContext : Decrease currentUser.Balance
+                Handler -> AiGenerateService : SendPromptWithFileAsync(...)
+                AiGenerateService --> Handler : AI_Response
+                Handler -> ApplicationDbContext : Decrease Balance
                 ApplicationDbContext -> Database : Update DomainUser
+                ApplicationDbContext -> Database : SaveChanges()
                 Database --> ApplicationDbContext : Success
-                alt AI Response is not empty
-                    Handler -> AiGenerateService : CountToken(result)
-                    AiGenerateService --> Handler : OutputTokenCount
-                    Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = false
-                    ApplicationDbContext -> Database : Update DomainUser
-                    Database --> ApplicationDbContext : Success
-                end
+
+                Handler -> AiGenerateService : CountToken(result)
+                AiGenerateService --> Handler : OutputTokenCount
+
+                Handler -> Handler : Calculate output cost
+                Handler -> ApplicationDbContext : Decrease Balance (output cost)
+                ApplicationDbContext -> Database : Update DomainUser
+                Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+                ApplicationDbContext -> Database : Update DomainUser
+                ApplicationDbContext -> Database : SaveChanges()
+                Database --> ApplicationDbContext : Success
+
                 Handler -> Handler : Extract JSON from AI Response
-                alt AI Response contains "NO_STRUCTURE_FOUND"
+                alt NO_STRUCTURE_FOUND
                     Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
-                    AiGenerateEndpoints --> UI : 400 Bad Request (errorCode: NO_STRUCTURE_FOUND)
-                    UI -> User : Error: No structure found in document
-                else JSON Deserialization Failed
+                    AiGenerateEndpoints --> UI : 400 Bad Request (NO_STRUCTURE_FOUND)
+                    UI -> User : Error: No structure found
+                else if JSON Deserialization Failed
                     Handler --> AiGenerateEndpoints : Error: GENERATE_CONTENT_FAILED
-                    AiGenerateEndpoints --> UI : 500 Internal Server Error (errorCode: GENERATE_CONTENT_FAILED)
-                    UI -> User : Error: Failed to generate questions
+                    AiGenerateEndpoints --> UI : 500 Internal Server Error (GENERATE_CONTENT_FAILED)
+                    UI -> User : Error: Failed to generate
                 else JSON Deserialization Success
                     Handler --> AiGenerateEndpoints : List<CreateUpdateQuestionDto>
-                    AiGenerateEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+                    AiGenerateEndpoints --> UI : 200 OK
                     UI -> User : Show generated questions
                 end
             end
         end
         deactivate Handler
     end
-finally
-    Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = false
-    ApplicationDbContext -> Database : Update DomainUser
-    Database --> ApplicationDbContext : Success
-    Handler -> AiGenerateService : DeleteFileAsync(fileName)
-    AiGenerateService --> Handler : Success
 end
+
+Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+ApplicationDbContext -> Database : Update DomainUser
+Database --> ApplicationDbContext : Success
+Handler -> AiGenerateService : DeleteFileAsync(fileName)
+AiGenerateService --> Handler : Success
 @enduml

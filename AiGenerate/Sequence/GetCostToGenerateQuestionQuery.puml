@@ -9,11 +9,11 @@ participant Database
 participant PromptProvider
 
 User -> UI : Upload PDF, request cost estimation
-UI -> AiGenerateEndpoints : GET /api/AiGenerate/DocumentStructure/Cost
+UI -> AiGenerateEndpoints : GET /api/AiGenerate/GetCostToGenerateQuestion
 AiGenerateEndpoints -> Handler : Handle(GetCostToGenerateDocumentStructureQuery)
 Handler -> AiGenerateService : UploadFileAsync(fileData)
 AiGenerateService --> Handler : UploadResult (FileUri, FileName)
-Handler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
+Handler -> PromptProvider : GetGenerateQuestionSystemInstructionPrompt()
 PromptProvider --> Handler : SystemInstruction
 Handler -> ApplicationDbContext : Query SystemSettings
 ApplicationDbContext -> Database : Query SystemSettings

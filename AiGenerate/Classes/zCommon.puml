@@ -1,0 +1,6 @@
+@startuml
+EndpointGroupBase <|-- AiGenerateEndpoints : <<extends>>
+AiGenerateEndpoints ..> ApiResponse : <<uses>>
+AiGenerateEndpoints ..> ISender : <<inject>>
+
+@enduml

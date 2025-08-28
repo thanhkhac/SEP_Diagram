@@ -1,0 +1,56 @@
+@startuml
+top to bottom direction
+skinparam wrapWidth 200
+'=====================DEFINE========================
+'=====================IMPORT========================
+!include ../../GlobalSettings.puml
+!include ../../common/Mediatr.puml
+!include ../../common/EndpointClasses.puml
+!include ../../common/IApplicationDbContext.puml
+!include ../../common/service/IUser.puml
+'=====================COMMAND========================
+class GenerateDocumentStructureCommand {
+    + FileData : FileStreamData
+}
+
+class DocumentStructureDto {
+    + Title : string
+    + Children : List<DocumentStructureDto>
+}
+
+DocumentStructureDto o--  DocumentStructureDto : Children
+
+
+class GenerateDocumentStructureCommandHandler {
+    -  _context : IApplicationDbContext
+    -  _aiGenerateService : IAiGenerateService
+    -  _user : IUser
+    + GenerateDocumentStructureCommandHandler(context:IApplicationDbContext, aiGenerateService:IAiGenerateService, user:IUser)
+    +  Handle(request:GenerateDocumentStructureCommand, cancellationToken:CancellationToken) : Task<Guid>
+}
+
+interface IAiGenerateService {
+    + SendPromptWithFileAsync(fileUri: string, systemInstruction: string, prompt: string, temperature: double = 0, topP: double = 1, cancellationToken: CancellationToken) : Task<string>
+    + SendPromptAsync(systemInstruction: string, prompt: string, temperature: double = 0, topP: double = 1, cancellationToken: CancellationToken) : Task<string>
+    + CountTokenWithFileAsync(fileUri: string, systemInstruction: string, prompt: string, cancellationToken: CancellationToken) : Task<int>
+    + CountToken(text1: string, text2: string, cancellationToken: CancellationToken) : Task<int>
+    + UploadFileAsync(fileData: FileStreamData, cancellationToken: CancellationToken) : Task<(string FileUri, string FileName)>
+    + DeleteFileAsync(fileName: string) : Task
+}
+'=====================ENDPOINT========================
+class AiGenerateEndpoints  {
+    +  AddQuestionSet(file:IFormFile, sender:ISender) : Task<Ok<ApiResponse<Guid>>>
+}
+'=====================RELATIONSHIP========================
+!include zCommon.puml
+GenerateDocumentStructureCommand ..|> IRequest : <<implements>>
+GenerateDocumentStructureCommandHandler ..> GenerateDocumentStructureCommand :  <<uses>>
+AiGenerateEndpoints ..> GenerateDocumentStructureCommand : <<uses>>
+GenerateDocumentStructureCommandHandler ..|> IRequestHandler : <<implements>>
+GenerateDocumentStructureCommandHandler ..> DocumentStructureDto: <<uses>>
+'=====INJECT
+GenerateDocumentStructureCommandHandler ..> IApplicationDbContext : <<inject>>
+GenerateDocumentStructureCommandHandler ..> IAiGenerateService : <<inject>>
+GenerateDocumentStructureCommandHandler ..> IUser : <<inject>>
+'=====INJECT
+@enduml

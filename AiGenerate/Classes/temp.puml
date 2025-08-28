@@ -1,0 +1,24 @@
+@startuml
+
+!include ../../GlobalSettings.puml
+class DocumentStructureDto {
+    + Title : string
+    + Children : List<DocumentStructureDto>
+}
+
+GenerateQuestionWithAiCommand --> DocumentStructureDto
+GenerateQuestionWithAiCommand --> DocumentStructureDto
+
+
+DocumentStructureDto <--  DocumentStructureDto : Children
+
+class GenerateQuestionWithAiCommand {
+    + FileData : FileStreamData
+    + IsGenerateExplain : bool
+    + Language : string
+    + QuestionCount : int
+    + QuestionTypes : List<string>
+    + DocumentStructure : DocumentStructureDto
+    + SelectedParts : DocumentStructureDto
+}
+@enduml

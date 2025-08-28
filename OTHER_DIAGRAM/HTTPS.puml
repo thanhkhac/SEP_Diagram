@@ -1,0 +1,34 @@
+@startuml
+title HTTPS (TLS Handshake) Sequence Diagram
+
+actor Client
+participant "Server" as Server
+participant "CA" as CA
+
+== TCP Handshake ==
+Client -> Server: SYN
+Server -> Client: SYN-ACK
+Client -> Server: ACK
+
+== TLS Handshake ==
+Client -> Server: ClientHello\n(supported TLS version,\ncipher suites, ClientRandom)
+Server -> Client: ServerHello\n(selected TLS version,\ncipher suite, ServerRandom)
+Server -> Client: Certificate
+Client -> CA: Verify Certificate
+CA --> Client: Certificate Valid / Invalid
+
+Client -> Server: ClientKeyExchange\n(Pre-master secret encrypted\nwith server public key)
+note over Client,Server
+Both derive Master Secret from:\nClientRandom + ServerRandom + Pre-Master
+end note
+
+Client -> Server: ChangeCipherSpec
+Client -> Server: Finished (encrypted)
+Server -> Client: ChangeCipherSpec
+Server -> Client: Finished (encrypted)
+
+== Secure Communication ==
+Client -> Server: HTTPS Request (encrypted)
+Server -> Client: HTTPS Response (encrypted)
+
+@enduml
