@@ -8,45 +8,69 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Select question set, click "Remove from Class"
+activate UI
 UI -> ClassEndpoints : DELETE /api/Class/{ClassId}/Questionsets/{QuestionSetId}
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(RemoveQuestionSetFromClassCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    activate ClassService
     ClassService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> ClassService : Permission
+    deactivate ApplicationDbContext
     ClassService --> Handler : bool
+    deactivate ClassService
     alt Not Lecturer or Owner
         Handler --> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
         ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
         UI -> User : Error: Not lecturer or owner of class
     else Allowed
         Handler -> ApplicationDbContext : Query ClassQuestionSet by QuestionSetId and ClassId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassQuestionSet
+        activate Database
         Database --> ApplicationDbContext : ClassQuestionSet
+        deactivate Database
         ApplicationDbContext --> Handler : ClassQuestionSet
+        deactivate ApplicationDbContext
         alt Question Set Not Found in Class
             Handler --> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND_IN_CLASS
             ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND_IN_CLASS)
             UI -> User : Error: Question set not found in class
         else Question Set Found in Class
             Handler -> ApplicationDbContext : Remove ClassQuestionSet
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Delete ClassQuestionSet
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
             ApplicationDbContext --> Handler : Guid
+            deactivate ApplicationDbContext
             Handler --> ClassEndpoints : Guid
             ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
             UI -> User : Info: Question set removed from class
         end
     end
 end
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

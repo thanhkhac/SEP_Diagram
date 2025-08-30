@@ -8,41 +8,64 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Click "Create Invite Code"
+activate UI
 UI -> ClassEndpoints : POST /api/Class/{ClassId}/Invitations
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(CreateInviteCodeCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    activate ClassService
     ClassService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> ClassService : Permission
+    deactivate ApplicationDbContext
     ClassService --> Handler : bool
+    deactivate ClassService
     alt Not Lecturer or Owner
         Handler --> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
         ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
         UI -> User : Error: Not lecturer or owner of class
     else Is Lecturer or Owner
         Handler -> ApplicationDbContext : Query existing ClassInvitations
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassInvitations
+        activate Database
         Database --> ApplicationDbContext : List<ClassInvitation>
+        deactivate Database
         ApplicationDbContext --> Handler : List<ClassInvitation>
+        deactivate ApplicationDbContext
         Handler -> ApplicationDbContext : Remove existing ClassInvitations
+        activate ApplicationDbContext
         Handler -> ApplicationDbContext : Add new ClassInvitation
         ApplicationDbContext -> Database : Delete existing, Insert new ClassInvitation
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : ClassCodeDto
+        deactivate ApplicationDbContext
         Handler --> ClassEndpoints : ClassCodeDto
         ClassEndpoints --> UI : 200 OK (ApiResponse<ClassCodeDto>)
         UI -> User : Info: Invite code created
     end
 end
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

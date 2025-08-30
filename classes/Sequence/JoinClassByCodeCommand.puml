@@ -7,44 +7,65 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Enter invite code, click "Join"
+activate UI
 UI -> ClassEndpoints : POST /api/Class/Students
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(JoinClassByCodeCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query ClassInvitation by Code
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query ClassInvitation
+activate Database
 Database --> ApplicationDbContext : ClassInvitation
+deactivate Database
 ApplicationDbContext --> Handler : ClassInvitation
+deactivate ApplicationDbContext
 alt Class Invitation Not Found or Expired
     Handler --> ClassEndpoints : Error: CLASS_CODE_NOT_FOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_CODE_NOT_FOUND)
     UI -> User : Error: Invite code not found or expired
 else Class Invitation Found
     Handler -> ApplicationDbContext : Query Class by ClassInvitation.ClassId
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Class
+    activate Database
     Database --> ApplicationDbContext : Class
+    deactivate Database
     ApplicationDbContext --> Handler : Class
+    deactivate ApplicationDbContext
     alt Class Not Found
         Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
         ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
         UI -> User : Error: Class not found
     else Class Found
         Handler -> ApplicationDbContext : Query ClassUser by UserId and ClassId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassUser
+        activate Database
         Database --> ApplicationDbContext : ClassUser
-        ApplicationDbContext --> Handler : ClassUser
+        deactivate Database
+        ApplicationDbContext -> Handler : ClassUser
+        deactivate ApplicationDbContext
         alt User Already In Class
             Handler --> ClassEndpoints : Error: STUDENT_ALREADY_EXISTS_IN_CLASS
             ClassEndpoints --> UI : 400 Bad Request (errorCode: STUDENT_ALREADY_EXISTS_IN_CLASS)
             UI -> User : Error: Student already in class
         else User Not In Class
             Handler -> ApplicationDbContext : Add new ClassUser and ClassInvitationUser
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Insert ClassUser, ClassInvitationUser
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
             ApplicationDbContext --> Handler : Unit
+            deactivate ApplicationDbContext
             Handler --> ClassEndpoints : Unit
             ClassEndpoints --> UI : 200 OK (ApiResponse<Unit>)
             UI -> User : Info: Joined class successfully
         end
     end
 end
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

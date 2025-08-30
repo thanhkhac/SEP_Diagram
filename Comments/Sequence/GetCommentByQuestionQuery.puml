@@ -9,37 +9,59 @@ participant Database
 participant Mapper
 
 User -> UI : View comments for question
+activate UI
 UI -> CommentEndpoints : GET /api/Comment/Question/{QuestionId}?pageNumber=...&pageSize=...
+activate CommentEndpoints
 CommentEndpoints -> Handler : Handle(GetCommentByQuestionQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Question (Include QuestionSet) by QuestionId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Question, QuestionSet
+activate Database
 Database --> ApplicationDbContext : Question, QuestionSet
+deactivate Database
 ApplicationDbContext --> Handler : Question
+deactivate ApplicationDbContext
 alt Question Not Found or Cannot Comment
     Handler --> CommentEndpoints : Error: QUESTION_CAN_NOT_COMMENT
     CommentEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_CAN_NOT_COMMENT)
     UI -> User : Error: Question not found or cannot comment
 else Question Found
     Handler -> CommentService : CanComment(questionSetId)
+    activate CommentService
     CommentService -> ApplicationDbContext : Query Permission (inferred)
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission (inferred)
+    activate Database
     Database --> ApplicationDbContext : Permission (inferred)
+    deactivate Database
     ApplicationDbContext --> CommentService : Permission (inferred)
+    deactivate ApplicationDbContext
     CommentService --> Handler : bool
+    deactivate CommentService
     alt No permission
         Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
         CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
         UI -> User : Error: User does not have permission to view comments
     else Allowed
         Handler -> ApplicationDbContext : Query Comments (Include ChildComments, CreatedByUser) by QuestionId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Comments, ChildComments, User
+        activate Database
         Database --> ApplicationDbContext : List<Comment>, List<Comment>, User
+        deactivate Database
         ApplicationDbContext --> Handler : List<Comment>
+        deactivate ApplicationDbContext
         Handler -> Mapper : Map List<Comment> to List<CommentDto>
+        activate Mapper
         Mapper --> Handler : List<CommentDto>
+        deactivate Mapper
         Handler --> CommentEndpoints : PaginatedList<CommentDto>
         CommentEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<CommentDto>>)
         UI -> User : Show comments
     end
 end
+deactivate Handler
+deactivate CommentEndpoints
+deactivate UI
 @enduml

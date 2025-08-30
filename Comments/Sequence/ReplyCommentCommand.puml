@@ -8,35 +8,55 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Enter reply, click "Reply"
+activate UI
 UI -> CommentEndpoints : POST /api/Comment/Reply
+activate CommentEndpoints
 CommentEndpoints -> Handler : Handle(ReplyCommentCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Parent Comment (Include Question, QuestionSet) by CommentId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Comment, Question, QuestionSet
+activate Database
 Database --> ApplicationDbContext : Comment, Question, QuestionSet
+deactivate Database
 ApplicationDbContext --> Handler : Comment (parentComment)
+deactivate ApplicationDbContext
 alt Parent Comment Not Found or Invalid
     Handler --> CommentEndpoints : Error: COMMENT_NOT_FOUND
     CommentEndpoints --> UI : 400 Bad Request (errorCode: COMMENT_NOT_FOUND)
     UI -> User : Error: Parent comment not found or invalid
 else Parent Comment Found
     Handler -> CommentService : CanComment(questionSetId)
-    CommentService -> ApplicationDbContext : Query Permission (inferred)
-    ApplicationDbContext -> Database : Query Permission (inferred)
-    Database --> ApplicationDbContext : Permission (inferred)
-    ApplicationDbContext --> CommentService : Permission (inferred)
+    activate CommentService
+    CommentService -> ApplicationDbContext : Query Permission 
+    activate ApplicationDbContext
+    ApplicationDbContext -> Database : Query Permission 
+    activate Database
+    Database --> ApplicationDbContext : Permission 
+    deactivate Database
+    ApplicationDbContext --> CommentService : Permission 
+    deactivate ApplicationDbContext
     CommentService --> Handler : bool
+    deactivate CommentService
     alt No permission
         Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
         CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
         UI -> User : Error: User does not have permission to reply
     else Allowed
         Handler -> ApplicationDbContext : Add new Reply Comment
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Insert Comment
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> CommentEndpoints : Guid
         CommentEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Reply posted successfully
     end
 end
+deactivate Handler
+deactivate CommentEndpoints
+deactivate UI
 @enduml

@@ -9,41 +9,67 @@ participant Database
 participant IdentityService
 
 User -> UI : Select comment, click "Delete"
+activate UI
 UI -> CommentEndpoints : DELETE /api/Comment/{CommentId}
+activate CommentEndpoints
 CommentEndpoints -> Handler : Handle(DeleteCommentCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Comment (Include Question) by CommentId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Comment, Question
+activate Database
 Database --> ApplicationDbContext : Comment, Question
+deactivate Database
 ApplicationDbContext --> Handler : Comment
+deactivate ApplicationDbContext
+
 alt Comment Not Found
     Handler --> CommentEndpoints : Error: COMMENT_NOT_FOUND
     CommentEndpoints --> UI : 400 Bad Request (errorCode: COMMENT_NOT_FOUND)
     UI -> User : Error: Comment not found
 else Comment Found
     Handler -> CommentService : CanDelete(commentId)
+    activate CommentService
     CommentService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    activate IdentityService
     IdentityService --> CommentService : bool (isAdmin)
+    deactivate IdentityService
+    
     alt Is Admin
         CommentService --> Handler : true
     else Not Admin
         CommentService -> ApplicationDbContext : Query Comment by Id and CreatedBy
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Comment
+        activate Database
         Database --> ApplicationDbContext : Comment
+        deactivate Database
         ApplicationDbContext --> CommentService : Comment
+        deactivate ApplicationDbContext
         CommentService --> Handler : bool (isCreator)
     end
+    deactivate CommentService
+    
     alt No permission
         Handler --> CommentEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_COMMENT
         CommentEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_COMMENT)
         UI -> User : Error: User does not have permission to delete this comment
     else Allowed
         Handler -> ApplicationDbContext : Mark Comment as Deleted
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Comment (IsDeleted = true)
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> CommentEndpoints : Guid
         CommentEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Comment deleted successfully
     end
 end
+
+deactivate Handler
+deactivate CommentEndpoints
+deactivate UI
 @enduml

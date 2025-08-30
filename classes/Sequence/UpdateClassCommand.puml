@@ -8,14 +8,23 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Edit info, click "Save"
+activate UI
 UI -> ClassEndpoints : PATCH /api/Class/{ClassId}
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(UpdateClassCommand)
+activate Handler
 Handler -> ClassService : GetClassOwnerAccess(classId)
+activate ClassService
 ClassService -> ApplicationDbContext : Query Class and ClassUser
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class and ClassUser
+activate Database
 Database --> ApplicationDbContext : Class, ClassUser
+deactivate Database
 ApplicationDbContext --> ClassService : Class, ClassUser
+deactivate ApplicationDbContext
 ClassService --> Handler : (IsOwner, ClassExists)
+deactivate ClassService
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
@@ -26,11 +35,18 @@ else Not Class Owner
     UI -> User : Error: Only owners can update
 else Class Found and Is Owner
     Handler -> ApplicationDbContext : Update Class
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Update Class
+    activate Database
     Database --> ApplicationDbContext : Success
+    deactivate Database
     ApplicationDbContext --> Handler : Guid
+    deactivate ApplicationDbContext
     Handler --> ClassEndpoints : Guid
     ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
     UI -> User : Info: Update successful
 end
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

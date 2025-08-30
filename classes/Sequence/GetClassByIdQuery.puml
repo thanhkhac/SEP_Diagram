@@ -8,23 +8,36 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Open class detail
+activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(GetClassByIdQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> ClassService : IsUserInClass(classId)
+    activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    activate Database
     Database --> ApplicationDbContext : ClassUser
+    deactivate Database
     ApplicationDbContext --> ClassService : ClassUser
+    deactivate ApplicationDbContext
     ClassService --> Handler : bool
+    deactivate ClassService
     alt User Not In Class
         Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
         ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
@@ -35,4 +48,7 @@ else Class Found
         UI -> User : Show class detail
     end
 end
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

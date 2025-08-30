@@ -7,12 +7,19 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Change member position
+activate UI
 UI -> ClassEndpoints : PATCH /api/Class/{ClassId}/Members/{UserId}
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(UpdatePositionCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query ClassUsers and Class by ClassId and UserId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query ClassUsers, Class
+activate Database
 Database --> ApplicationDbContext : List<ClassUser>, Class
+deactivate Database
 ApplicationDbContext --> Handler : List<ClassUser>, Class
+deactivate ApplicationDbContext
 alt Not Class Owner
     Handler --> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
     ClassEndpoints --> UI : 400 Bad Request (errorCode: ONLY_OWNERS_CAN_UPDATE)
@@ -34,9 +41,13 @@ else Is Class Owner
                 UI -> User : Error: Position not provided
             else Position Provided
                 Handler -> ApplicationDbContext : Update ClassMember position
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update ClassMember
+                activate Database
                 Database --> ApplicationDbContext : Success
+                deactivate Database
                 ApplicationDbContext --> Handler : UpdatePositionDto
+                deactivate ApplicationDbContext
                 Handler --> ClassEndpoints : UpdatePositionDto
                 ClassEndpoints --> UI : 200 OK (ApiResponse<UpdatePositionDto>)
                 UI -> User : Info: Member position updated
@@ -44,5 +55,7 @@ else Is Class Owner
         end
     end
 end
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

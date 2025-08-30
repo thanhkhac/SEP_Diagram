@@ -8,44 +8,72 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for tests
+activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Tests?status=...&testName=...
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(SearchTestInClassQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> ClassService : IsUserInClass(classId)
+    activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    activate Database
     Database --> ApplicationDbContext : ClassUser
+    deactivate Database
     ApplicationDbContext --> ClassService : ClassUser
+    deactivate ApplicationDbContext
     ClassService --> Handler : bool
+    deactivate ClassService
     alt User Not In Class
         Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
         ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
         UI -> User : Error: User not in class
     else User In Class
         Handler -> ApplicationDbContext : Query Tests by ClassId and TestName
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Tests
+        activate Database
         Database --> ApplicationDbContext : List<Test>
+        deactivate Database
         ApplicationDbContext --> Handler : List<Test>
+        deactivate ApplicationDbContext
         Handler -> Handler : Filter Tests by Status (Active, Completed, Upcoming)
         Handler -> ApplicationDbContext : Query TestVersions for QuestionCount
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestVersions
+        activate Database
         Database --> ApplicationDbContext : List<TestVersion>
+        deactivate Database
         ApplicationDbContext --> Handler : Dictionary<TestId, {TestVersionId, QuestionCount}>
+        deactivate ApplicationDbContext
         Handler -> ApplicationDbContext : Query Attempts for NumberOfCompletion
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Attempts
+        activate Database
         Database --> ApplicationDbContext : List<Attempt>
+        deactivate Database
         ApplicationDbContext --> Handler : Dictionary<TestId, Count>
+        deactivate ApplicationDbContext
         Handler --> ClassEndpoints : PaginatedList<SearchTestResultDto>
         ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<SearchTestResultDto>>)
         UI -> User : Show test search results
     end
 end
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

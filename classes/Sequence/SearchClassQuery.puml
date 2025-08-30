@@ -7,12 +7,19 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for classes
+activate UI
 UI -> ClassEndpoints : GET /api/Class?name=...&shareMode=...
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(SearchClassQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Classes (not deleted, with CreatedByUser and ClassUsers)
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Classes
+activate Database
 Database --> ApplicationDbContext : List<Class>
+deactivate Database
 ApplicationDbContext --> Handler : List<Class>
+deactivate ApplicationDbContext
 Handler -> Handler : Filter classes where current user is a ClassUser
 Handler -> Handler : Map Class Owners
 alt ShareMode Provided
@@ -21,5 +28,7 @@ end
 Handler --> ClassEndpoints : PaginatedList<ClassSearchResultDto>
 ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<ClassSearchResultDto>>)
 UI -> User : Show class search results
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

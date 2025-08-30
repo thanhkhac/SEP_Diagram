@@ -7,14 +7,23 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Fill in info, click "Create"
+activate UI
 UI -> ClassEndpoints : POST /api/Class
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(CreateClassCommand)
+activate Handler
 Handler -> ApplicationDbContext : Add new Class
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Insert new Class
+activate Database
 Database --> ApplicationDbContext : ClassId
+deactivate Database
 ApplicationDbContext --> Handler : Guid
+deactivate ApplicationDbContext
 Handler --> ClassEndpoints : Guid
 ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
 UI -> User : Info: Class created successfully
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

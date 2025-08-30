@@ -9,54 +9,83 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Select question set, click "Add to Class"
+activate UI
 UI -> ClassEndpoints : POST /api/Class/{ClassId}/Questionsets/{QuestionSetId}
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(AddQuestionSetToClassCommand)
+activate Handler
 Handler -> ClassService : GetActiveClass(classId)
+activate ClassService
 ClassService -> ApplicationDbContext : Query Class
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> ClassService : Class
+deactivate ApplicationDbContext
 ClassService --> Handler : Class
+deactivate ClassService
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query QuestionSet
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query QuestionSet
+    activate Database
     Database --> ApplicationDbContext : QuestionSet
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : QuestionSet
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : QuestionSet
+    deactivate QuestionSetService
     alt Question Set Not Found
         Handler --> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND
         ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
         UI -> User : Error: Question set not found
     else Question Set Found
         Handler -> ClassService : CanUserAddQuestionSetToClass(userId, classId)
+        activate ClassService
         ClassService -> ApplicationDbContext : Query Permission
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        activate Database
         Database --> ApplicationDbContext : Permission
+        deactivate Database
         ApplicationDbContext --> ClassService : Permission
+        deactivate ApplicationDbContext
         ClassService --> Handler : bool
+        deactivate ClassService
         alt No permission
             Handler --> ClassEndpoints : Error: COMMON_FORBIDDEN
             ClassEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
             UI -> User : Error: No permission
         else Allowed
             Handler -> ApplicationDbContext : Query existing ClassQuestionSet
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query ClassQuestionSet
+            activate Database
             Database --> ApplicationDbContext : ClassQuestionSet
+            deactivate Database
             ApplicationDbContext --> Handler : ClassQuestionSet
+            deactivate ApplicationDbContext
             alt Question Set Already Added
                 Handler --> ClassEndpoints : Error: QUESTION_SET_ALREADY_ADDED_TO_CLASS
                 ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_ALREADY_ADDED_TO_CLASS)
                 UI -> User : Error: Question set already added to class
             else Question Set Not Added
                 Handler -> ApplicationDbContext : Add new ClassQuestionSet
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Insert ClassQuestionSet
+                activate Database
                 Database --> ApplicationDbContext : Success
+                deactivate Database
                 ApplicationDbContext --> Handler : Guid
+                deactivate ApplicationDbContext
                 Handler --> ClassEndpoints : Guid
                 ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
                 UI -> User : Info: Question set added to class
@@ -64,5 +93,7 @@ else Class Found
         end
     end
 end
-
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml

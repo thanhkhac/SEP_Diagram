@@ -8,29 +8,43 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for students
+activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Students?keyword=...
+activate ClassEndpoints
 ClassEndpoints -> Handler : Handle(SearchStudentInClassQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
     ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> ClassService : IsUserInClass(classId)
+    activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    activate Database
     Database --> ApplicationDbContext : ClassUser
+    deactivate Database
     ApplicationDbContext --> ClassService : ClassUser
+    deactivate ApplicationDbContext
     ClassService --> Handler : bool
+    deactivate ClassService
     alt User Not In Class
         Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
         ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
         UI -> User : Error: User not in class
     else User In Class
         Handler -> ApplicationDbContext : Query Students in Class
+        activate ApplicationDbContext
         alt Keyword and FieldName Provided
             Handler -> Handler : Validate FieldName
             alt Invalid FieldName
@@ -39,17 +53,25 @@ else Class Found
                 UI -> User : Error: Invalid search field
             else Valid FieldName
                 ApplicationDbContext -> Database : Query Students with dynamic filter
+                activate Database
                 Database --> ApplicationDbContext : List<Student>
+                deactivate Database
                 ApplicationDbContext --> Handler : List<Student>
             end
         else No Keyword or FieldName
             ApplicationDbContext -> Database : Query all Students in Class
+            activate Database
             Database --> ApplicationDbContext : List<Student>
+            deactivate Database
             ApplicationDbContext --> Handler : List<Student>
         end
+        deactivate ApplicationDbContext
         Handler --> ClassEndpoints : PaginatedList<StudentSearchResultDto>
         ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<StudentSearchResultDto>>)
         UI -> User : Show student search results
     end
 end
+deactivate Handler
+deactivate ClassEndpoints
+deactivate UI
 @enduml
