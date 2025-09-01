@@ -7,21 +7,34 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for folders
+activate UI
 UI -> FolderTestEndpoints : GET /api/Folder?folderName=...&shareMode=...
+activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(SearchFolderQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query FolderUsers (Include Folder, CreatedByUser) for authors
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query FolderUsers, Folder, User
+activate Database
 Database --> ApplicationDbContext : List<FolderUser>, Folder, User
+deactivate Database
 ApplicationDbContext --> Handler : Dictionary<FolderId, FullName> (authors)
+deactivate ApplicationDbContext
 Handler -> Handler : Parse ShareMode (if provided)
 Handler -> ApplicationDbContext : Query FolderUsers (Include Folder) for folders
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query FolderUsers, Folder
+activate Database
 Database --> ApplicationDbContext : List<FolderUser>, Folder
+deactivate Database
 ApplicationDbContext --> Handler : List<FolderUser>
+deactivate ApplicationDbContext
 Handler -> Handler : Filter by UserId, IsDeleted, FolderName, ShareMode
 Handler -> Handler : Map to SearchFolderTestDto
 Handler --> FolderTestEndpoints : PaginatedList<SearchFolderTestDto>
 FolderTestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<SearchFolderTestDto>>)
 UI -> User : Show folder search results
-
+deactivate Handler
+deactivate FolderTestEndpoints
+deactivate UI
 @enduml

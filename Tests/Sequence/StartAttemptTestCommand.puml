@@ -10,19 +10,28 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Click "Start Test"
+activate UI
 UI -> TestEndpoints : POST /api/Test/Attempt/{TestId}/Start
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(StartAttemptTestCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Test by TestId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Test
+activate Database
 Database --> ApplicationDbContext : Test
+deactivate Database
 ApplicationDbContext --> Handler : Test
+deactivate ApplicationDbContext
 alt Test Not Found
     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
     UI -> User : Error: Test not found
 else Test Found
     Handler -> TestService : TryCheckCanAttemptTest(test)
+    activate TestService
     TestService --> Handler : Success/Error
+    deactivate TestService
     alt Not Yet Time to Open Test
         Handler --> TestEndpoints : Error: NOT_YET_TIME_TO_OPEN_TEST
         TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_YET_TIME_TO_OPEN_TEST)
@@ -37,53 +46,86 @@ else Test Found
         UI -> User : Error: Only students in class can attempt test
     else Can Attempt Test
         Handler -> ApplicationDbContext : Query existing unsubmitted Attempt by UserId and TestId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Attempt
+        activate Database
         Database --> ApplicationDbContext : Attempt
+        deactivate Database
         ApplicationDbContext --> Handler : Attempt (attempted)
+        deactivate ApplicationDbContext
         alt Existing Unsubmitted Attempt Found
             Handler -> ApplicationDbContext : Query AttemptQuestions by AttemptId
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query AttemptQuestions
+            activate Database
             Database --> ApplicationDbContext : List<AttemptQuestion>
+            deactivate Database
             ApplicationDbContext --> Handler : Dictionary<QuestionId, AttemptQuestion> (userAnswerDict)
+            deactivate ApplicationDbContext
             Handler -> Handler : Calculate TimeRemaining
         else No Existing Unsubmitted Attempt
             Handler -> ApplicationDbContext : Query Attempts by UserId and TestId (count)
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query Attempts
+            activate Database
             Database --> ApplicationDbContext : List<Attempt>
+            deactivate Database
             ApplicationDbContext --> Handler : List<Attempt>
+            deactivate ApplicationDbContext
             alt Max Attempts Exceeded
                 Handler --> TestEndpoints : Error: MAX_ATTEMPT_IN_THIS_TEST
                 TestEndpoints --> UI : 400 Bad Request (errorCode: MAX_ATTEMPT_IN_THIS_TEST)
                 UI -> User : Error: Max attempts exceeded
             else Max Attempts Not Exceeded
                 Handler -> ApplicationDbContext : Query random TestVersion by TestId
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Query TestVersion
+                activate Database
                 Database --> ApplicationDbContext : TestVersion
+                deactivate Database
                 ApplicationDbContext --> Handler : TestVersion
+                deactivate ApplicationDbContext
                 alt Test Version Not Found
                     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
                     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
                     UI -> User : Error: Test version not found
                 else Test Version Found
                     Handler -> ApplicationDbContext : Add new Attempt
+                    activate ApplicationDbContext
                     Handler -> HangFireService : AutoSubmitTest(attemptId, timeLimit)
+                    activate HangFireService
                     ApplicationDbContext -> Database : Insert Attempt
+                    activate Database
                     Database --> ApplicationDbContext : Success
+                    deactivate Database
+                    deactivate ApplicationDbContext
+                    deactivate HangFireService
                     Handler -> Handler : Set TimeRemaining to Test.TimeLimit
                 end
             end
         end
         Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question) by TestVersionId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+        activate Database
         Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+        deactivate Database
         ApplicationDbContext --> Handler : List<TestVersionQuestion>
+        deactivate ApplicationDbContext
         Handler -> Handler : Map to AttemptDetailDto (including Questions with user answers)
         Handler -> ApplicationDbContext : Save Changes
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Attempt
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
+        deactivate ApplicationDbContext
         Handler --> TestEndpoints : AttemptDetailDto
         TestEndpoints --> UI : 200 OK (ApiResponse<AttemptDetailDto>)
         UI -> User : Show test questions
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

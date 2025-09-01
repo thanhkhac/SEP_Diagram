@@ -8,37 +8,59 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Edit info, click "Save"
+activate UI
 UI -> QuestionSetEndpoints : PATCH /api/QuestionSet/{id}
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(UpdateQuestionSetCommand)
+activate Handler
 Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSet
+deactivate QuestionSetService
 alt Not found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Found
     Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : Permission
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : bool
+    deactivate QuestionSetService
     alt No permission
         Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
         UI -> User : Error: No permission
     else Allowed
         Handler -> ApplicationDbContext : Update QuestionSet
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update QuestionSet
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> QuestionSetEndpoints : Guid
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Update successful
     end
 end
-@enduml 
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
+@enduml

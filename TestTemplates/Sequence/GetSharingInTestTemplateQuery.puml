@@ -8,36 +8,56 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : View sharing details
+activate UI
 UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}/Sharing
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(GetSharingInTestTemplateQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+activate Database
 Database --> ApplicationDbContext : TestTemplate
+deactivate Database
 ApplicationDbContext --> Handler : TestTemplate
+deactivate ApplicationDbContext
 alt Test Template Not Found
     Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
     UI -> User : Error: Test template not found
 else Test Template Found
     Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestTemplateService : Permission
+    deactivate ApplicationDbContext
     TestTemplateService --> Handler : bool
+    deactivate TestTemplateService
     alt No permission
         Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
         TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
         UI -> User : Error: User does not have permission to view sharing
     else Allowed
         Handler -> ApplicationDbContext : Query TestTemplateUsers by TestTemplateId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateUsers
+        activate Database
         Database --> ApplicationDbContext : List<TestTemplateUser>
+        deactivate Database
         ApplicationDbContext --> Handler : List<TestTemplateUser>
+        deactivate ApplicationDbContext
         Handler -> Handler : Map to SharingModelDto and Sort
         Handler --> TestTemplateEndpoints : ResourceShareDto
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
         UI -> User : Show sharing details
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

@@ -28,13 +28,13 @@ alt Question Not Found or Cannot Comment
 else Question Found
     Handler -> CommentService : CanComment(questionSetId)
     activate CommentService
-    CommentService -> ApplicationDbContext : Query Permission (inferred)
+    CommentService -> ApplicationDbContext : Query Permission 
     activate ApplicationDbContext
-    ApplicationDbContext -> Database : Query Permission (inferred)
+    ApplicationDbContext -> Database : Query Permission 
     activate Database
-    Database --> ApplicationDbContext : Permission (inferred)
+    Database --> ApplicationDbContext : Permission 
 deactivate Database
-    ApplicationDbContext --> CommentService : Permission (inferred)
+    ApplicationDbContext --> CommentService : Permission 
 deactivate ApplicationDbContext
     CommentService --> Handler : bool
 deactivate CommentService

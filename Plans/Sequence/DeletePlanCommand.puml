@@ -1,29 +1,43 @@
 @startuml
-actor AdminUser
+actor Moderator
 participant "Plan Management UI" as UI
 participant PlanEndpoints
 participant DeletePlanCommandHandler as Handler
 participant ApplicationDbContext
 participant Database
 
-AdminUser -> UI : Select plan, click "Delete"
+Moderator -> UI : Select plan, click "Delete"
+activate UI
 UI -> PlanEndpoints : DELETE /api/Plan/{PlanId}
+activate PlanEndpoints
 PlanEndpoints -> Handler : Handle(DeletePlanCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Plan by PlanId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Plan
+activate Database
 Database --> ApplicationDbContext : Plan
+deactivate Database
 ApplicationDbContext --> Handler : Plan
+deactivate ApplicationDbContext
 alt Plan Not Found
     Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
     PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-    UI -> AdminUser : Error: Plan not found
+    UI -> Moderator : Error: Plan not found
 else Plan Found
     Handler -> ApplicationDbContext : Mark Plan as Deleted
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Update Plan (IsDeleted = true)
+    activate Database
     Database --> ApplicationDbContext : Success
+    deactivate Database
     ApplicationDbContext --> Handler : Guid
+    deactivate ApplicationDbContext
     Handler --> PlanEndpoints : Guid
     PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> AdminUser : Info: Plan deleted successfully
+    UI -> Moderator : Info: Plan deleted successfully
 end
+deactivate Handler
+deactivate PlanEndpoints
+deactivate UI
 @enduml

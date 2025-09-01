@@ -8,16 +8,27 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for public question sets
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/Public?name=...&tagIds=...&sortBy=...
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(SearchPublicQuestionSetQuery)
+activate Handler
 Handler -> QuestionSetService : SearchPublicQuestionSetsAsync(name, tagIds, pageNumber, pageSize, sortBy)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query Public QuestionSets
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Public QuestionSets
+activate Database
 Database --> ApplicationDbContext : List<QuestionSet>
+deactivate Database
 ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+deactivate QuestionSetService
 Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
 UI -> User : Show public question set search results
-
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml

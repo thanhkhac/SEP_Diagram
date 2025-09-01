@@ -9,41 +9,63 @@ participant Database
 participant IdentityService
 
 User -> UI : Click "Delete"
+activate UI
 UI -> TestEndpoints : DELETE /api/Test/{TestId}
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(DeleteTestCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Test by TestId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Test
+activate Database
 Database --> ApplicationDbContext : Test
+deactivate Database
 ApplicationDbContext --> Handler : Test
+deactivate ApplicationDbContext
 alt Test Not Found
     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
     UI -> User : Error: Test not found
 else Test Found
     Handler -> TestService : CanViewOrEditTest(classId)
+    activate TestService
     TestService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    activate IdentityService
     IdentityService --> TestService : bool (isAdmin)
+    deactivate IdentityService
     alt Is Admin
         TestService --> Handler : true
     else Not Admin
         TestService -> ApplicationDbContext : Query ClassUser (Owner or Teacher)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassUser
+        activate Database
         Database --> ApplicationDbContext : ClassUser
+        deactivate Database
         ApplicationDbContext --> TestService : ClassUser
+        deactivate ApplicationDbContext
         TestService --> Handler : bool (isOwnerOrTeacher)
     end
+    deactivate TestService
     alt No permission
         Handler --> TestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST
         TestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST)
         UI -> User : Error: User does not have permission to delete this test
     else Allowed
         Handler -> ApplicationDbContext : Mark Test as Deleted
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Test (IsDeleted = true)
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> TestEndpoints : Guid
         TestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Test deleted successfully
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

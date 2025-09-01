@@ -7,25 +7,39 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for test templates in folder
+activate UI
 UI -> FolderTestEndpoints : GET /api/Folder/{FolderId}/TestTemplates?testTemplateName=...
+activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(SearchTestTemplateInFolderQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query FolderUsers (Include Folder) by FolderId and UserId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query FolderUsers, Folder
+activate Database
 Database --> ApplicationDbContext : FolderUser, Folder
+deactivate Database
 ApplicationDbContext --> Handler : FolderUser (accessUser)
+deactivate ApplicationDbContext
 alt User Not Have Permission in Folder
     Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
     FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
     UI -> User : Error: User does not have permission in folder
 else User Has Permission
     Handler -> ApplicationDbContext : Query FolderTestTemplates (Include TestTemplate, Questions, CreatedByUser)
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query FolderTestTemplates, TestTemplate, Questions, User
+    activate Database
     Database --> ApplicationDbContext : List<FolderTestTemplate>, TestTemplate, Questions, User
+    deactivate Database
     ApplicationDbContext --> Handler : List<FolderTestTemplate>
+    deactivate ApplicationDbContext
     Handler -> Handler : Filter by FolderId, IsDeleted, TestTemplateName
     Handler -> Handler : Map to TestTemplateDto
     Handler --> FolderTestEndpoints : SearchTestTemplateInFolderDto (with PaginatedList<TestTemplateDto>)
-    TestTemplateEndpoints --> UI : 200 OK (ApiResponse<SearchTestTemplateInFolderDto>)
+    FolderTestEndpoints --> UI : 200 OK (ApiResponse<SearchTestTemplateInFolderDto>)
     UI -> User : Show test templates in folder
 end
+deactivate Handler
+deactivate FolderTestEndpoints
+deactivate UI
 @enduml

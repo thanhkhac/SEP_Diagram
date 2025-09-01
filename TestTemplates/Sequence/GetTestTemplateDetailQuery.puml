@@ -8,35 +8,55 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Open test template detail
+activate UI
 UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(GetTestTemplateDetailQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+activate Database
 Database --> ApplicationDbContext : TestTemplate
+deactivate Database
 ApplicationDbContext --> Handler : TestTemplate
+deactivate ApplicationDbContext
 alt Test Template Not Found
     Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
     UI -> User : Error: Test template not found
 else Test Template Found
     Handler -> TestTemplateService : CanViewTesTemplate(testTemplateId)
+    activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestTemplateService : Permission
+    deactivate ApplicationDbContext
     TestTemplateService --> Handler : bool
+    deactivate TestTemplateService
     alt No permission
         Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
         TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
         UI -> User : Error: User does not have permission to view this test template
     else Allowed
         Handler -> ApplicationDbContext : Query TestTemplate with Questions (Include CreatedByUser, TestTemplateQuestions, Question)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplate, Questions
+        activate Database
         Database --> ApplicationDbContext : TestTemplate, List<Question>
+        deactivate Database
         ApplicationDbContext --> Handler : TestTemplate, List<Question>
+        deactivate ApplicationDbContext
         Handler --> TestTemplateEndpoints : TestTemplateDetailDto
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplateDetailDto>)
         UI -> User : Show test template detail
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

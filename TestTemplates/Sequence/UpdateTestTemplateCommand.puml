@@ -8,22 +8,34 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Edit info, update questions, click "Save"
+activate UI
 UI -> TestTemplateEndpoints : PATCH /api/TestTemplate/{TestTemplateId}
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(UpdateTestTemplateCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+activate Database
 Database --> ApplicationDbContext : TestTemplate
+deactivate Database
 ApplicationDbContext --> Handler : TestTemplate
+deactivate ApplicationDbContext
 alt Test Template Not Found
     Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
     UI -> User : Error: Test template not found
 else Test Template Found
     Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestTemplateService : Permission
+    deactivate ApplicationDbContext
     TestTemplateService --> Handler : bool
     alt No permission
         Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
@@ -31,10 +43,20 @@ else Test Template Found
         UI -> User : Error: User does not have permission to edit this test template
     else Allowed
         Handler -> ApplicationDbContext : Update TestTemplate Name
+        activate ApplicationDbContext
+        ApplicationDbContext -> Database : Update TestTemplate
+        activate Database
+        Database --> ApplicationDbContext : Success
+        deactivate Database
+        deactivate ApplicationDbContext
         Handler -> ApplicationDbContext : Query existing TestTemplateQuestions (Include Questions)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateQuestions, Questions
+        activate Database
         Database --> ApplicationDbContext : List<TestTemplateQuestion>, List<Question>
+        deactivate Database
         ApplicationDbContext --> Handler : List<TestTemplateQuestion>, List<Question>
+        deactivate ApplicationDbContext
         Handler -> Handler : Filter questions to update/create/delete
         Handler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(newQuestionsFromQuestionSet)
         TestTemplateService --> Handler : Success/Error
@@ -45,15 +67,23 @@ else Test Template Found
         else Question Access Granted
             Handler -> TestTemplateService : CheckQuestionsForUpdate(questionsToUpdate, existingQuestions)
             TestTemplateService --> Handler : CheckUpdateQuestion (UpdateQuestionIds, NotUpdateQuestionIds)
+            deactivate TestTemplateService
             Handler -> ApplicationDbContext : Add new Questions and TestTemplateQuestions
+            activate ApplicationDbContext
             Handler -> ApplicationDbContext : Remove deleted/updated TestTemplateQuestions
             ApplicationDbContext -> Database : Insert/Update/Delete Questions, TestTemplateQuestions
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
             ApplicationDbContext --> Handler : Guid
+            deactivate ApplicationDbContext
             Handler --> TestTemplateEndpoints : Guid
             TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
             UI -> User : Info: Test template updated successfully
         end
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

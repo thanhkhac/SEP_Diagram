@@ -6,9 +6,13 @@ participant GetAllAccountCommandHandler as Handler
 participant IdentityService
 
 AdminUser -> UI : Search for accounts (by keyword, field, banned status, role)
+activate UI
 UI -> UserEndpoints : GET /api/User/AllAccounts?keyword=...&fieldName=...&isBanned=...&role=...
+activate UserEndpoints
 UserEndpoints -> Handler : Handle(SearchAllAccountQuery)
+activate Handler
 Handler -> IdentityService : SearchUserWithRole(searchUserDto)
+activate IdentityService
 alt Invalid Role
     IdentityService --> Handler : Error: INVALID_ROLE
     Handler --> UserEndpoints : Error: INVALID_ROLE
@@ -16,8 +20,12 @@ alt Invalid Role
     UI -> AdminUser : Error: Invalid role provided
 else Search Success
     IdentityService --> Handler : PaginatedList<UserForListDto>
+    deactivate IdentityService
     Handler --> UserEndpoints : PaginatedList<UserForListDto>
     UserEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<UserForListDto>>)
     UI -> AdminUser : Show search results
 end
+deactivate Handler
+deactivate UserEndpoints
+deactivate UI
 @enduml

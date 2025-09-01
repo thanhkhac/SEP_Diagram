@@ -8,35 +8,55 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Open test detail
+activate UI
 UI -> TestEndpoints : GET /api/Test/{TestId}
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(GetTestDetailQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Test by TestId (Include TestVersions)
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Test, TestVersions
+activate Database
 Database --> ApplicationDbContext : Test, List<TestVersion>
+deactivate Database
 ApplicationDbContext --> Handler : Test
+deactivate ApplicationDbContext
 alt Test Not Found
     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
     UI -> User : Error: Test not found
 else Test Found
     Handler -> TestService : CanViewOrEditTest(classId)
+    activate TestService
     TestService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestService : Permission
+    deactivate ApplicationDbContext
     TestService --> Handler : bool
+    deactivate TestService
     alt No permission
         Handler --> TestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST
         TestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST)
         UI -> User : Error: User does not have permission to view this test
     else Allowed
         Handler -> ApplicationDbContext : Query TestVersionQuestions (for version 0, Include Question)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+        activate Database
         Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+        deactivate Database
         ApplicationDbContext --> Handler : List<QuestionResponseDto>
+        deactivate ApplicationDbContext
         Handler --> TestEndpoints : TestDetailDto
         TestEndpoints --> UI : 200 OK (ApiResponse<TestDetailDto>)
         UI -> User : Show test detail
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

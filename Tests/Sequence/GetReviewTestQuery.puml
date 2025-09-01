@@ -8,12 +8,19 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Request to review attempt
+activate UI
 UI -> TestEndpoints : GET /api/Test/Review/{AttemptId}
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(GetReviewTestQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query Attempt (Include User, Test, TestGrades) by AttemptId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Attempt, User, Test, TestGrades
+activate Database
 Database --> ApplicationDbContext : Attempt, User, Test, TestGrades
+deactivate Database
 ApplicationDbContext --> Handler : Attempt
+deactivate ApplicationDbContext
 alt Attempt Not Found or Test Not Found
     Handler --> TestEndpoints : Error: ATTEMPT_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: ATTEMPT_NOT_FOUND)
@@ -25,11 +32,17 @@ else Attempt Found
         UI -> User : Error: Test not submitted, cannot view
     else Test Submitted
         Handler -> TestService : GetRoleUserInTest(test)
+        activate TestService
         TestService -> ApplicationDbContext : Query ClassUser
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassUser
+        activate Database
         Database --> ApplicationDbContext : ClassUser
+        deactivate Database
         ApplicationDbContext --> TestService : ClassUser
+        deactivate ApplicationDbContext
         TestService --> Handler : ClassShareMode? (roleInTest)
+        deactivate TestService
         Handler -> Handler : Determine isShowCorrectAnswer (based on Test setting and role)
         alt Not Owner/Teacher and Not Allowed to Review or Not Own Attempt
             Handler --> TestEndpoints : Error: STUDENT_CAN_REVIEW_THIS_TEST
@@ -37,13 +50,21 @@ else Attempt Found
             UI -> User : Error: Student cannot review this test
         else Allowed to Review
             Handler -> ApplicationDbContext : Query AttemptQuestions by AttemptId
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query AttemptQuestions
+            activate Database
             Database --> ApplicationDbContext : List<AttemptQuestion>
+            deactivate Database
             ApplicationDbContext --> Handler : Dictionary<QuestionId, AttemptQuestion> (userAnswerDict)
+            deactivate ApplicationDbContext
             Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question) by TestVersionId
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+            activate Database
             Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+            deactivate Database
             ApplicationDbContext --> Handler : List<TestVersionQuestion>
+            deactivate ApplicationDbContext
             Handler -> Handler : Calculate total score
             Handler -> Handler : Map to ReviewTestDto (including Questions with user answers and correct answers)
             Handler --> TestEndpoints : ReviewTestDto
@@ -52,4 +73,7 @@ else Attempt Found
         end
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

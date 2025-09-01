@@ -9,41 +9,63 @@ participant Database
 participant IdentityService
 
 User -> UI : Click "Delete"
+activate UI
 UI -> TestTemplateEndpoints : DELETE /api/TestTemplate/{TestTemplateId}
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(DeleteTestTemplateCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+activate Database
 Database --> ApplicationDbContext : TestTemplate
+deactivate Database
 ApplicationDbContext --> Handler : TestTemplate
+deactivate ApplicationDbContext
 alt Test Template Not Found
     Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
     UI -> User : Error: Test template not found
 else Test Template Found
     Handler -> TestTemplateService : CanDeleteTestTemplate(testTemplateId)
+    activate TestTemplateService
     TestTemplateService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    activate IdentityService
     IdentityService --> TestTemplateService : bool (isAdmin)
+    deactivate IdentityService
     alt Is Admin
         TestTemplateService --> Handler : true
     else Not Admin
         TestTemplateService -> ApplicationDbContext : Query TestTemplateUser (Owner)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateUser
+        activate Database
         Database --> ApplicationDbContext : TestTemplateUser
+        deactivate Database
         ApplicationDbContext --> TestTemplateService : TestTemplateUser
+        deactivate ApplicationDbContext
         TestTemplateService --> Handler : bool (isOwner)
     end
+    deactivate TestTemplateService
     alt No permission
         Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
         TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
         UI -> User : Error: User does not have permission to delete this test template
     else Allowed
         Handler -> ApplicationDbContext : Mark TestTemplate as Deleted
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update TestTemplate (IsDeleted = true)
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> TestTemplateEndpoints : Guid
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Test template deleted successfully
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

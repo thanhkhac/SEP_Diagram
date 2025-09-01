@@ -9,41 +9,63 @@ participant Database
 participant IdentityService
 
 User -> UI : Click "Delete"
+activate UI
 UI -> FolderTestEndpoints : DELETE /api/Folder/{FolderId}
+activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(DeleteFolderCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Folder by FolderId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+activate Database
 Database --> ApplicationDbContext : Folder
+deactivate Database
 ApplicationDbContext --> Handler : Folder
+deactivate ApplicationDbContext
 alt Folder Not Found
     Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
     FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
     UI -> User : Error: Folder not found
 else Folder Found
     Handler -> FolderTestService : CanDeleteOrEditFolderTest(folderId)
+    activate FolderTestService
     FolderTestService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    activate IdentityService
     IdentityService --> FolderTestService : bool (isAdmin)
+    deactivate IdentityService
     alt Is Admin
         FolderTestService --> Handler : true
     else Not Admin
         FolderTestService -> ApplicationDbContext : Query FolderUser (Owner)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query FolderUser
+        activate Database
         Database --> ApplicationDbContext : FolderUser
+        deactivate Database
         ApplicationDbContext --> FolderTestService : FolderUser
+        deactivate ApplicationDbContext
         FolderTestService --> Handler : bool (isOwner)
     end
+    deactivate FolderTestService
     alt No permission
         Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
         FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
         UI -> User : Error: User does not have permission to delete folder
     else Allowed
         Handler -> ApplicationDbContext : Mark Folder as Deleted
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Folder (IsDeleted = true)
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> FolderTestEndpoints : Guid
         FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
         UI -> User : Info: Folder deleted successfully
     end
 end
+deactivate Handler
+deactivate FolderTestEndpoints
+deactivate UI
 @enduml

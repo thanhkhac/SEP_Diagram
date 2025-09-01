@@ -8,16 +8,27 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for owned/shared question sets
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/SharedOrOwned?name=...&filterBy=...&sortBy=...
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(SearchOwnAndSharedQuestionSetQuery)
+activate Handler
 Handler -> QuestionSetService : SearchOwnAndSharedQuestionSetsAsync(userId, name, pageNumber, pageSize, filterBy, sortBy)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query Owned/Shared QuestionSets
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Owned/Shared QuestionSets
+activate Database
 Database --> ApplicationDbContext : List<QuestionSet>
+deactivate Database
 ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+deactivate QuestionSetService
 Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
 UI -> User : Show owned/shared question set search results
-
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml

@@ -9,12 +9,19 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Submit answers / Save progress
+activate UI
 UI -> TestEndpoints : POST /api/Test/Attempt/{AttemptId}/Submit
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(SubmitTestAttemptCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Attempt (Include Test, TestVersion) by AttemptId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Attempt, Test, TestVersion
+activate Database
 Database --> ApplicationDbContext : Attempt, Test, TestVersion
+deactivate Database
 ApplicationDbContext --> Handler : Attempt
+deactivate ApplicationDbContext
 alt Attempt/Test Not Found
     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
@@ -26,7 +33,9 @@ else Attempt Found
         UI -> User : Error: User mismatch for attempt
     else User Match
         Handler -> TestService : TryCheckCanAttemptTest(test)
+        activate TestService
         TestService --> Handler : Success/Error (from previous checks)
+        deactivate TestService
         alt Test Not Open / Overdue / Not Student
             Handler --> TestEndpoints : Error: (Various TestService Errors)
             TestEndpoints --> UI : 400 Bad Request (errorCode: Various TestService Errors)
@@ -38,13 +47,21 @@ else Attempt Found
                 UI -> User : Error: Attempt already submitted
             else Attempt Not Submitted
                 Handler -> ApplicationDbContext : Query TestVersionQuestions (Include Question)
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Query TestVersionQuestions, Question
+                activate Database
                 Database --> ApplicationDbContext : List<TestVersionQuestion>, List<Question>
+                deactivate Database
                 ApplicationDbContext --> Handler : List<QuestionResponseDto> (questionsInTest)
+                deactivate ApplicationDbContext
                 Handler -> ApplicationDbContext : Query existing AttemptQuestions
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Query AttemptQuestions
+                activate Database
                 Database --> ApplicationDbContext : List<AttemptQuestion>
+                deactivate Database
                 ApplicationDbContext --> Handler : List<AttemptQuestion> (attemptedQuestions)
+                deactivate ApplicationDbContext
                 loop For each Question in Test
                     Handler -> Handler : Grade User Answer (based on QuestionType)
                     alt Invalid Question Type
@@ -53,31 +70,57 @@ else Attempt Found
                         UI -> User : Error: Invalid question type encountered
                     else Valid Question Type
                         Handler -> ApplicationDbContext : Update or Add AttemptQuestion (with score and data)
+                        activate ApplicationDbContext
+                        ApplicationDbContext -> Database : Update/Insert AttemptQuestion
+                        activate Database
+                        Database --> ApplicationDbContext
+                        deactivate Database
+                        deactivate ApplicationDbContext
                     end
                     Handler -> Handler : Accumulate totalScore
                 end
                 alt IsSubmit is true
                     Handler -> Handler : Set Attempt.TimeFinish = DateTime.UtcNow
                     Handler -> HangFireService : DeleteJobByArgument(attemptId)
+                    activate HangFireService
+                    deactivate HangFireService
                 end
                 Handler -> ApplicationDbContext : Update Attempt Score
+                activate ApplicationDbContext
                 Handler -> ApplicationDbContext : Query existing TestGrade
                 ApplicationDbContext -> Database : Query TestGrade
+                activate Database
                 Database --> ApplicationDbContext : TestGrade
+                deactivate Database
                 ApplicationDbContext --> Handler : TestGrade
+                deactivate ApplicationDbContext
                 alt TestGrade Not Found
                     Handler -> ApplicationDbContext : Add new TestGrade
+                    activate ApplicationDbContext
+                    ApplicationDbContext -> Database : Insert TestGrade
+                    activate Database
+                    Database --> ApplicationDbContext
+                    deactivate Database
+                    deactivate ApplicationDbContext
                 else TestGrade Found
                     Handler -> Handler : Update TestGrade Score (based on GradeAttemptMethod)
                 end
                 Handler -> ApplicationDbContext : Add/Update AttemptQuestions
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Insert/Update AttemptQuestions, TestGrade, Attempt
+                activate Database
                 Database --> ApplicationDbContext : Success
+                deactivate Database
                 ApplicationDbContext --> Handler : TestResultDto
+                deactivate ApplicationDbContext
+                Handler --> TestEndpoints : TestResultDto
                 TestEndpoints --> UI : 200 OK (ApiResponse<TestResultDto>)
                 UI -> User : Show test result
             end
         end
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

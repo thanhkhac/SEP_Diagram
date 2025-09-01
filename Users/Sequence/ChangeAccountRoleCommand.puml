@@ -6,23 +6,33 @@ participant ChangeAccountRoleCommandHandler as Handler
 participant IdentityService
 
 AdminUser -> UI : Select user, choose new role, click "Change Role"
+activate UI
 UI -> UserEndpoints : PATCH /api/User/{UserId}/Role
+activate UserEndpoints
 UserEndpoints -> Handler : Handle(ChangeAccountRoleCommand)
+activate Handler
 Handler -> IdentityService : ChangeRoleAsync(userId, role)
+activate IdentityService
 alt User Not Found
     IdentityService --> Handler : Error: USER_NOT_FOUND
+    deactivate IdentityService
     Handler --> UserEndpoints : Error: USER_NOT_FOUND
     UserEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_FOUND)
     UI -> AdminUser : Error: User not found
 else Invalid Role
     IdentityService --> Handler : Error: INVALID_ROLE
+    deactivate IdentityService
     Handler --> UserEndpoints : Error: INVALID_ROLE
     UserEndpoints --> UI : 400 Bad Request (errorCode: INVALID_ROLE)
     UI -> AdminUser : Error: Invalid role provided
 else Role Change Success
     IdentityService --> Handler : Guid (userId)
+    deactivate IdentityService
     Handler --> UserEndpoints : Guid
     UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
     UI -> AdminUser : Info: User role updated successfully
 end
+deactivate Handler
+deactivate UserEndpoints
+deactivate UI
 @enduml

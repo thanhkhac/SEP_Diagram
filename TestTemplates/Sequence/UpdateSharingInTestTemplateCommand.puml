@@ -8,53 +8,86 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Update sharing settings
+activate UI
 UI -> TestTemplateEndpoints : PATCH /api/TestTemplate/{TestTemplateId}/Sharing
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(UpdateSharingInTestTemplateCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+activate Database
 Database --> ApplicationDbContext : TestTemplate
+deactivate Database
 ApplicationDbContext --> Handler : TestTemplate
+deactivate ApplicationDbContext
 alt Test Template Not Found
     Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
     UI -> User : Error: Test template not found
 else Test Template Found
     Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestTemplateService : Permission
+    deactivate ApplicationDbContext
     TestTemplateService --> Handler : bool
+    deactivate TestTemplateService
     alt No permission
         Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
         TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
         UI -> User : Error: User does not have permission to edit sharing
     else Allowed
         Handler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query DomainUsers
+        activate Database
         Database --> ApplicationDbContext : List<DomainUser>
+        deactivate Database
         ApplicationDbContext --> Handler : List<DomainUser>
+        deactivate ApplicationDbContext
         alt Invalid SharingUserIds
             Handler --> TestTemplateEndpoints : Error: USER_NOTFOUND
             TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOTFOUND)
             UI -> User : Error: Invalid user(s) in sharing list
         else Valid SharingUserIds
             Handler -> ApplicationDbContext : Query existing TestTemplateUsers
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query TestTemplateUsers
+            activate Database
             Database --> ApplicationDbContext : List<TestTemplateUser>
+            deactivate Database
             ApplicationDbContext --> Handler : List<TestTemplateUser>
+            deactivate ApplicationDbContext
             loop For each SharingModel
                 Handler -> ApplicationDbContext : Update or Add TestTemplateUser
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update/Insert TestTemplateUser
+                activate Database
+                Database --> ApplicationDbContext : Success
+                deactivate Database
+                deactivate ApplicationDbContext
             end
             Handler -> ApplicationDbContext : Remove TestTemplateUsers for DeleteUserIds
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Delete TestTemplateUsers
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
             ApplicationDbContext --> Handler : Guid
+            deactivate ApplicationDbContext
             Handler --> TestTemplateEndpoints : Guid
             TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
             UI -> User : Info: Sharing settings updated
         end
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

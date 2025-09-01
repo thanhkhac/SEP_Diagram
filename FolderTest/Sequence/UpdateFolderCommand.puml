@@ -8,45 +8,69 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Edit folder name, click "Save"
+activate UI
 UI -> FolderTestEndpoints : PATCH /api/Folder/{FolderId}
+activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(UpdateFolderCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Folder by FolderId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+activate Database
 Database --> ApplicationDbContext : Folder
+deactivate Database
 ApplicationDbContext --> Handler : Folder
+deactivate ApplicationDbContext
 alt Folder Not Found
     Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
     FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
     UI -> User : Error: Folder not found
 else Folder Found
     Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    activate FolderTestService
     FolderTestService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> FolderTestService : Permission
+    deactivate ApplicationDbContext
     FolderTestService --> Handler : bool
+    deactivate FolderTestService
     alt No permission
         Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
         FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
         UI -> User : Error: User does not have permission to edit folder
     else Allowed
         Handler -> ApplicationDbContext : Query Folder by Name and CreatedBy (for duplicate check)
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Folder
+        activate Database
         Database --> ApplicationDbContext : Folder
+        deactivate Database
         ApplicationDbContext --> Handler : Folder (folderByName)
+        deactivate ApplicationDbContext
         alt Folder Name Already Exists
             Handler --> FolderTestEndpoints : Error: FOLDER_ALREADY_EXISTS
             FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_ALREADY_EXISTS)
             UI -> User : Error: Folder name already exists
         else Folder Name Unique
             Handler -> ApplicationDbContext : Update Folder Name
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Update Folder
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
             ApplicationDbContext --> Handler : Guid
+            deactivate ApplicationDbContext
             Handler --> FolderTestEndpoints : Guid
             FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
             UI -> User : Info: Folder updated successfully
         end
     end
 end
+deactivate Handler
+deactivate FolderTestEndpoints
+deactivate UI
 @enduml

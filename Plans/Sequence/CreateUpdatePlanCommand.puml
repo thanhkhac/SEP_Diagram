@@ -6,47 +6,80 @@ participant CreatePlanCommandHandler as Handler
 participant ApplicationDbContext
 participant Database
 
-AdminUser -> UI : Create/Update plan details
+Moderator -> UI : Create/Update plan details
+activate UI
 UI -> PlanEndpoints : POST /api/Plan (or PUT/PATCH)
+activate PlanEndpoints
 PlanEndpoints -> Handler : Handle(CreateUpdatePlanCommand)
+activate Handler
 alt PlanId is provided (Update existing plan)
     Handler -> ApplicationDbContext : Query Plan by PlanId
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Plan
+    activate Database
     Database --> ApplicationDbContext : Plan
+    deactivate Database
     ApplicationDbContext --> Handler : Plan (existedPlan)
+    deactivate ApplicationDbContext
     alt Plan Not Found
         Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
         PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-        UI -> AdminUser : Error: Plan not found
+        UI -> Moderator : Error: Plan not found
     else Plan Found
         Handler -> ApplicationDbContext : Update Plan properties
+        activate ApplicationDbContext
         alt Price Changed
             Handler -> ApplicationDbContext : Query latest PlanPriceHistory
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query PlanPriceHistory
+            activate Database
             Database --> ApplicationDbContext : PlanPriceHistory
+            deactivate Database
             ApplicationDbContext --> Handler : PlanPriceHistory (latestPlanPriceHistory)
+            deactivate ApplicationDbContext
             alt Latest Price History Found
                 Handler -> ApplicationDbContext : Update latest PlanPriceHistory (set DateFinish)
+                activate ApplicationDbContext
+                ApplicationDbContext -> Database : Update PlanPriceHistory
+                activate Database
+                Database --> ApplicationDbContext : Success
+                deactivate Database
+                deactivate ApplicationDbContext
             end
             Handler -> ApplicationDbContext : Add new PlanPriceHistory
-            ApplicationDbContext -> Database : Update PlanPriceHistory, Insert PlanPriceHistory
+            activate ApplicationDbContext
+            ApplicationDbContext -> Database : Insert PlanPriceHistory
+            activate Database
             Database --> ApplicationDbContext : Success
+            deactivate Database
+            deactivate ApplicationDbContext
         end
         Handler -> ApplicationDbContext : Update Plan Price
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Plan
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> PlanEndpoints : Guid
         PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> AdminUser : Info: Plan updated successfully
+        UI -> Moderator : Info: Plan updated successfully
     end
 else PlanId is null (Create new plan)
     Handler -> ApplicationDbContext : Add new Plan and PlanPriceHistory
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Insert Plan, PlanPriceHistory
+    activate Database
     Database --> ApplicationDbContext : Success
+    deactivate Database
     ApplicationDbContext --> Handler : Guid
+    deactivate ApplicationDbContext
     Handler --> PlanEndpoints : Guid
     PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> AdminUser : Info: Plan created successfully
+    UI -> Moderator : Info: Plan created successfully
 end
+deactivate Handler
+deactivate PlanEndpoints
+deactivate UI
 @enduml

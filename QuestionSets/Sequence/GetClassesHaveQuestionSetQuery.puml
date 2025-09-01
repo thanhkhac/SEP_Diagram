@@ -7,24 +7,38 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : View classes with question set
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Classes
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(GetClassesHaveQuestionSetQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> Handler : QuestionSet
+deactivate ApplicationDbContext
 alt Question Set Not Found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Question Set Found
     Handler -> ApplicationDbContext : Query ClassUsers (Owner or Teacher) with Class and ClassQuestionSets
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUsers, Class, ClassQuestionSets
+    activate Database
     Database --> ApplicationDbContext : List<ClassUser>
+    deactivate Database
     ApplicationDbContext --> Handler : List<ClassUser>
+    deactivate ApplicationDbContext
     Handler -> Handler : Map to GetClassesHaveQuestionSetDto (including IsAdded status)
     Handler --> QuestionSetEndpoints : List<GetClassesHaveQuestionSetDto>
     QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<GetClassesHaveQuestionSetDto>>)
     UI -> User : Show classes with question set
 end
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml

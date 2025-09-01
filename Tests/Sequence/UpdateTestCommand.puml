@@ -8,23 +8,36 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Edit info, update questions, click "Save"
+activate UI
 UI -> TestEndpoints : PATCH /api/Test/{TestId}
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(UpdateTestCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Test by TestId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Test
+activate Database
 Database --> ApplicationDbContext : Test
+deactivate Database
 ApplicationDbContext --> Handler : Test
+deactivate ApplicationDbContext
 alt Test Not Found
     Handler --> TestEndpoints : Error: TEST_NOT_FOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: TEST_NOT_FOUND)
     UI -> User : Error: Test not found
 else Test Found
     Handler -> TestService : CanViewOrEditTest(classId)
+    activate TestService
     TestService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> TestService : Permission
+    deactivate ApplicationDbContext
     TestService --> Handler : bool
+    deactivate TestService
     alt No permission
         Handler --> TestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST
         TestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST)
@@ -36,34 +49,50 @@ else Test Found
             UI -> User : Error: Test already open, cannot edit
         else Test Not Open
             Handler -> ApplicationDbContext : Update Test Properties (Name, TimeLimit, StartTime, EndTime, etc.)
+            activate ApplicationDbContext
             Handler -> ApplicationDbContext : Query existing TestVersions and TestVersionQuestions (Include Questions)
             ApplicationDbContext -> Database : Query TestVersions, TestVersionQuestions, Questions
+            activate Database
             Database --> ApplicationDbContext : List<TestVersion>, List<TestVersionQuestion>, List<Question>
+            deactivate Database
             ApplicationDbContext --> Handler : Lists of TestVersions, TestVersionQuestions, Questions
+            deactivate ApplicationDbContext
             alt Questions to Delete Not Found
                 Handler --> TestEndpoints : Error: QUESTION_NOT_FOUND_TO_DELETE
                 TestEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_FOUND_TO_DELETE)
                 UI -> User : Error: Some questions to delete were not found
             else Questions to Delete Found
                 Handler -> TestService : QuestionAccessAndCompareForTest(newQuestionsFromQuestionSet)
+                activate TestService
                 TestService --> Handler : List<Guid> (newQuestionIds)
+                deactivate TestService
                 alt New Question Access Denied
                     Handler --> TestEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
                     TestEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
                     UI -> User : Error: Some new questions are not accessible or invalid
                 else New Question Access Granted
                     Handler -> TestService : CheckQuestionsForUpdate(questionsToUpdate, existingQuestions)
+                    activate TestService
                     TestService --> Handler : CheckUpdateQuestion (UpdateQuestionIds, NotUpdateQuestionIds)
+                    deactivate TestService
                     alt NumberOfShuffles Changed
                         Handler -> ApplicationDbContext : Add/Remove TestVersions and TestVersionQuestions
+                        activate ApplicationDbContext
                         ApplicationDbContext -> Database : Insert/Delete TestVersions, TestVersionQuestions
+                        activate Database
                         Database --> ApplicationDbContext : Success
+                        deactivate Database
+                        deactivate ApplicationDbContext
                     end
                     Handler -> ApplicationDbContext : Add new Questions and TestVersionQuestions
+                    activate ApplicationDbContext
                     Handler -> ApplicationDbContext : Remove deleted/updated TestVersionQuestions
                     ApplicationDbContext -> Database : Insert/Update/Delete Questions, TestVersionQuestions
+                    activate Database
                     Database --> ApplicationDbContext : Success
+                    deactivate Database
                     ApplicationDbContext --> Handler : Guid
+                    deactivate ApplicationDbContext
                     Handler --> TestEndpoints : Guid
                     TestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
                     UI -> User : Info: Test updated successfully
@@ -72,4 +101,7 @@ else Test Found
         end
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

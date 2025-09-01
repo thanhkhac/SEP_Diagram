@@ -9,34 +9,53 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Fill in info, add questions, click "Create"
+activate UI
 UI -> TestEndpoints : POST /api/Test
+activate TestEndpoints
 TestEndpoints -> Handler : Handle(CreateTestCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Class by ClassId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+activate Database
 Database --> ApplicationDbContext : Class
+deactivate Database
 ApplicationDbContext --> Handler : Class
+deactivate ApplicationDbContext
 alt Class Not Found
     Handler --> TestEndpoints : Error: CLASS_NOTFOUND
     TestEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
     UI -> User : Error: Class not found
 else Class Found
     Handler -> PlanService : CanOpenTest(userId)
+    activate PlanService
     PlanService -> ApplicationDbContext : Query UserSubscription
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query UserSubscription
+    activate Database
     Database --> ApplicationDbContext : List<UserSubscription>
+    deactivate Database
     ApplicationDbContext --> PlanService : List<UserSubscription>
+    deactivate ApplicationDbContext
     PlanService --> Handler : bool
+    deactivate PlanService
     alt Plan Required
         Handler --> TestEndpoints : Error: PLAN_REQUIRE_PLAN
         TestEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
         UI -> User : Error: Please buy a plan
     else Plan Available
         Handler -> TestService : CanCreateTest(classId)
+        activate TestService
         TestService -> ApplicationDbContext : Query Permission
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        activate Database
         Database --> ApplicationDbContext : Permission
+        deactivate Database
         ApplicationDbContext --> TestService : Permission
+        deactivate ApplicationDbContext
         TestService --> Handler : bool
+        deactivate TestService
         alt No permission
             Handler --> TestEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
             TestEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
@@ -48,20 +67,30 @@ else Class Found
                 UI -> User : Error: Number of questions exceeds limit (max 100)
             else Number of Questions within Limit
                 Handler -> TestService : QuestionAccessAndCompareForTest(questions)
-                TestService -> ApplicationDbContext : Query Questions/Permissions (inferred)
-                ApplicationDbContext -> Database : Query Questions/Permissions (inferred)
-                Database --> ApplicationDbContext : Questions/Permissions (inferred)
-                ApplicationDbContext --> TestService : Questions/Permissions (inferred)
+                activate TestService
+                TestService -> ApplicationDbContext : Query Questions/Permissions
+                activate ApplicationDbContext
+                ApplicationDbContext -> Database : Query Questions/Permissions
+                activate Database
+                Database --> ApplicationDbContext : Questions/Permissions
+                deactivate Database
+                ApplicationDbContext --> TestService : Questions/Permissions
+                deactivate ApplicationDbContext
                 TestService --> Handler : List<Guid> (validQuestionIds)
+                deactivate TestService
                 alt Question Access Denied
                     Handler --> TestEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
                     TestEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
                     UI -> User : Error: Some questions are not accessible or invalid
                 else Question Access Granted
                     Handler -> ApplicationDbContext : Add new Test, TestVersions, Questions, TestVersionQuestions
+                    activate ApplicationDbContext
                     ApplicationDbContext -> Database : Insert Test, TestVersions, Questions, TestVersionQuestions
+                    activate Database
                     Database --> ApplicationDbContext : Success
+                    deactivate Database
                     ApplicationDbContext --> Handler : Guid
+                    deactivate ApplicationDbContext
                     Handler --> TestEndpoints : Guid
                     TestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
                     UI -> User : Info: Test created successfully
@@ -70,4 +99,7 @@ else Class Found
         end
     end
 end
+deactivate Handler
+deactivate TestEndpoints
+deactivate UI
 @enduml

@@ -10,55 +10,81 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Request learn questions
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{id}/LearnQuestions?questionCount=n
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(GetQuestionSetLearnQuestionsQuery)
-
+activate Handler
 Handler -> PlanService : CanLearn(userId)
+activate PlanService
 PlanService -> ApplicationDbContext : Query UserSubscription
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query UserSubscription
+activate Database
 Database --> ApplicationDbContext : List<UserSubscription>
+deactivate Database
 ApplicationDbContext --> PlanService : List<UserSubscription>
+deactivate ApplicationDbContext
 PlanService --> Handler : bool
-
+deactivate PlanService
 alt Require plan
     Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
     UI -> User : Error: Please buy a plan
 else Continue
     Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query QuestionSet
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query QuestionSet
+    activate Database
     Database --> ApplicationDbContext : QuestionSet
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : QuestionSet
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : QuestionSet
-
+    deactivate QuestionSetService
     alt Not found
         Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
         UI -> User : Error: Question set not found
     else Found
         Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        activate QuestionSetService
         QuestionSetService -> ApplicationDbContext : Query Permission
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        activate Database
         Database --> ApplicationDbContext : Permission
+        deactivate Database
         ApplicationDbContext --> QuestionSetService : Permission
+        deactivate ApplicationDbContext
         QuestionSetService --> Handler : bool
-
+        deactivate QuestionSetService
         alt No permission
             Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
             QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
             UI -> User : Error: No permission
         else Allowed
             Handler -> QuestionService : GetQuestionsBySetIdForLearnAsync(questionSetId, userId, questionCount)
+            activate QuestionService
             QuestionService -> ApplicationDbContext : Query Questions
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query Questions
+            activate Database
             Database --> ApplicationDbContext : List<Question>
+            deactivate Database
             ApplicationDbContext --> QuestionService : List<Question>
+            deactivate ApplicationDbContext
             QuestionService --> Handler : List<QuestionResponseDto>
+            deactivate QuestionService
             Handler --> QuestionSetEndpoints : List<QuestionResponseDto>
             QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<QuestionResponseDto>>)
             UI -> User : Show learn questions
         end
     end
 end
-@enduml 
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
+@enduml

@@ -7,18 +7,31 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Update full name, click "Save"
+activate UI
 UI -> UserEndpoints : PATCH /api/User/Info
+activate UserEndpoints
 UserEndpoints -> Handler : Handle(UpdateUserInfoCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query DomainUser by UserId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUser
+activate Database
 Database --> ApplicationDbContext : DomainUser
+deactivate Database
 ApplicationDbContext --> Handler : DomainUser (user)
+deactivate ApplicationDbContext
 Handler -> ApplicationDbContext : Update user FullName
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Update DomainUser
+activate Database
 Database --> ApplicationDbContext : Success
+deactivate Database
 ApplicationDbContext --> Handler : Guid
+deactivate ApplicationDbContext
 Handler --> UserEndpoints : Guid
 UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
 UI -> User : Info: User info updated successfully
-
+deactivate Handler
+deactivate UserEndpoints
+deactivate UI
 @enduml

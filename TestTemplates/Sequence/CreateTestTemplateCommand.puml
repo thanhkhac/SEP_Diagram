@@ -8,27 +8,42 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Fill in info, add questions, click "Create"
+activate UI
 UI -> TestTemplateEndpoints : POST /api/TestTemplate
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(CreateTestTemplateCommand)
+activate Handler
 Handler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(questions)
-TestTemplateService -> ApplicationDbContext : Query Questions/Permissions (inferred)
-ApplicationDbContext -> Database : Query Questions/Permissions (inferred)
-Database --> ApplicationDbContext : Questions/Permissions (inferred)
-ApplicationDbContext --> TestTemplateService : Questions/Permissions (inferred)
+activate TestTemplateService
+TestTemplateService -> ApplicationDbContext : Query Questions/Permissions
+activate ApplicationDbContext
+ApplicationDbContext -> Database : Query Questions/Permissions
+activate Database
+Database --> ApplicationDbContext : Questions/Permissions
+deactivate Database
+ApplicationDbContext --> TestTemplateService : Questions/Permissions
+deactivate ApplicationDbContext
 TestTemplateService --> Handler : Success/Error
+deactivate TestTemplateService
 alt Question Access Denied
     Handler --> TestTemplateEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
     TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
     UI -> User : Error: Some questions are not accessible or invalid
 else Question Access Granted
     Handler -> ApplicationDbContext : Add new TestTemplate and TestTemplateUser
-    Handler -> Handler : Create Question entities and TestTemplateQuestion links from DTOs
+    activate ApplicationDbContext
+    ' Handler -> Handler : Create Question entities and TestTemplateQuestion links from DTOs
     ApplicationDbContext -> Database : Insert TestTemplate, TestTemplateUser, Questions, TestTemplateQuestions
+    activate Database
     Database --> ApplicationDbContext : Success
+    deactivate Database
     ApplicationDbContext --> Handler : Guid
+    deactivate ApplicationDbContext
     Handler --> TestTemplateEndpoints : Guid
     TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
     UI -> User : Info: Test template created successfully
 end
-
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

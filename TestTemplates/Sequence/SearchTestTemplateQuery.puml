@@ -7,17 +7,26 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Search for test templates
+activate UI
 UI -> TestTemplateEndpoints : GET /api/TestTemplate?testTemplateName=...&shareMode=...
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(SearchTestTemplateQuery)
+activate Handler
 Handler -> Handler : Parse ShareMode (if provided)
 Handler -> ApplicationDbContext : Query TestTemplateUsers (Include TestTemplate)
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplateUsers, TestTemplate
+activate Database
 Database --> ApplicationDbContext : List<TestTemplateUser>
+deactivate Database
 ApplicationDbContext --> Handler : List<TestTemplateUser>
+deactivate ApplicationDbContext
 Handler -> Handler : Filter by UserId, TestTemplateName, ShareMode, IsDeleted
 Handler -> Handler : Map to TestTemplateDto
 Handler --> TestTemplateEndpoints : PaginatedList<TestTemplateDto>
 TestTemplateEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<TestTemplateDto>>)
 UI -> User : Show test template search results
-
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

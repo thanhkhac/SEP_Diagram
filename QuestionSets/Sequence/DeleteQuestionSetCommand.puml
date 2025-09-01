@@ -8,37 +8,59 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Click "Delete"
+activate UI
 UI -> QuestionSetEndpoints : DELETE /api/QuestionSet/{id}
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(DeleteQuestionSetCommand)
+activate Handler
 Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSet
+deactivate QuestionSetService
 alt Not found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Found
     Handler -> QuestionSetService : CanUserDeleteQuestionSet(userId, questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : Permission
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : bool
+    deactivate QuestionSetService
     alt No permission
         Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
         UI -> User : Error: No permission
     else Allowed
         Handler -> ApplicationDbContext : Delete QuestionSet
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Delete QuestionSet
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Unit
+        deactivate ApplicationDbContext
         Handler --> QuestionSetEndpoints : Unit
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Unit>)
         UI -> User : Info: Delete successful
     end
 end
-@enduml 
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
+@enduml

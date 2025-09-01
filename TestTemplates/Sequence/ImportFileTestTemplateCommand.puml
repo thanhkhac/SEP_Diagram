@@ -6,8 +6,11 @@ participant ImportFileTestTemplateCommandHandler as Handler
 participant FileService
 
 User -> UI : Upload Excel file
+activate UI
 UI -> TestTemplateEndpoints : POST /api/TestTemplate/ImportFile
+activate TestTemplateEndpoints
 TestTemplateEndpoints -> Handler : Handle(ImportFileTestTemplateCommand)
+activate Handler
 Handler -> Handler : Check FileData and FileData.Data
 alt File Not Found or Empty
     Handler --> TestTemplateEndpoints : Error: FILE_NOT_FOUND
@@ -21,10 +24,15 @@ else File Found
         UI -> User : Error: Invalid file format (must be .xlsx or .xls)
     else Valid File Format
         Handler -> FileService : GetQuestionFromFile(fileData)
+        activate FileService
         FileService --> Handler : ImportedQuestionDto (validQuestions, invalidQuestions)
+        deactivate FileService
         Handler --> TestTemplateEndpoints : ImportedQuestionDto
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ImportedQuestionDto>)
         UI -> User : Show imported questions (valid and invalid)
     end
 end
+deactivate Handler
+deactivate TestTemplateEndpoints
+deactivate UI
 @enduml

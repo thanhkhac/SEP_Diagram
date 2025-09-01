@@ -8,32 +8,50 @@ participant ApplicationDbContext
 participant Database
 
 AdminUser -> UI : Select user, click "Ban/Unban"
+activate UI
 UI -> UserEndpoints : PATCH /api/User/{UserId}/Ban
+activate UserEndpoints
 UserEndpoints -> Handler : Handle(BanAccountCommand)
+activate Handler
 alt Target User is Current User
     Handler --> UserEndpoints : Error: COMMON_FORBIDDEN
     UserEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
     UI -> AdminUser : Error: You cannot ban your own account
 else Target User is Different
     Handler -> IdentityService : GetUsersInRoleAsync() (for Administrators)
+    activate IdentityService
     IdentityService --> Handler : List<Guid> (adminIds)
+    deactivate IdentityService
     Handler -> ApplicationDbContext : Query DomainUser by UserId (IgnoreQueryFilters, not deleted, not admin)
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query DomainUser
+    activate Database
     Database --> ApplicationDbContext : DomainUser
+    deactivate Database
     ApplicationDbContext --> Handler : DomainUser (bannedUsers)
+    deactivate ApplicationDbContext
     alt User Not Found or Is Admin
         Handler --> UserEndpoints : Error: ACCOUNT_NOTFOUND
         UserEndpoints --> UI : 400 Bad Request (errorCode: ACCOUNT_NOTFOUND)
         UI -> AdminUser : Error: User not found or cannot be banned
     else User Found and Can Be Banned
         Handler -> IdentityService : BanUser(userId, isBanned)
+        activate IdentityService
         IdentityService --> Handler : Success
+        deactivate IdentityService
         Handler -> ApplicationDbContext : Update DomainUser IsBanned status
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Update DomainUser
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> Handler : Guid
+        deactivate ApplicationDbContext
         Handler --> UserEndpoints : 200 OK (ApiResponse<Guid>)
-        UI -> AdminUser : Info: User ban status updated
+        UserEndpoints --> UI : Info: User ban status updated
     end
 end
+deactivate Handler
+deactivate UserEndpoints
+deactivate UI
 @enduml

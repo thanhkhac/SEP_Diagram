@@ -8,57 +8,84 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Select test template, click "Add to Folder"
+activate UI
 UI -> FolderTestEndpoints : POST /api/Folder/{FolderId}/TestTemplates/{TestTemplateId}
+activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(AddTestTemplateToFolderCommand)
+activate Handler
 Handler -> ApplicationDbContext : Query Folder by FolderId
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+activate Database
 Database --> ApplicationDbContext : Folder
+deactivate Database
 ApplicationDbContext --> Handler : Folder
+deactivate ApplicationDbContext
 alt Folder Not Found
     Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
     FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
     UI -> User : Error: Folder not found
 else Folder Found
     Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query TestTemplate
+    activate Database
     Database --> ApplicationDbContext : TestTemplate
+    deactivate Database
     ApplicationDbContext --> Handler : TestTemplate
+    deactivate ApplicationDbContext
     alt Test Template Not Found
         Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
         FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
         UI -> User : Error: Test template not found
     else Test Template Found
         Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+        activate FolderTestService
         FolderTestService -> ApplicationDbContext : Query Permission
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        activate Database
         Database --> ApplicationDbContext : Permission
+        deactivate Database
         ApplicationDbContext --> FolderTestService : Permission
+        deactivate ApplicationDbContext
         FolderTestService --> Handler : bool
+        deactivate FolderTestService
         alt No permission
             Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
             FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
             UI -> User : Error: User does not have permission in folder
         else Allowed
             Handler -> ApplicationDbContext : Query FolderTestTemplate by FolderId and TestTemplateId
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query FolderTestTemplate
+            activate Database
             Database --> ApplicationDbContext : FolderTestTemplate
+            deactivate Database
             ApplicationDbContext --> Handler : FolderTestTemplate
+            deactivate ApplicationDbContext
             alt Test Template Already Exists in Folder
                 Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_ALREADY_EXISTS_IN_FOLDER
                 FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_ALREADY_EXISTS_IN_FOLDER)
                 UI -> User : Error: Test template already exists in folder
             else Test Template Not in Folder
                 Handler -> FolderTestService : TryCanUseTesTemplate(testTemplateId)
-                FolderTestService --> Handler : Success/Error (inferred)
+                activate FolderTestService
+                FolderTestService --> Handler : Success/Error
+                deactivate FolderTestService
                 alt Cannot Use Test Template
                     Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
                     FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
                     UI -> User : Error: Cannot use this test template
                 else Can Use Test Template
                     Handler -> ApplicationDbContext : Add new FolderTestTemplate
+                    activate ApplicationDbContext
                     ApplicationDbContext -> Database : Insert FolderTestTemplate
+                    activate Database
                     Database --> ApplicationDbContext : Success
+                    deactivate Database
                     ApplicationDbContext --> Handler : Guid
+                    deactivate ApplicationDbContext
                     Handler --> FolderTestEndpoints : Guid
                     FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
                     UI -> User : Info: Test template added to folder
@@ -67,4 +94,7 @@ else Folder Found
         end
     end
 end
+deactivate Handler
+deactivate FolderTestEndpoints
+deactivate UI
 @enduml

@@ -9,39 +9,63 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Click "Reset history"
+activate UI
 UI -> QuestionSetEndpoints : DELETE /api/QuestionSet/{id}/LearnHistory
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(ResetQuestionSetHistoryCommand)
+activate Handler
 Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSet
+deactivate QuestionSetService
 alt Not found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Found
     Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : Permission
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : bool
+    deactivate QuestionSetService
     alt No permission
         Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
         UI -> User : Error: No permission
     else Allowed
         Handler -> UserQuestionSetHistoryService : DeleteHistoriesByUserAndSetAsync(userId, questionSetId)
+        activate UserQuestionSetHistoryService
         UserQuestionSetHistoryService -> ApplicationDbContext : Delete UserQuestionSetHistories
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Delete UserQuestionSetHistories
+        activate Database
         Database --> ApplicationDbContext : Success
+        deactivate Database
         ApplicationDbContext --> UserQuestionSetHistoryService : Success
+        deactivate ApplicationDbContext
         UserQuestionSetHistoryService --> Handler : Unit
+        deactivate UserQuestionSetHistoryService
         Handler --> QuestionSetEndpoints : Unit
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Unit>)
         UI -> User : Info: History reset
     end
 end
-@enduml 
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
+@enduml

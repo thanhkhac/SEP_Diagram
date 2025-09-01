@@ -7,15 +7,24 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Enter email to search for user
+activate UI
 UI -> UserEndpoints : GET /api/User/SearchForSelection?email=...
+activate UserEndpoints
 UserEndpoints -> Handler : Handle(SearchUserForSelectionQuery)
+activate Handler
 Handler -> ApplicationDbContext : Query DomainUsers by Email
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUsers
+activate Database
 Database --> ApplicationDbContext : List<DomainUser>
+deactivate Database
 ApplicationDbContext --> Handler : List<DomainUser>
+deactivate ApplicationDbContext
 Handler -> Handler : Map to UserForSelectionDto
 Handler --> UserEndpoints : List<UserForSelectionDto>
 UserEndpoints --> UI : 200 OK (ApiResponse<List<UserForSelectionDto>>)
 UI -> User : Show user selection results
-
+deactivate Handler
+deactivate UserEndpoints
+deactivate UI
 @enduml
