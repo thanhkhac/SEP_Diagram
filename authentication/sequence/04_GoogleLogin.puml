@@ -32,17 +32,18 @@ activate UserManager
 UserManager -> Database : Query UserAccount
 activate Database
 Database --> UserManager : UserAccount/null
+UserManager --> IdentityService :  UserAccount/null
+
 deactivate Database
+deactivate UserManager
+
 alt User exists
     alt User banned
-        UserManager --> IdentityService : Error: ACCOUNT_BANNED
-        deactivate UserManager
         IdentityService --> GoogleLoginHandler : Error: ACCOUNT_BANNED
         GoogleLoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
         AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_BANNED)
         UI -> User : Thông báo lỗi: Tài khoản bị khóa
     else User không bị ban
-        UserManager --> IdentityService : Success
         deactivate UserManager
         IdentityService --> GoogleLoginHandler : TokenDto
         GoogleLoginHandler --> AuthenticationEndpoints : TokenDto

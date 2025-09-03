@@ -2,7 +2,6 @@
 actor User
 participant "Question Set Copy/Import UI" as UI
 participant "Create new question set UI" as CreateUI
-
 participant QuestionSetEndpoints
 participant GetQuestionSetQuestionsForCopyQueryHandler as Handler
 participant QuestionSetService
@@ -11,49 +10,79 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Request questions for copy/import
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/QuestionsForCopy
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(GetQuestionSetQuestionsForCopyQuery)
+activate Handler
 Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSet
+deactivate QuestionSetService
 alt Question Set Not Found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Question Set Found
     Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : Permission
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : bool
+    deactivate QuestionSetService
     alt No permission
         Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
         UI -> User : Error: You are not allowed to view this question set
     else Allowed
         Handler -> PlanService : CanCopyOrImportQuestionSet(userId)
+        activate PlanService
         PlanService -> ApplicationDbContext : Query UserSubscription
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query UserSubscription
+        activate Database
         Database --> ApplicationDbContext : List<UserSubscription>
+        deactivate Database
         ApplicationDbContext --> PlanService : List<UserSubscription>
+        deactivate ApplicationDbContext
         PlanService --> Handler : bool
+        deactivate PlanService
         alt Plan Required
             Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
             QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
             UI -> User : Error: Please buy a plan to copy or import question set
         else Plan Available
             Handler -> ApplicationDbContext : Query Questions by QuestionSetId
+            activate ApplicationDbContext
             ApplicationDbContext -> Database : Query Questions
+            activate Database
             Database --> ApplicationDbContext : List<Question>
+            deactivate Database
             ApplicationDbContext --> Handler : List<Question>
+            deactivate ApplicationDbContext
             Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
             QuestionSetEndpoints --> CreateUI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+            activate CreateUI
             CreateUI -> User : Show questions for copy/import
+            deactivate CreateUI
         end
     end
 end
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml

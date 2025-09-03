@@ -8,37 +8,59 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : Request questions for editing
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/QuestionsForEdit
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(GetQuestionSetQuestionsForEditQuery)
+activate Handler
 Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+activate Database
 Database --> ApplicationDbContext : QuestionSet
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSet
+deactivate QuestionSetService
 alt Question Set Not Found
     Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
     QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
     UI -> User : Error: Question set not found
 else Question Set Found
     Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
     ApplicationDbContext --> QuestionSetService : Permission
+    deactivate ApplicationDbContext
     QuestionSetService --> Handler : bool
+    deactivate QuestionSetService
     alt No permission
         Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
         QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
         UI -> User : Error: You are not allowed to view this question set
     else Allowed
         Handler -> ApplicationDbContext : Query Questions by QuestionSetId
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Questions
+        activate Database
         Database --> ApplicationDbContext : List<Question>
+        deactivate Database
         ApplicationDbContext --> Handler : List<Question>
+        deactivate ApplicationDbContext
         Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
         UI -> User : Show questions for editing
     end
 end
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
 @enduml

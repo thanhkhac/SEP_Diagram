@@ -12,11 +12,6 @@ UI -> FolderTestEndpoints : POST /api/Folder
 activate FolderTestEndpoints
 FolderTestEndpoints -> Handler : Handle(CreateFolderCommand)
 activate Handler
-alt User ID is null
-    Handler --> FolderTestEndpoints : Error: ACCOUNT_NOTFOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: ACCOUNT_NOTFOUND)
-    UI -> User : Error: User account not found
-else User ID is valid
     Handler -> ApplicationDbContext : Add new Folder and FolderUser
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Insert Folder, FolderUser
@@ -28,7 +23,6 @@ else User ID is valid
     Handler --> FolderTestEndpoints : Guid
     FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
     UI -> User : Info: Folder created successfully
-end
 deactivate Handler
 deactivate FolderTestEndpoints
 deactivate UI

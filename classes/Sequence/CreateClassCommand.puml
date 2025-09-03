@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor User as User
 participant "Create Class UI" as UI
 participant ClassEndpoints
 participant CreateClassCommandHandler as Handler

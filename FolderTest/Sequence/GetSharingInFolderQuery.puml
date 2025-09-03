@@ -51,7 +51,7 @@ else Folder Found
         deactivate Database
         ApplicationDbContext --> Handler : List<FolderUser>
         deactivate ApplicationDbContext
-        Handler -> Handler : Map to SharingModelDto and Sort
+        Handler -> Handler : Map to SharingModelDto
         Handler --> FolderTestEndpoints : ResourceShareDto
         FolderTestEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
         UI -> User : Show sharing details

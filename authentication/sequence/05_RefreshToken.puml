@@ -5,14 +5,20 @@ participant AuthenticationEndpoints as Endpoint
 participant RefreshTokenHandler as Handler
 participant IdentityService
 participant UserManager
-Database Database
+participant Database
 
 User -> UI : Continue operation when token expires
+activate UI
 UI -> Endpoint : POST /api/Authentication/RefreshToken
+activate Endpoint
 Endpoint -> Handler : Send RefreshTokenCommand
+activate Handler
 Handler -> IdentityService : RefreshTokenAsync(accessToken, refreshToken)
+activate IdentityService
 IdentityService -> Database : Find RefreshToken
+activate Database
 Database --> IdentityService : RefreshToken/null
+deactivate Database
 alt RefreshToken invalid/expired
     IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
     Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
@@ -20,8 +26,13 @@ alt RefreshToken invalid/expired
     UI -> User : Display error: Session expired
 else RefreshToken valid
     IdentityService -> UserManager : FindByIdAsync(userId)
+    activate UserManager
     UserManager -> Database : Query UserAccount
+    activate Database
     Database --> UserManager : UserAccount/null
+    deactivate Database
+    UserManager --> IdentityService : UserAccount/null
+    deactivate UserManager
     alt User invalid/banned
         IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
         Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
@@ -34,4 +45,7 @@ else RefreshToken valid
         UI -> User : Continue using the system
     end
 end
+deactivate Handler
+deactivate Endpoint
+deactivate UI
 @enduml

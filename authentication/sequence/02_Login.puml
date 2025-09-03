@@ -20,9 +20,10 @@ activate UserManager
 UserManager -> Database : Query User
 activate Database
 Database --> UserManager : User/null
+UserManager --> IdentityService : User/null
+
 deactivate Database
 alt User not found
-    UserManager --> IdentityService : Error: ACCOUNT_INVALID_CREDENTIALS
     deactivate UserManager
     IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
     LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
@@ -30,14 +31,12 @@ alt User not found
     UI -> User : Display error message: "Invalid account or password"
 else User found
     alt Account is banned
-        UserManager --> IdentityService : Error: ACCOUNT_BANNED
         deactivate UserManager
         IdentityService --> LoginHandler : Error: ACCOUNT_BANNED
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
         AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_BANNED" }
         UI -> User : Display error message: "Your account has been banned"
     else Email not confirmed
-        UserManager --> IdentityService : Error: ACCOUNT_EMAIL_NOT_VERIFIED
         deactivate UserManager
         IdentityService --> LoginHandler : Error: ACCOUNT_EMAIL_NOT_VERIFIED
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_NOT_VERIFIED)

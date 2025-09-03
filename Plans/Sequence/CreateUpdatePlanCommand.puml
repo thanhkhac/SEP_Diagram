@@ -28,6 +28,8 @@ alt PlanId is provided (Update existing plan)
     else Plan Found
         Handler -> ApplicationDbContext : Update Plan properties
         activate ApplicationDbContext
+        deactivate ApplicationDbContext
+
         alt Price Changed
             Handler -> ApplicationDbContext : Query latest PlanPriceHistory
             activate ApplicationDbContext

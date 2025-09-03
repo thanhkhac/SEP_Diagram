@@ -8,15 +8,27 @@ participant ApplicationDbContext
 participant Database
 
 User -> UI : View permissions
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{id}/Permissions
+activate QuestionSetEndpoints
 QuestionSetEndpoints -> Handler : Handle(GetQuestionSetPermissionsQuery)
+activate Handler
 Handler -> QuestionSetService : GetPermissions(userId, questionSetId)
+activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query Permissions
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Permissions
+activate Database
 Database --> ApplicationDbContext : QuestionSetPermissions
+deactivate Database
 ApplicationDbContext --> QuestionSetService : QuestionSetPermissionsDto
+deactivate ApplicationDbContext
 QuestionSetService --> Handler : QuestionSetPermissionsDto
+deactivate QuestionSetService
 Handler --> QuestionSetEndpoints : QuestionSetPermissionsDto
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<QuestionSetPermissionsDto>)
 UI -> User : Show permissions
-@enduml 
+deactivate Handler
+deactivate QuestionSetEndpoints
+deactivate UI
+@enduml

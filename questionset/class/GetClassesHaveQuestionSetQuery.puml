@@ -8,7 +8,7 @@
 !include ../../common/EndpointClasses.puml
 !include ../../common/IApplicationDbContext.puml
 !include ../../common/service/IUser.puml
-!include ../Dto/GetClassesHaveQuestionSetDto.puml
+!include ../dtos/GetClassesHaveQuestionSetDto.puml
 '=====================QUERY========================
 class GetClassesHaveQuestionSetQuery {
     + QuestionSetId : Guid <<get>> <<set>>

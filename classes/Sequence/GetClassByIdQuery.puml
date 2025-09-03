@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor "Owner" as User
 participant "Class Detail UI" as UI
 participant ClassEndpoints
 participant GetClassByIdQueryHandler as Handler

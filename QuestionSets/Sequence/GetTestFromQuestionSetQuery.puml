@@ -62,17 +62,6 @@ else Question Set Found
             UI -> User : Error: User does not have access to question set
         else Allowed
             Handler -> Handler : Organize Questions by Type
-            loop while questions.Count < NumberOfQuestion
-                Handler -> Handler : Select random QuestionType
-                alt QuestionList for Type is Empty
-                    Handler -> Handler : Remove QuestionType from selection
-                    Handler -> Handler : Continue loop
-                else QuestionList for Type has Questions
-                    Handler -> Handler : Select random Question from list
-                    Handler -> Handler : Add Question to result list
-                    Handler -> Handler : Remove Question from list (to avoid duplicates)
-                end
-            end
             Handler --> QuestionSetEndpoints : List<QuestionResponseDto>
             QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<QuestionResponseDto>>)
             UI -> User : Show test questions

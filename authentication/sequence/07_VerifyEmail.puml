@@ -20,10 +20,11 @@ activate UserManager
 UserManager -> Database : Query UserAccount
 activate Database
 Database --> UserManager : UserAccount/null
-deactivate Database
-alt User not found
-    UserManager --> IdentityService : Error: ACCOUNT_NOTFOUND
     deactivate UserManager
+deactivate Database
+    UserManager --> IdentityService : UserAccount
+
+alt User not found
     IdentityService --> VerifyEmailHandler : Error: ACCOUNT_NOTFOUND
     VerifyEmailHandler --> AuthenticationEndpoints : Error (ACCOUNT_NOTFOUND)
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
@@ -31,7 +32,6 @@ alt User not found
 else User found
     IdentityService -> IdentityService : Check lockout status
     alt Too many incorrect attempts
-        UserManager --> IdentityService : Error: EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY
         deactivate UserManager
         IdentityService --> VerifyEmailHandler : Error: EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY
         VerifyEmailHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY)

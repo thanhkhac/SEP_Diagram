@@ -1,40 +1,29 @@
 @startuml
 actor User
 participant "Folder List UI" as UI
-participant FolderTestEndpoints
+participant FolderTestEndpoints as API
 participant SearchFolderQueryHandler as Handler
-participant ApplicationDbContext
+participant ApplicationDbContext as DbContext
 participant Database
 
-User -> UI : Search for folders
+User -> UI : Search folders
 activate UI
-UI -> FolderTestEndpoints : GET /api/Folder?folderName=...&shareMode=...
-activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(SearchFolderQuery)
+UI -> API : GET /api/Folder?folderName=...&shareMode=...
+activate API
+API -> Handler : Handle(SearchFolderQuery)
 activate Handler
-Handler -> ApplicationDbContext : Query FolderUsers (Include Folder, CreatedByUser) for authors
-activate ApplicationDbContext
-ApplicationDbContext -> Database : Query FolderUsers, Folder, User
+Handler -> DbContext : Query folders + authors
+activate DbContext
+DbContext -> Database : Execute SQL
 activate Database
-Database --> ApplicationDbContext : List<FolderUser>, Folder, User
+Database --> DbContext : Data
 deactivate Database
-ApplicationDbContext --> Handler : Dictionary<FolderId, FullName> (authors)
-deactivate ApplicationDbContext
-Handler -> Handler : Parse ShareMode (if provided)
-Handler -> ApplicationDbContext : Query FolderUsers (Include Folder) for folders
-activate ApplicationDbContext
-ApplicationDbContext -> Database : Query FolderUsers, Folder
-activate Database
-Database --> ApplicationDbContext : List<FolderUser>, Folder
-deactivate Database
-ApplicationDbContext --> Handler : List<FolderUser>
-deactivate ApplicationDbContext
-Handler -> Handler : Filter by UserId, IsDeleted, FolderName, ShareMode
-Handler -> Handler : Map to SearchFolderTestDto
-Handler --> FolderTestEndpoints : PaginatedList<SearchFolderTestDto>
-FolderTestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<SearchFolderTestDto>>)
-UI -> User : Show folder search results
+DbContext --> Handler : Folders + Authors
+deactivate DbContext
+Handler --> API : PaginatedList<SearchFolderDto>
 deactivate Handler
-deactivate FolderTestEndpoints
+API --> UI : 200 OK
+deactivate API
+UI -> User : Show search results
 deactivate UI
 @enduml

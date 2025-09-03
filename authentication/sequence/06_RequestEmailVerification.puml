@@ -21,19 +21,20 @@ activate UserManager
 UserManager -> Database : Query UserAccount
 activate Database
 Database --> UserManager : UserAccount/null
+deactivate UserManager
+
 deactivate Database
+    UserManager --> IdentityService : UserAccount
+
 alt User not found
-    UserManager --> IdentityService : Error: ACCOUNT_NOTFOUND
-    deactivate UserManager
     IdentityService --> RequestEmailVerificationHandler : Error: ACCOUNT_NOTFOUND
     RequestEmailVerificationHandler --> AuthenticationEndpoints : Error ACCOUNT_NOTFOUND
     AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
     UI -> User : Error: Account not found
+
 else User found
     IdentityService -> IdentityService : Check lockout
     alt Lockout active
-        UserManager --> IdentityService : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
-        deactivate UserManager
         IdentityService --> RequestEmailVerificationHandler : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
         AuthenticationEndpoints --> UI : 400 Bad Request (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
@@ -53,12 +54,12 @@ else User found
         EmailService --> IdentityService : Success
         deactivate EmailService
         IdentityService --> RequestEmailVerificationHandler : Success
+        deactivate IdentityService
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Success
         AuthenticationEndpoints --> UI : 200 OK
         UI -> User : Info: Verification code sent to your email
     end
 end
-deactivate IdentityService
 deactivate RequestEmailVerificationHandler
 deactivate AuthenticationEndpoints
 deactivate UI

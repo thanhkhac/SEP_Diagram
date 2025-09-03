@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor "Owner" as User
 participant "Class Members UI" as UI
 participant ClassEndpoints
 participant UpdatePositionCommandHandler as Handler

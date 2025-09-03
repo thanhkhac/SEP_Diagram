@@ -1,5 +1,5 @@
 @startuml
-actor User
+actor "Lecturer" as User
 participant "Edit Class UI" as UI
 participant ClassEndpoints
 participant UpdateClassCommandHandler as Handler
