@@ -1,51 +1,96 @@
 @startuml
 actor User
-participant UI
-participant AuthenticationEndpoints as Endpoint
-participant RefreshTokenHandler as Handler
-participant IdentityService
-participant UserManager
-participant Database
+participant "Login UI" as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant RefreshTokenHandler <<Handler>>
+participant IdentityService <<Service>>
+participant UserManager <<Service>>
+Database Database
+
+note right of RefreshTokenHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
 
 User -> UI : Continue operation when token expires
 activate UI
-UI -> Endpoint : POST /api/Authentication/RefreshToken
-activate Endpoint
-Endpoint -> Handler : Send RefreshTokenCommand
-activate Handler
-Handler -> IdentityService : RefreshTokenAsync(accessToken, refreshToken)
+
+UI -> AuthenticationEndpoints : POST /api/Authentication/RefreshToken
+activate AuthenticationEndpoints
+AuthenticationEndpoints -> RefreshTokenHandler : Send RefreshTokenCommand
+deactivate AuthenticationEndpoints
+activate RefreshTokenHandler
+RefreshTokenHandler -> IdentityService : RefreshTokenAsync(accessToken, refreshToken)
+deactivate RefreshTokenHandler
 activate IdentityService
 IdentityService -> Database : Find RefreshToken
+deactivate IdentityService
 activate Database
 Database --> IdentityService : RefreshToken/null
 deactivate Database
+activate IdentityService
 alt RefreshToken invalid/expired
-    IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
-    Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
-    Endpoint --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
+    IdentityService --> RefreshTokenHandler : Error: ACCOUNT_INVALID_CREDENTIALS
+    deactivate IdentityService
+    activate RefreshTokenHandler
+    RefreshTokenHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
+    deactivate RefreshTokenHandler
+    activate AuthenticationEndpoints
+    AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_INVALID_CREDENTIALS" }
+    deactivate AuthenticationEndpoints
+
+
     UI -> User : Display error: Session expired
+
+
 else RefreshToken valid
+    activate IdentityService
+
     IdentityService -> UserManager : FindByIdAsync(userId)
+    deactivate IdentityService
     activate UserManager
     UserManager -> Database : Query UserAccount
+    deactivate UserManager
     activate Database
     Database --> UserManager : UserAccount/null
     deactivate Database
+    activate UserManager
     UserManager --> IdentityService : UserAccount/null
     deactivate UserManager
+    activate IdentityService
     alt User invalid/banned
-        IdentityService --> Handler : Error: ACCOUNT_INVALID_CREDENTIALS
-        Handler --> Endpoint : Error (ACCOUNT_INVALID_CREDENTIALS)
-        Endpoint --> UI : 400 Bad Request (ACCOUNT_INVALID_CREDENTIALS)
+        IdentityService --> RefreshTokenHandler : Error: ACCOUNT_INVALID_CREDENTIALS
+        deactivate IdentityService
+        activate RefreshTokenHandler
+        RefreshTokenHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
+        deactivate RefreshTokenHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_INVALID_CREDENTIALS" }
+        deactivate AuthenticationEndpoints
+
+
         UI -> User : Display error: Session expired
+
+
     else User valid
-        IdentityService --> Handler : TokenDto
-        Handler --> Endpoint : TokenDto
-        Endpoint --> UI : 200 OK + New Tokens
+        activate IdentityService
+        IdentityService --> RefreshTokenHandler : TokenDto
+        deactivate IdentityService
+        activate RefreshTokenHandler
+        RefreshTokenHandler --> AuthenticationEndpoints : TokenDto
+        deactivate RefreshTokenHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 200 OK { "token": <TokenDto> }
+        deactivate AuthenticationEndpoints
         UI -> User : Continue using the system
     end
 end
-deactivate Handler
-deactivate Endpoint
-deactivate UI
+
 @enduml

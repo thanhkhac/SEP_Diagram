@@ -1,61 +1,96 @@
 @startuml
 actor "Owner" as User
-participant "Class Members UI" as UI
-participant ClassEndpoints
-participant UpdatePositionCommandHandler as Handler
-participant ApplicationDbContext
+participant "Class Members UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":UpdatePositionCommandHandler" as UpdatePositionCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdatePositionCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Change member position
 activate UI
 UI -> ClassEndpoints : PATCH /api/Class/{ClassId}/Members/{UserId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(UpdatePositionCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query ClassUsers and Class by ClassId and UserId
+ClassEndpoints -> UpdatePositionCommandHandler : Handle(UpdatePositionCommand)
+deactivate ClassEndpoints
+activate UpdatePositionCommandHandler
+UpdatePositionCommandHandler -> ApplicationDbContext : Query ClassUsers and Class by ClassId and UserId
+deactivate UpdatePositionCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query ClassUsers, Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<ClassUser>, Class
 deactivate Database
-ApplicationDbContext --> Handler : List<ClassUser>, Class
+activate ApplicationDbContext
+ApplicationDbContext --> UpdatePositionCommandHandler : List<ClassUser>, Class
 deactivate ApplicationDbContext
+activate UpdatePositionCommandHandler
 alt Not Class Owner
-    Handler --> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: ONLY_OWNERS_CAN_UPDATE)
-    UI -> User : Error: Only owners can update
+    UpdatePositionCommandHandler -> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
+    deactivate UpdatePositionCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "ONLY_OWNERS_CAN_UPDATE" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Only owners can update
 else Is Class Owner
+    activate UpdatePositionCommandHandler
     alt Class Not Found
-        Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-        UI -> User : Error: Class not found
+        UpdatePositionCommandHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+        deactivate UpdatePositionCommandHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: Class not found
     else Class Found
+        activate UpdatePositionCommandHandler
         alt Target User Not Found or Is Owner
-            Handler --> ClassEndpoints : Error: NOT_FOUND_STUDENT_IN_CLASS
-            ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_STUDENT_IN_CLASS)
-            UI -> User : Error: Student not found or is owner
+            UpdatePositionCommandHandler -> ClassEndpoints : Error: NOT_FOUND_STUDENT_IN_CLASS
+            deactivate UpdatePositionCommandHandler
+            activate ClassEndpoints
+            ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_STUDENT_IN_CLASS" }
+            deactivate ClassEndpoints
+            UI -> User : Display error: Student not found or is owner
         else Target User Found and Not Owner
+            activate UpdatePositionCommandHandler
             alt Position Not Provided
-                Handler --> ClassEndpoints : Error: PERMISSION_NOT_FOUND
-                ClassEndpoints --> UI : 400 Bad Request (errorCode: PERMISSION_NOT_FOUND)
-                UI -> User : Error: Position not provided
+                UpdatePositionCommandHandler -> ClassEndpoints : Error: PERMISSION_NOT_FOUND
+                deactivate UpdatePositionCommandHandler
+                activate ClassEndpoints
+                ClassEndpoints --> UI : 400 Bad Request { "error": "PERMISSION_NOT_FOUND" }
+                deactivate ClassEndpoints
+                UI -> User : Display error: Position not provided
             else Position Provided
-                Handler -> ApplicationDbContext : Update ClassMember position
+                activate UpdatePositionCommandHandler
+                UpdatePositionCommandHandler -> ApplicationDbContext : Update ClassMember position
+                deactivate UpdatePositionCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update ClassMember
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
                 deactivate Database
-                ApplicationDbContext --> Handler : UpdatePositionDto
+                activate ApplicationDbContext
+                ApplicationDbContext --> UpdatePositionCommandHandler : UpdatePositionDto
                 deactivate ApplicationDbContext
-                Handler --> ClassEndpoints : UpdatePositionDto
+                activate UpdatePositionCommandHandler
+                UpdatePositionCommandHandler -> ClassEndpoints : UpdatePositionDto
+                deactivate UpdatePositionCommandHandler
+                activate ClassEndpoints
                 ClassEndpoints --> UI : 200 OK (ApiResponse<UpdatePositionDto>)
-                UI -> User : Info: Member position updated
+                deactivate ClassEndpoints
+                UI -> User : Display info: Member position updated
             end
         end
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

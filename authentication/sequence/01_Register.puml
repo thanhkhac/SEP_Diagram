@@ -1,58 +1,96 @@
 @startuml
 actor Guest as User
-participant "Register UI" as UI
-participant AuthenticationEndpoints
-participant RegisterUserHandler
-participant IdentityService
-participant UserManager
+participant "Register UI"  as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant RegisterUserHandler <<Handler>>
+participant IdentityService <<Service>>
+participant UserManager <<Service>>
 Database Database
+
+note right of RegisterUserHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
 
 User -> UI : Enter email, password
 activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/Register
 activate AuthenticationEndpoints
 AuthenticationEndpoints -> RegisterUserHandler : Send RegisterUserCommand
+deactivate AuthenticationEndpoints
 activate RegisterUserHandler
 RegisterUserHandler -> IdentityService : CreateUserAsync(email, password)
+deactivate RegisterUserHandler
 activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+deactivate IdentityService
 activate UserManager
 UserManager -> Database : Query User
+deactivate UserManager
 activate Database
 Database --> UserManager : User/null
-UserManager --> IdentityService : User/null
 deactivate Database
+activate UserManager
+UserManager --> IdentityService : User/null
+deactivate UserManager
+activate IdentityService
 deactivate UserManager
 alt User exists
     alt User is banned
-
         IdentityService --> RegisterUserHandler : Error: ACCOUNT_EMAIL_BANNED
+        deactivate IdentityService
+        activate RegisterUserHandler
         RegisterUserHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_BANNED)
+        deactivate RegisterUserHandler
+        activate AuthenticationEndpoints
         AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_EMAIL_BANNED" }
+        deactivate AuthenticationEndpoints
         UI -> User : Error message: Email is banned
     else User is not banned
         deactivate UserManager
+        activate IdentityService
         IdentityService --> RegisterUserHandler : Error: IDENTITY_DUPLICATE_EMAIL
+        deactivate IdentityService
+        activate RegisterUserHandler
         RegisterUserHandler --> AuthenticationEndpoints : Error (IDENTITY_DUPLICATE_EMAIL)
+        deactivate RegisterUserHandler
+        activate AuthenticationEndpoints
         AuthenticationEndpoints --> UI : 400 Bad Request { "error": "IDENTITY_DUPLICATE_EMAIL" }
+        deactivate AuthenticationEndpoints
         UI -> User : Error message: Email already exists
+        activate IdentityService
     end
 else User doesn't exist
     IdentityService -> UserManager : CreateAsync(user, password)
+    deactivate IdentityService
     activate UserManager
     UserManager -> Database : Insert User
+    deactivate UserManager
     activate Database
+    deactivate UserManager
     Database --> UserManager : Success
+    activate UserManager
     deactivate Database
     UserManager --> IdentityService : Success
     deactivate UserManager
+    activate IdentityService
     IdentityService --> RegisterUserHandler : Return userId
+    deactivate IdentityService
+    activate RegisterUserHandler
     RegisterUserHandler --> AuthenticationEndpoints : Return userId
+    deactivate RegisterUserHandler
+    activate AuthenticationEndpoints
     AuthenticationEndpoints --> UI : 200 OK { "userId": <id> }
+    deactivate AuthenticationEndpoints
     UI -> User : Redirect to login page
 end
-deactivate IdentityService
-deactivate RegisterUserHandler
-deactivate AuthenticationEndpoints
+
 deactivate UI
 @enduml

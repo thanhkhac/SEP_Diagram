@@ -1,63 +1,100 @@
 @startuml
 actor User
-participant "Test Template Detail UI" as UI
-participant TestTemplateEndpoints
-participant GetSharingInTestTemplateQueryHandler as Handler
-participant TestTemplateService
-participant ApplicationDbContext
+participant "Test Template Detail UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":GetSharingInTestTemplateQueryHandler" as GetSharingInTestTemplateQueryHandler <<Handler>>
+participant ":TestTemplateService" as TestTemplateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetSharingInTestTemplateQueryHandler
+  Managed by MediatR
+end note
+
+note right of TestTemplateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View sharing details
 activate UI
 UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}/Sharing
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(GetSharingInTestTemplateQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+TestTemplateEndpoints -> GetSharingInTestTemplateQueryHandler : Handle(GetSharingInTestTemplateQuery)
+deactivate TestTemplateEndpoints
+activate GetSharingInTestTemplateQueryHandler
+GetSharingInTestTemplateQueryHandler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+deactivate GetSharingInTestTemplateQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : TestTemplate
 deactivate Database
-ApplicationDbContext --> Handler : TestTemplate
+activate ApplicationDbContext
+ApplicationDbContext --> GetSharingInTestTemplateQueryHandler : TestTemplate
 deactivate ApplicationDbContext
+activate GetSharingInTestTemplateQueryHandler
 alt Test Template Not Found
-    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
-    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
-    UI -> User : Error: Test template not found
+    GetSharingInTestTemplateQueryHandler -> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    deactivate GetSharingInTestTemplateQueryHandler
+    activate TestTemplateEndpoints
+    TestTemplateEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND" }
+    deactivate TestTemplateEndpoints
+    UI -> User : Display error: Test template not found
 else Test Template Found
-    Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    activate GetSharingInTestTemplateQueryHandler
+    GetSharingInTestTemplateQueryHandler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    deactivate GetSharingInTestTemplateQueryHandler
     activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    deactivate TestTemplateService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> TestTemplateService : Permission
     deactivate ApplicationDbContext
-    TestTemplateService --> Handler : bool
+    activate TestTemplateService
+    TestTemplateService --> GetSharingInTestTemplateQueryHandler : bool
     deactivate TestTemplateService
+    activate GetSharingInTestTemplateQueryHandler
     alt No permission
-        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
-        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
-        UI -> User : Error: User does not have permission to view sharing
+        GetSharingInTestTemplateQueryHandler -> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        deactivate GetSharingInTestTemplateQueryHandler
+        activate TestTemplateEndpoints
+        TestTemplateEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE" }
+        deactivate TestTemplateEndpoints
+        UI -> User : Display error: User does not have permission to view sharing
     else Allowed
-        Handler -> ApplicationDbContext : Query TestTemplateUsers by TestTemplateId
+        activate GetSharingInTestTemplateQueryHandler
+        GetSharingInTestTemplateQueryHandler -> ApplicationDbContext : Query TestTemplateUsers by TestTemplateId
+        deactivate GetSharingInTestTemplateQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateUsers
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<TestTemplateUser>
         deactivate Database
-        ApplicationDbContext --> Handler : List<TestTemplateUser>
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetSharingInTestTemplateQueryHandler : List<TestTemplateUser>
         deactivate ApplicationDbContext
-        Handler -> Handler : Map to SharingModelDto and Sort
-        Handler --> TestTemplateEndpoints : ResourceShareDto
+        activate GetSharingInTestTemplateQueryHandler
+        GetSharingInTestTemplateQueryHandler -> GetSharingInTestTemplateQueryHandler : Map to SharingModelDto and Sort
+        GetSharingInTestTemplateQueryHandler -> TestTemplateEndpoints : ResourceShareDto
+        deactivate GetSharingInTestTemplateQueryHandler
+        activate TestTemplateEndpoints
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
+        deactivate TestTemplateEndpoints
         UI -> User : Show sharing details
     end
 end
-deactivate Handler
-deactivate TestTemplateEndpoints
 deactivate UI
+
 @enduml

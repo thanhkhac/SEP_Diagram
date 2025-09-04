@@ -1,52 +1,85 @@
 @startuml
 actor "Lecturer" as User
-participant "Edit Class UI" as UI
-participant ClassEndpoints
-participant UpdateClassCommandHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Edit Class UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":UpdateClassCommandHandler" as UpdateClassCommandHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateClassCommandHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Edit info, click "Save"
 activate UI
 UI -> ClassEndpoints : PATCH /api/Class/{ClassId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(UpdateClassCommand)
-activate Handler
-Handler -> ClassService : GetClassOwnerAccess(classId)
+ClassEndpoints -> UpdateClassCommandHandler : Handle(UpdateClassCommand)
+deactivate ClassEndpoints
+activate UpdateClassCommandHandler
+UpdateClassCommandHandler -> ClassService : GetClassOwnerAccess(classId)
+deactivate UpdateClassCommandHandler
 activate ClassService
 ClassService -> ApplicationDbContext : Query Class and ClassUser
+deactivate ClassService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class and ClassUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class, ClassUser
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> ClassService : Class, ClassUser
 deactivate ApplicationDbContext
-ClassService --> Handler : (IsOwner, ClassExists)
+activate ClassService
+ClassService --> UpdateClassCommandHandler : (IsOwner, ClassExists)
 deactivate ClassService
+activate UpdateClassCommandHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    UpdateClassCommandHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate UpdateClassCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Not Class Owner
-    Handler --> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: ONLY_OWNERS_CAN_UPDATE)
-    UI -> User : Error: Only owners can update
+    activate UpdateClassCommandHandler
+    UpdateClassCommandHandler -> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
+    deactivate UpdateClassCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "ONLY_OWNERS_CAN_UPDATE" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Only owners can update
 else Class Found and Is Owner
-    Handler -> ApplicationDbContext : Update Class
+    activate UpdateClassCommandHandler
+    UpdateClassCommandHandler -> ApplicationDbContext : Update Class
+    deactivate UpdateClassCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Update Class
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    ApplicationDbContext --> Handler : Guid
+    activate ApplicationDbContext
+    ApplicationDbContext --> UpdateClassCommandHandler : Guid
     deactivate ApplicationDbContext
-    Handler --> ClassEndpoints : Guid
+    activate UpdateClassCommandHandler
+    UpdateClassCommandHandler -> ClassEndpoints : Guid
+    deactivate UpdateClassCommandHandler
+    activate ClassEndpoints
     ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> User : Info: Update successful
+    deactivate ClassEndpoints
+    UI -> User : Display info: Update successful
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

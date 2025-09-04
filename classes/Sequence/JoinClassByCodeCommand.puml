@@ -1,71 +1,110 @@
 @startuml
 actor User
-participant "Join Class UI" as UI
-participant ClassEndpoints
-participant JoinClassByCodeCommandHandler as Handler
-participant ApplicationDbContext
+participant "Join Class UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":JoinClassByCodeCommandHandler" as JoinClassByCodeCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of JoinClassByCodeCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Enter invite code, click "Join"
 activate UI
 UI -> ClassEndpoints : POST /api/Class/Students
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(JoinClassByCodeCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query ClassInvitation by Code
+ClassEndpoints -> JoinClassByCodeCommandHandler : Handle(JoinClassByCodeCommand)
+deactivate ClassEndpoints
+activate JoinClassByCodeCommandHandler
+JoinClassByCodeCommandHandler -> ApplicationDbContext : Query ClassInvitation by Code
+deactivate JoinClassByCodeCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query ClassInvitation
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : ClassInvitation
 deactivate Database
-ApplicationDbContext --> Handler : ClassInvitation
+activate ApplicationDbContext
+ApplicationDbContext --> JoinClassByCodeCommandHandler : ClassInvitation
 deactivate ApplicationDbContext
+activate JoinClassByCodeCommandHandler
 alt Class Invitation Not Found or Expired
-    Handler --> ClassEndpoints : Error: CLASS_CODE_NOT_FOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_CODE_NOT_FOUND)
-    UI -> User : Error: Invite code not found or expired
+    JoinClassByCodeCommandHandler -> ClassEndpoints : Error: CLASS_CODE_NOT_FOUND
+    deactivate JoinClassByCodeCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_CODE_NOT_FOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Invite code not found or expired
 else Class Invitation Found
-    Handler -> ApplicationDbContext : Query Class by ClassInvitation.ClassId
+    activate JoinClassByCodeCommandHandler
+    JoinClassByCodeCommandHandler -> ApplicationDbContext : Query Class by ClassInvitation.ClassId
+    deactivate JoinClassByCodeCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Class
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Class
     deactivate Database
-    ApplicationDbContext --> Handler : Class
+    activate ApplicationDbContext
+    ApplicationDbContext --> JoinClassByCodeCommandHandler : Class
     deactivate ApplicationDbContext
+    activate JoinClassByCodeCommandHandler
     alt Class Not Found
-        Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-        UI -> User : Error: Class not found
+        JoinClassByCodeCommandHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+        deactivate JoinClassByCodeCommandHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: Class not found
     else Class Found
-        Handler -> ApplicationDbContext : Query ClassUser by UserId and ClassId
+        activate JoinClassByCodeCommandHandler
+        JoinClassByCodeCommandHandler -> ApplicationDbContext : Query ClassUser by UserId and ClassId
+        deactivate JoinClassByCodeCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassUser
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : ClassUser
         deactivate Database
-        ApplicationDbContext -> Handler : ClassUser
+        activate ApplicationDbContext
+        ApplicationDbContext -> JoinClassByCodeCommandHandler : ClassUser
         deactivate ApplicationDbContext
+        activate JoinClassByCodeCommandHandler
         alt User Already In Class
-            Handler --> ClassEndpoints : Error: STUDENT_ALREADY_EXISTS_IN_CLASS
-            ClassEndpoints --> UI : 400 Bad Request (errorCode: STUDENT_ALREADY_EXISTS_IN_CLASS)
-            UI -> User : Error: Student already in class
+            JoinClassByCodeCommandHandler -> ClassEndpoints : Error: STUDENT_ALREADY_EXISTS_IN_CLASS
+            deactivate JoinClassByCodeCommandHandler
+            activate ClassEndpoints
+            ClassEndpoints --> UI : 400 Bad Request { "error": "STUDENT_ALREADY_EXISTS_IN_CLASS" }
+            deactivate ClassEndpoints
+            UI -> User : Display error: Student already in class
         else User Not In Class
-            Handler -> ApplicationDbContext : Add new ClassUser and ClassInvitationUser
+            activate JoinClassByCodeCommandHandler
+            JoinClassByCodeCommandHandler -> ApplicationDbContext : Add new ClassUser and ClassInvitationUser
+            deactivate JoinClassByCodeCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Insert ClassUser, ClassInvitationUser
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            ApplicationDbContext --> Handler : Unit
+            activate ApplicationDbContext
+            ApplicationDbContext --> JoinClassByCodeCommandHandler : Unit
             deactivate ApplicationDbContext
-            Handler --> ClassEndpoints : Unit
+            activate JoinClassByCodeCommandHandler
+            JoinClassByCodeCommandHandler -> ClassEndpoints : Unit
+            deactivate JoinClassByCodeCommandHandler
+            activate ClassEndpoints
             ClassEndpoints --> UI : 200 OK (ApiResponse<Unit>)
-            UI -> User : Info: Joined class successfully
+            deactivate ClassEndpoints
+            UI -> User : Display info: Joined class successfully
         end
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

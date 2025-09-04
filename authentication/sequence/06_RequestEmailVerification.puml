@@ -1,66 +1,105 @@
 @startuml
 actor Guest as User
-participant "Request email verification UI" as UI
-participant AuthenticationEndpoints
-participant RequestEmailVerificationHandler
-participant IdentityService
-participant UserManager
-participant EmailService
+participant "Request email verification UI" as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant RequestEmailVerificationHandler <<Handler>>
+participant IdentityService <<Service>>
+participant UserManager <<Service>>
+participant EmailService <<Service>>
 participant Database
+
+note right of RequestEmailVerificationHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
+
+note right of EmailService
+  Managed by IoC
+end note
 
 User -> UI : Enter email, click "Send verification code"
 activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/RequestEmailVerification
 activate AuthenticationEndpoints
 AuthenticationEndpoints -> RequestEmailVerificationHandler : SendRequestEmailVerificationCommand
+deactivate AuthenticationEndpoints
 activate RequestEmailVerificationHandler
 RequestEmailVerificationHandler -> IdentityService : RequestEmailVerificationAsync(email)
+deactivate RequestEmailVerificationHandler
 activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+deactivate IdentityService
 activate UserManager
 UserManager -> Database : Query UserAccount
+deactivate UserManager
 activate Database
 Database --> UserManager : UserAccount/null
-deactivate UserManager
-
 deactivate Database
-    UserManager --> IdentityService : UserAccount
-
+activate UserManager
+UserManager --> IdentityService : UserAccount/null
+deactivate UserManager
+activate IdentityService
 alt User not found
     IdentityService --> RequestEmailVerificationHandler : Error: ACCOUNT_NOTFOUND
-    RequestEmailVerificationHandler --> AuthenticationEndpoints : Error ACCOUNT_NOTFOUND
-    AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
-    UI -> User : Error: Account not found
-
+    deactivate IdentityService
+    activate RequestEmailVerificationHandler
+    RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (ACCOUNT_NOTFOUND)
+    deactivate RequestEmailVerificationHandler
+    activate AuthenticationEndpoints
+    AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_NOTFOUND" }
+    deactivate AuthenticationEndpoints
+    UI -> User : Display error: Account not found
 else User found
+    activate IdentityService
     IdentityService -> IdentityService : Check lockout
     alt Lockout active
         IdentityService --> RequestEmailVerificationHandler : Error: EMAIL_VERIFICATION_REQUEST_TOO_MANY
+        deactivate IdentityService
+        activate RequestEmailVerificationHandler
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
-        AuthenticationEndpoints --> UI : 400 Bad Request (EMAIL_VERIFICATION_REQUEST_TOO_MANY)
-        UI -> User : Error: Too many verification requests
+        deactivate RequestEmailVerificationHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "EMAIL_VERIFICATION_REQUEST_TOO_MANY" }
+        deactivate AuthenticationEndpoints
+        UI -> User : Display error: Too many verification requests
     else Allowed to send
+        activate IdentityService
         IdentityService -> IdentityService : Generate random code
         IdentityService -> UserManager : UpdateAsync(user)
+        deactivate IdentityService
         activate UserManager
         UserManager -> Database : Update UserAccount
+        deactivate UserManager
         activate Database
         Database --> UserManager : Success
         deactivate Database
+        activate UserManager
         UserManager --> IdentityService : Success
         deactivate UserManager
+        activate IdentityService
         IdentityService -> EmailService : SendEmailAsync(email, subject, body)
+        deactivate IdentityService
         activate EmailService
         EmailService --> IdentityService : Success
         deactivate EmailService
+        activate IdentityService
         IdentityService --> RequestEmailVerificationHandler : Success
         deactivate IdentityService
+        activate RequestEmailVerificationHandler
         RequestEmailVerificationHandler --> AuthenticationEndpoints : Success
-        AuthenticationEndpoints --> UI : 200 OK
-        UI -> User : Info: Verification code sent to your email
+        deactivate RequestEmailVerificationHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 200 OK { "message": "Verification code sent" }
+        deactivate AuthenticationEndpoints
+        UI -> User : Display info: Verification code sent to your email
     end
 end
-deactivate RequestEmailVerificationHandler
-deactivate AuthenticationEndpoints
-deactivate UI
+
 @enduml

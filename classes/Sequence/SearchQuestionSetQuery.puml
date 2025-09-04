@@ -1,62 +1,99 @@
 @startuml
 actor User
-participant "Class Detail UI" as UI
-participant ClassEndpoints
-participant SearchQuestionSetQueryHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class Detail UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":SearchQuestionSetQueryHandler" as SearchQuestionSetQueryHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchQuestionSetQueryHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View questions in set
 activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Questionsets?name=...
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(SearchQuestionSetQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Class by ClassId
+ClassEndpoints -> SearchQuestionSetQueryHandler : Handle(SearchQuestionSetQuery)
+deactivate ClassEndpoints
+activate SearchQuestionSetQueryHandler
+SearchQuestionSetQueryHandler -> ApplicationDbContext : Query Class by ClassId
+deactivate SearchQuestionSetQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
-ApplicationDbContext --> Handler : Class
+activate ApplicationDbContext
+ApplicationDbContext --> SearchQuestionSetQueryHandler : Class
 deactivate ApplicationDbContext
+activate SearchQuestionSetQueryHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    SearchQuestionSetQueryHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate SearchQuestionSetQueryHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> ClassService : IsUserInClass(classId)
+    activate SearchQuestionSetQueryHandler
+    SearchQuestionSetQueryHandler -> ClassService : IsUserInClass(classId)
+    deactivate SearchQuestionSetQueryHandler
     activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    deactivate ClassService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : ClassUser
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> ClassService : ClassUser
     deactivate ApplicationDbContext
-    ClassService --> Handler : bool
+    activate ClassService
+    ClassService --> SearchQuestionSetQueryHandler : bool
     deactivate ClassService
+    activate SearchQuestionSetQueryHandler
     alt User Not In Class
-        Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
-        UI -> User : Error: User not in class
+        SearchQuestionSetQueryHandler -> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+        deactivate SearchQuestionSetQueryHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_USER_IN_CLASS" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: User not in class
     else User In Class
-        Handler -> ApplicationDbContext : Query QuestionSets linked to Class (filtered by Name)
+        activate SearchQuestionSetQueryHandler
+        SearchQuestionSetQueryHandler -> ApplicationDbContext : Query QuestionSets linked to Class (filtered by Name)
+        deactivate SearchQuestionSetQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query QuestionSets
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<QuestionSet>
         deactivate Database
-        ApplicationDbContext --> Handler : PaginatedList<QuestionSetForListResponseDto>
+        activate ApplicationDbContext
+        ApplicationDbContext --> SearchQuestionSetQueryHandler : PaginatedList<QuestionSetForListResponseDto>
         deactivate ApplicationDbContext
-        Handler --> ClassEndpoints : PaginatedList<QuestionSetForListResponseDto>
+        activate SearchQuestionSetQueryHandler
+        SearchQuestionSetQueryHandler -> ClassEndpoints : PaginatedList<QuestionSetForListResponseDto>
+        deactivate SearchQuestionSetQueryHandler
+        activate ClassEndpoints
         ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
+        deactivate ClassEndpoints
         UI -> User : Show question set search results
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

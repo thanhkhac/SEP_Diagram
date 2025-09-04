@@ -1,0 +1,42 @@
+@startuml
+actor User as User
+participant "Endpoints" as Controller <<Controller>>
+participant "Sender" as Sender <<MediatR ISender>>
+participant "AuthorizationBehaviour" as Authorization <<Pipeline Behaviour>>
+participant "ValidationBehaviour" as Validation <<Pipeline Behaviour>>
+participant "RequestHandler" as Handler <<MediatR Request Handler>>
+
+User -> Controller: Http request
+activate Controller
+Controller -> Sender: Send(request)
+activate Sender
+Sender -> Authorization: Execute pipeline (Handle request)
+activate Authorization
+alt Unauthorized
+    Authorization --> Sender: throw Exception (COMMON_UNAUTHORIZED/COMMON_FORBIDDEN)
+    Sender --> Controller: Error response
+    Controller --> User: Http response
+else Authorized
+    Authorization -> Validation: next(request)
+    activate Validation
+    alt Validation fails
+        Validation --> Authorization: throw ValidationException
+        Authorization --> Sender: Error response
+        Sender --> Controller: Error response
+        Controller --> User: Http response
+    else Validation passes
+        Validation -> Handler: next(request)
+        activate Handler
+        Handler --> Validation: Response
+        deactivate Handler
+        Validation --> Authorization: Response
+        Authorization --> Sender: Response
+        Sender --> Controller: Response
+        Controller --> User: Http response
+    end
+end
+deactivate Authorization
+
+deactivate Sender
+deactivate Controller
+@enduml

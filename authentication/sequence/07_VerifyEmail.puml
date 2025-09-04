@@ -1,67 +1,109 @@
 @startuml
 actor Guest as User
-participant "Verify email UI" as UI
-participant AuthenticationEndpoints
-participant VerifyEmailHandler
-participant IdentityService
-participant UserManager
-Database Database
+participant "Verify email UI" as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant VerifyEmailHandler <<Handler>>
+participant IdentityService <<Service>>
+participant UserManager <<Service>>
+participant Database
+
+note right of VerifyEmailHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
 
 User -> UI : Enter verification code and click Confirm
 activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/VerifyEmail
 activate AuthenticationEndpoints
 AuthenticationEndpoints -> VerifyEmailHandler : Send VerifyEmailCommand
+deactivate AuthenticationEndpoints
 activate VerifyEmailHandler
 VerifyEmailHandler -> IdentityService : VerifyEmailAsync(email, code)
+deactivate VerifyEmailHandler
 activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+deactivate IdentityService
 activate UserManager
 UserManager -> Database : Query UserAccount
+deactivate UserManager
 activate Database
 Database --> UserManager : UserAccount/null
-    deactivate UserManager
 deactivate Database
-    UserManager --> IdentityService : UserAccount
-
+activate UserManager
+UserManager --> IdentityService : UserAccount/null
+deactivate UserManager
+activate IdentityService
 alt User not found
     IdentityService --> VerifyEmailHandler : Error: ACCOUNT_NOTFOUND
+    deactivate IdentityService
+    activate VerifyEmailHandler
     VerifyEmailHandler --> AuthenticationEndpoints : Error (ACCOUNT_NOTFOUND)
-    AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_NOTFOUND)
-    UI -> User : Error message: Account not found
+    deactivate VerifyEmailHandler
+    activate AuthenticationEndpoints
+    AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_NOTFOUND" }
+    deactivate AuthenticationEndpoints
+    UI -> User : Display error: Account not found
 else User found
+    activate IdentityService
     IdentityService -> IdentityService : Check lockout status
     alt Too many incorrect attempts
-        deactivate UserManager
         IdentityService --> VerifyEmailHandler : Error: EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY
+        deactivate IdentityService
+        activate VerifyEmailHandler
         VerifyEmailHandler --> AuthenticationEndpoints : Error (EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY)
-        AuthenticationEndpoints --> UI : 400 Bad Request (EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY)
-        UI -> User : Error message: Too many failed verification attempts
+        deactivate VerifyEmailHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "EMAIL_VERIFICATION_CODE_FAILED_TOO_MANY" }
+        deactivate AuthenticationEndpoints
+        UI -> User : Display error: Too many failed verification attempts
     else Allowed to verify
+        activate IdentityService
         IdentityService -> IdentityService : Validate code and expiry time
         alt Code is invalid or expired
             IdentityService --> VerifyEmailHandler : Error: ACCOUNT_INVALID_VERIFICATION_CODE
+            deactivate IdentityService
+            activate VerifyEmailHandler
             VerifyEmailHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_VERIFICATION_CODE)
-            AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_INVALID_VERIFICATION_CODE)
-            UI -> User : Error message: Verification code is incorrect or expired
+            deactivate VerifyEmailHandler
+            activate AuthenticationEndpoints
+            AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_INVALID_VERIFICATION_CODE" }
+            deactivate AuthenticationEndpoints
+            UI -> User : Display error: Verification code is incorrect or expired
+
         else Code is valid
+
+            activate IdentityService
             IdentityService -> UserManager : UpdateAsync(user)
+            deactivate IdentityService
             activate UserManager
             UserManager -> Database : Update UserAccount
+            deactivate UserManager
             activate Database
             Database --> UserManager : Success
             deactivate Database
+            activate UserManager
             UserManager --> IdentityService : Success
             deactivate UserManager
+            activate IdentityService
             IdentityService --> VerifyEmailHandler : Success
+            deactivate IdentityService
+            activate VerifyEmailHandler
             VerifyEmailHandler --> AuthenticationEndpoints : Success
-            AuthenticationEndpoints --> UI : 200 OK
-            UI -> User : Success message: Email verified successfully
+            deactivate VerifyEmailHandler
+            activate AuthenticationEndpoints
+            AuthenticationEndpoints --> UI : 200 OK { "message": "Email verified successfully" }
+            deactivate AuthenticationEndpoints
+            UI -> User : Display info: Email verified successfully
         end
     end
 end
-deactivate IdentityService
-deactivate VerifyEmailHandler
-deactivate AuthenticationEndpoints
-deactivate UI
+
 @enduml

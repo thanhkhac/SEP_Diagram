@@ -1,71 +1,114 @@
 @startuml
 actor User
-participant "Test Template List UI" as UI
-participant TestTemplateEndpoints
-participant DeleteTestTemplateCommandHandler as Handler
-participant TestTemplateService
-participant ApplicationDbContext
+participant "Test Template List UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":DeleteTestTemplateCommandHandler" as DeleteTestTemplateCommandHandler <<Handler>>
+participant ":TestTemplateService" as TestTemplateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
+participant ":IdentityService" as IdentityService <<Service>>
 participant Database
-participant IdentityService
+
+note right of DeleteTestTemplateCommandHandler
+  Managed by MediatR
+end note
+
+note right of TestTemplateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
 
 User -> UI : Click "Delete"
 activate UI
 UI -> TestTemplateEndpoints : DELETE /api/TestTemplate/{TestTemplateId}
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(DeleteTestTemplateCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+TestTemplateEndpoints -> DeleteTestTemplateCommandHandler : Handle(DeleteTestTemplateCommand)
+deactivate TestTemplateEndpoints
+activate DeleteTestTemplateCommandHandler
+DeleteTestTemplateCommandHandler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+deactivate DeleteTestTemplateCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : TestTemplate
 deactivate Database
-ApplicationDbContext --> Handler : TestTemplate
+activate ApplicationDbContext
+ApplicationDbContext --> DeleteTestTemplateCommandHandler : TestTemplate
 deactivate ApplicationDbContext
+activate DeleteTestTemplateCommandHandler
 alt Test Template Not Found
-    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
-    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
-    UI -> User : Error: Test template not found
+    DeleteTestTemplateCommandHandler -> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    deactivate DeleteTestTemplateCommandHandler
+    activate TestTemplateEndpoints
+    TestTemplateEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND" }
+    deactivate TestTemplateEndpoints
+    UI -> User : Display error: Test template not found
 else Test Template Found
-    Handler -> TestTemplateService : CanDeleteTestTemplate(testTemplateId)
+    activate DeleteTestTemplateCommandHandler
+    DeleteTestTemplateCommandHandler -> TestTemplateService : CanDeleteTestTemplate(testTemplateId)
+    deactivate DeleteTestTemplateCommandHandler
     activate TestTemplateService
     TestTemplateService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    deactivate TestTemplateService
     activate IdentityService
     IdentityService --> TestTemplateService : bool (isAdmin)
     deactivate IdentityService
+    activate TestTemplateService
     alt Is Admin
-        TestTemplateService --> Handler : true
+        TestTemplateService -> DeleteTestTemplateCommandHandler : true
     else Not Admin
         TestTemplateService -> ApplicationDbContext : Query TestTemplateUser (Owner)
+        deactivate TestTemplateService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateUser
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : TestTemplateUser
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> TestTemplateService : TestTemplateUser
         deactivate ApplicationDbContext
-        TestTemplateService --> Handler : bool (isOwner)
+        activate TestTemplateService
+        TestTemplateService -> DeleteTestTemplateCommandHandler : bool (isOwner)
     end
     deactivate TestTemplateService
+    activate DeleteTestTemplateCommandHandler
     alt No permission
-        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
-        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
-        UI -> User : Error: User does not have permission to delete this test template
+        DeleteTestTemplateCommandHandler -> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        deactivate DeleteTestTemplateCommandHandler
+        activate TestTemplateEndpoints
+        TestTemplateEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE" }
+        deactivate TestTemplateEndpoints
+        UI -> User : Display error: User does not have permission to delete this test template
     else Allowed
-        Handler -> ApplicationDbContext : Mark TestTemplate as Deleted
+        activate DeleteTestTemplateCommandHandler
+        DeleteTestTemplateCommandHandler -> ApplicationDbContext : Mark TestTemplate as Deleted
+        deactivate DeleteTestTemplateCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update TestTemplate (IsDeleted = true)
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> DeleteTestTemplateCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> TestTemplateEndpoints : Guid
+        activate DeleteTestTemplateCommandHandler
+        DeleteTestTemplateCommandHandler -> TestTemplateEndpoints : Guid
+        deactivate DeleteTestTemplateCommandHandler
+        activate TestTemplateEndpoints
         TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> User : Info: Test template deleted successfully
+        deactivate TestTemplateEndpoints
+        UI -> User : Display info: Test template deleted successfully
     end
 end
-deactivate Handler
-deactivate TestTemplateEndpoints
 deactivate UI
+
 @enduml

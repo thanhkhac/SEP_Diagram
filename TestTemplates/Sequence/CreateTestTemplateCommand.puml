@@ -1,49 +1,77 @@
 @startuml
 actor User
-participant "Create Test Template UI" as UI
-participant TestTemplateEndpoints
-participant CreateTestTemplateCommandHandler as Handler
-participant TestTemplateService
-participant ApplicationDbContext
+participant "Create Test Template UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":CreateTestTemplateCommandHandler" as CreateTestTemplateCommandHandler <<Handler>>
+participant ":TestTemplateService" as TestTemplateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of CreateTestTemplateCommandHandler
+  Managed by MediatR
+end note
+
+note right of TestTemplateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Fill in info, add questions, click "Create"
 activate UI
 UI -> TestTemplateEndpoints : POST /api/TestTemplate
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(CreateTestTemplateCommand)
-activate Handler
-Handler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(questions)
+TestTemplateEndpoints -> CreateTestTemplateCommandHandler : Handle(CreateTestTemplateCommand)
+deactivate TestTemplateEndpoints
+activate CreateTestTemplateCommandHandler
+CreateTestTemplateCommandHandler -> TestTemplateService : TryCheckQuestionAccessForTestTemplate(questions)
+deactivate CreateTestTemplateCommandHandler
 activate TestTemplateService
 TestTemplateService -> ApplicationDbContext : Query Questions/Permissions
+deactivate TestTemplateService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Questions/Permissions
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Questions/Permissions
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> TestTemplateService : Questions/Permissions
 deactivate ApplicationDbContext
-TestTemplateService --> Handler : Success/Error
+activate TestTemplateService
+TestTemplateService --> CreateTestTemplateCommandHandler : Success/Error
 deactivate TestTemplateService
+activate CreateTestTemplateCommandHandler
 alt Question Access Denied
-    Handler --> TestTemplateEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
-    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_NOT_HAVE_ACCESS)
-    UI -> User : Error: Some questions are not accessible or invalid
+    CreateTestTemplateCommandHandler -> TestTemplateEndpoints : Error: QUESTION_NOT_HAVE_ACCESS
+    deactivate CreateTestTemplateCommandHandler
+    activate TestTemplateEndpoints
+    TestTemplateEndpoints --> UI : 400 Bad Request { "error": "QUESTION_NOT_HAVE_ACCESS" }
+    deactivate TestTemplateEndpoints
+    UI -> User : Display error: Some questions are not accessible or invalid
 else Question Access Granted
-    Handler -> ApplicationDbContext : Add new TestTemplate and TestTemplateUser
+    activate CreateTestTemplateCommandHandler
+    CreateTestTemplateCommandHandler -> ApplicationDbContext : Add new TestTemplate and TestTemplateUser
+    deactivate CreateTestTemplateCommandHandler
     activate ApplicationDbContext
-    ' Handler -> Handler : Create Question entities and TestTemplateQuestion links from DTOs
     ApplicationDbContext -> Database : Insert TestTemplate, TestTemplateUser, Questions, TestTemplateQuestions
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    ApplicationDbContext --> Handler : Guid
+    activate ApplicationDbContext
+    ApplicationDbContext --> CreateTestTemplateCommandHandler : Guid
     deactivate ApplicationDbContext
-    Handler --> TestTemplateEndpoints : Guid
+    activate CreateTestTemplateCommandHandler
+    CreateTestTemplateCommandHandler -> TestTemplateEndpoints : Guid
+    deactivate CreateTestTemplateCommandHandler
+    activate TestTemplateEndpoints
     TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> User : Info: Test template created successfully
+    deactivate TestTemplateEndpoints
+    UI -> User : Display info: Test template created successfully
 end
-deactivate Handler
-deactivate TestTemplateEndpoints
 deactivate UI
+
 @enduml

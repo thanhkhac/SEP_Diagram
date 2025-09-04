@@ -1,52 +1,84 @@
 @startuml
 actor User
-participant "Class List UI" as UI
-participant ClassEndpoints
-participant DeleteClassHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class List UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":DeleteClassHandler" as DeleteClassHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of DeleteClassHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Click "Delete"
 activate UI
 UI -> ClassEndpoints : DELETE /api/Class/{ClassId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(DeleteClassCommand)
-activate Handler
-Handler -> ClassService : GetClassOwnerAccess(classId)
+ClassEndpoints -> DeleteClassHandler : Handle(DeleteClassCommand)
+deactivate ClassEndpoints
+activate DeleteClassHandler
+DeleteClassHandler -> ClassService : GetClassOwnerAccess(classId)
+deactivate DeleteClassHandler
 activate ClassService
 ClassService -> ApplicationDbContext : Query Class and ClassUser
+deactivate ClassService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class and ClassUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class, ClassUser
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> ClassService : Class, ClassUser
 deactivate ApplicationDbContext
-ClassService --> Handler : (IsOwner, ClassExists)
+activate ClassService
+ClassService --> DeleteClassHandler : (IsOwner, ClassExists)
 deactivate ClassService
+activate DeleteClassHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    DeleteClassHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate DeleteClassHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Not Class Owner
-    Handler --> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: ONLY_OWNERS_CAN_UPDATE)
-    UI -> User : Error: Only owners can delete
+    DeleteClassHandler -> ClassEndpoints : Error: ONLY_OWNERS_CAN_UPDATE
+    deactivate DeleteClassHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "ONLY_OWNERS_CAN_UPDATE" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Only owners can delete
 else Class Found and Is Owner
-    Handler -> ApplicationDbContext : Mark Class as Deleted
+    activate DeleteClassHandler
+    DeleteClassHandler -> ApplicationDbContext : Mark Class as Deleted
+    deactivate DeleteClassHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Update Class (IsDeleted = true)
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    ApplicationDbContext --> Handler : Guid
+    activate ApplicationDbContext
+    ApplicationDbContext --> DeleteClassHandler : Guid
     deactivate ApplicationDbContext
-    Handler --> ClassEndpoints : Guid
+    activate DeleteClassHandler
+    DeleteClassHandler -> ClassEndpoints : Guid
+    deactivate DeleteClassHandler
+    activate ClassEndpoints
     ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> User : Info: Delete successful
+    deactivate ClassEndpoints
+    UI -> User : Display info: Delete successful
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

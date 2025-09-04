@@ -1,71 +1,120 @@
 @startuml
 actor User
-participant "Login UI" as UI
-participant AuthenticationEndpoints
-participant GoogleLoginHandler
-participant IdentityService
-participant GoogleAuthService
+participant "Login UI" as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant GoogleLoginHandler <<Handler>>
+participant IdentityService <<Service>>
+participant GoogleAuthService <<Service>>
 participant GoogleOAuthServer <<Server>>
-participant UserManager
+participant UserManager <<Service>>
 Database Database
 
-User -> UI : Nhấn nút Google Login
+note right of GoogleLoginHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of GoogleAuthService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
+
+User -> UI : Click Google Login button
 activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/GoogleLogin
+
 activate AuthenticationEndpoints
 AuthenticationEndpoints -> GoogleLoginHandler : Send GoogleLoginCommand
+deactivate AuthenticationEndpoints
 activate GoogleLoginHandler
 GoogleLoginHandler -> IdentityService : TryGoogleLoginAsync(code, redirectUri)
+deactivate GoogleLoginHandler
 activate IdentityService
 IdentityService -> GoogleAuthService : ExchangeCodeForUserInfoAsync(code, redirectUri)
+deactivate IdentityService
 activate GoogleAuthService
 GoogleAuthService -> GoogleOAuthServer : Exchange code for tokens
+deactivate GoogleAuthService
 activate GoogleOAuthServer
 GoogleOAuthServer --> GoogleAuthService : Access token
+deactivate GoogleOAuthServer
+activate GoogleAuthService
 GoogleAuthService -> GoogleOAuthServer : Get user info
+deactivate GoogleAuthService
+activate GoogleOAuthServer
 GoogleOAuthServer --> GoogleAuthService : User info
 deactivate GoogleOAuthServer
+activate GoogleAuthService  
 GoogleAuthService --> IdentityService : GoogleUserDto
 deactivate GoogleAuthService
+activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+deactivate IdentityService
 activate UserManager
-UserManager -> Database : Query UserAccount
+UserManager -> Database : Query User
+deactivate UserManager
 activate Database
-Database --> UserManager : UserAccount/null
-UserManager --> IdentityService :  UserAccount/null
-
+Database --> UserManager : User/null
 deactivate Database
+activate UserManager
+UserManager --> IdentityService : User/null
 deactivate UserManager
 
 alt User exists
-    alt User banned
+    alt User is banned
+        activate IdentityService
         IdentityService --> GoogleLoginHandler : Error: ACCOUNT_BANNED
+        deactivate IdentityService
+        activate GoogleLoginHandler
         GoogleLoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
-        AuthenticationEndpoints --> UI : 400 Bad Request (ACCOUNT_BANNED)
-        UI -> User : Thông báo lỗi: Tài khoản bị khóa
-    else User không bị ban
-        deactivate UserManager
+        deactivate GoogleLoginHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_BANNED" }
+        deactivate AuthenticationEndpoints
+        UI -> User : Error message: Your account has been banned
+        
+    else User is not banned
+        activate IdentityService
         IdentityService --> GoogleLoginHandler : TokenDto
+        deactivate IdentityService
+        activate GoogleLoginHandler
         GoogleLoginHandler --> AuthenticationEndpoints : TokenDto
-        AuthenticationEndpoints --> UI : 200 OK + TokenDto
+        deactivate GoogleLoginHandler
+        activate AuthenticationEndpoints
+        AuthenticationEndpoints --> UI : 200 OK { "token": <TokenDto> }
+        deactivate AuthenticationEndpoints
         UI -> User : Redirect to home page
+        
+        activate IdentityService
     end
 else User doesn't exist
-    IdentityService -> UserManager : CreateAsync(userAccount)
+    IdentityService -> UserManager : CreateAsync(user)
+    deactivate IdentityService
     activate UserManager
-    UserManager -> Database : Insert UserAccount + User
+    UserManager -> Database : Insert User
+    deactivate UserManager
     activate Database
     Database --> UserManager : Success
     deactivate Database
+    activate UserManager
     UserManager --> IdentityService : Success
     deactivate UserManager
+    activate IdentityService
     IdentityService --> GoogleLoginHandler : TokenDto
+    deactivate IdentityService
+    activate GoogleLoginHandler
     GoogleLoginHandler --> AuthenticationEndpoints : TokenDto
-    AuthenticationEndpoints --> UI : 200 OK + TokenDto
-    UI -> User : Redirect to home page
+    deactivate GoogleLoginHandler
+    activate AuthenticationEndpoints
+    AuthenticationEndpoints --> UI : 200 OK { "token": <TokenDto> }
+    deactivate AuthenticationEndpoints
+    UI -> User : Redirect to home
+    
 end
-deactivate IdentityService
-deactivate GoogleLoginHandler
-deactivate AuthenticationEndpoints
-deactivate UI
 @enduml

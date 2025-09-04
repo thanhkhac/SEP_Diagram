@@ -1,68 +1,99 @@
 @startuml
 actor "Lecturer" as User
-participant "Class Detail UI" as UI
-participant ClassEndpoints
-participant GetInviteStudentCodeQueryHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class Detail UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":GetInviteStudentCodeQueryHandler" as GetInviteStudentCodeQueryHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetInviteStudentCodeQueryHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View invite code
 activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Invitation-Code
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(GetInviteStudentCodeQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Class by ClassId
+ClassEndpoints -> GetInviteStudentCodeQueryHandler : Handle(GetInviteStudentCodeQuery)
+deactivate ClassEndpoints
+activate GetInviteStudentCodeQueryHandler
+GetInviteStudentCodeQueryHandler -> ApplicationDbContext : Query Class by ClassId
+deactivate GetInviteStudentCodeQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
-ApplicationDbContext --> Handler : Class
+activate ApplicationDbContext
+ApplicationDbContext --> GetInviteStudentCodeQueryHandler : Class
 deactivate ApplicationDbContext
+activate GetInviteStudentCodeQueryHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    GetInviteStudentCodeQueryHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate GetInviteStudentCodeQueryHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    activate GetInviteStudentCodeQueryHandler
+    GetInviteStudentCodeQueryHandler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    deactivate GetInviteStudentCodeQueryHandler
     activate ClassService
     ClassService -> ApplicationDbContext : Query Permission
+    deactivate ClassService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> ClassService : Permission
     deactivate ApplicationDbContext
-    ClassService --> Handler : bool
+    activate ClassService
+    ClassService --> GetInviteStudentCodeQueryHandler : bool
     deactivate ClassService
+    activate GetInviteStudentCodeQueryHandler
     alt Not Lecturer or Owner
-        Handler --> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
-        UI -> User : Error: Not lecturer or owner of class
+        GetInviteStudentCodeQueryHandler -> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
+        deactivate GetInviteStudentCodeQueryHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: Not lecturer or owner of class
     else Is Lecturer or Owner
-        Handler -> ApplicationDbContext : Query active ClassInvitation by ClassId
+        activate GetInviteStudentCodeQueryHandler
+        GetInviteStudentCodeQueryHandler -> ApplicationDbContext : Query active ClassInvitation by ClassId
+        deactivate GetInviteStudentCodeQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassInvitation
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : ClassInvitation
         deactivate Database
-        ApplicationDbContext --> Handler : ClassInvitation
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetInviteStudentCodeQueryHandler : ClassInvitation
         deactivate ApplicationDbContext
-        alt No Active Invite Code
-            Handler --> ClassEndpoints : null
-            ClassEndpoints --> UI : 200 OK (ApiResponse<null>)
-            UI -> User : Info: No active invite code
-        else Active Invite Code Found
-            Handler --> ClassEndpoints : string? (Code)
-            ClassEndpoints --> UI : 200 OK (ApiResponse<string?>)
-            UI -> User : Show invite code
-        end
+        activate GetInviteStudentCodeQueryHandler
+        GetInviteStudentCodeQueryHandler -> ClassEndpoints : string? (Code)
+        deactivate GetInviteStudentCodeQueryHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 200 OK (ApiResponse<string?>)
+        deactivate ClassEndpoints
+        UI -> User : Show invite code
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

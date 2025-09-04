@@ -1,54 +1,86 @@
 @startuml
 actor "Owner" as User
-participant "Class Detail UI" as UI
-participant ClassEndpoints
-participant GetClassByIdQueryHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class Detail UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":GetClassByIdQueryHandler" as GetClassByIdQueryHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetClassByIdQueryHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Open class detail
 activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(GetClassByIdQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Class by ClassId
+ClassEndpoints -> GetClassByIdQueryHandler : Handle(GetClassByIdQuery)
+deactivate ClassEndpoints
+activate GetClassByIdQueryHandler
+GetClassByIdQueryHandler -> ApplicationDbContext : Query Class by ClassId
+deactivate GetClassByIdQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
-ApplicationDbContext --> Handler : Class
+activate ApplicationDbContext
+ApplicationDbContext --> GetClassByIdQueryHandler : Class
 deactivate ApplicationDbContext
+activate GetClassByIdQueryHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    GetClassByIdQueryHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate GetClassByIdQueryHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> ClassService : IsUserInClass(classId)
+    activate GetClassByIdQueryHandler
+    GetClassByIdQueryHandler -> ClassService : IsUserInClass(classId)
+    deactivate GetClassByIdQueryHandler
     activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    deactivate ClassService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : ClassUser
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> ClassService : ClassUser
     deactivate ApplicationDbContext
-    ClassService --> Handler : bool
+    activate ClassService
+    ClassService --> GetClassByIdQueryHandler : bool
     deactivate ClassService
+    activate GetClassByIdQueryHandler
     alt User Not In Class
-        Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
-        UI -> User : Error: User not in class
+        GetClassByIdQueryHandler -> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+        deactivate GetClassByIdQueryHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_USER_IN_CLASS" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: User not in class
     else User In Class
-        Handler --> ClassEndpoints : ClassDetailDto
+        GetClassByIdQueryHandler -> ClassEndpoints : ClassDetailDto
+        deactivate GetClassByIdQueryHandler
+        activate ClassEndpoints
         ClassEndpoints --> UI : 200 OK (ApiResponse<ClassDetailDto>)
+        deactivate ClassEndpoints
         UI -> User : Show class detail
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

@@ -1,99 +1,159 @@
 @startuml
 actor "Lecturer" as User
-participant "Class Detail UI" as UI
-participant ClassEndpoints
-participant AddQuestionSetToClassCommandHandler as Handler
-participant ClassService
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Class Detail UI" as UI <<UI>>
+participant ClassEndpoints <<Controller>>
+participant AddQuestionSetToClassCommandHandler <<Handler>>
+participant ClassService <<Service>>
+participant QuestionSetService <<Service>>
+participant ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of AddQuestionSetToClassCommandHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Select question set, click "Add to Class"
 activate UI
 UI -> ClassEndpoints : POST /api/Class/{ClassId}/Questionsets/{QuestionSetId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(AddQuestionSetToClassCommand)
-activate Handler
-Handler -> ClassService : GetActiveClass(classId)
+ClassEndpoints -> AddQuestionSetToClassCommandHandler : Handle(AddQuestionSetToClassCommand)
+deactivate ClassEndpoints
+activate AddQuestionSetToClassCommandHandler
+AddQuestionSetToClassCommandHandler -> ClassService : GetActiveClass(classId)
+deactivate AddQuestionSetToClassCommandHandler
 activate ClassService
 ClassService -> ApplicationDbContext : Query Class
+deactivate ClassService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> ClassService : Class
 deactivate ApplicationDbContext
-ClassService --> Handler : Class
+activate ClassService
+ClassService --> AddQuestionSetToClassCommandHandler : Class
 deactivate ClassService
+activate AddQuestionSetToClassCommandHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    AddQuestionSetToClassCommandHandler --> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate AddQuestionSetToClassCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    activate AddQuestionSetToClassCommandHandler
+    AddQuestionSetToClassCommandHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    deactivate AddQuestionSetToClassCommandHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query QuestionSet
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query QuestionSet
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : QuestionSet
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : QuestionSet
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : QuestionSet
+    activate QuestionSetService
+    QuestionSetService --> AddQuestionSetToClassCommandHandler : QuestionSet
     deactivate QuestionSetService
+    activate AddQuestionSetToClassCommandHandler
     alt Question Set Not Found
-        Handler --> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-        UI -> User : Error: Question set not found
+        AddQuestionSetToClassCommandHandler --> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND
+        deactivate AddQuestionSetToClassCommandHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: Question set not found
     else Question Set Found
-        Handler -> ClassService : CanUserAddQuestionSetToClass(userId, classId)
+        activate AddQuestionSetToClassCommandHandler
+        AddQuestionSetToClassCommandHandler -> ClassService : CanUserAddQuestionSetToClass(userId, classId)
+        deactivate AddQuestionSetToClassCommandHandler
         activate ClassService
         ClassService -> ApplicationDbContext : Query Permission
+        deactivate ClassService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Permission
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> ClassService : Permission
         deactivate ApplicationDbContext
-        ClassService --> Handler : bool
+        activate ClassService
+        ClassService --> AddQuestionSetToClassCommandHandler : bool
         deactivate ClassService
+        activate AddQuestionSetToClassCommandHandler
         alt No permission
-            Handler --> ClassEndpoints : Error: COMMON_FORBIDDEN
-            ClassEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-            UI -> User : Error: No permission
+            AddQuestionSetToClassCommandHandler --> ClassEndpoints : Error: COMMON_FORBIDDEN
+            deactivate AddQuestionSetToClassCommandHandler
+            activate ClassEndpoints
+            ClassEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+            deactivate ClassEndpoints
+            UI -> User : Display error: No permission
         else Allowed
-            Handler -> ApplicationDbContext : Query existing ClassQuestionSet
+            activate AddQuestionSetToClassCommandHandler
+            AddQuestionSetToClassCommandHandler -> ApplicationDbContext : Query existing ClassQuestionSet
+            deactivate AddQuestionSetToClassCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Query ClassQuestionSet
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : ClassQuestionSet
             deactivate Database
-            ApplicationDbContext --> Handler : ClassQuestionSet
+            activate ApplicationDbContext
+            ApplicationDbContext --> AddQuestionSetToClassCommandHandler : ClassQuestionSet
             deactivate ApplicationDbContext
+            activate AddQuestionSetToClassCommandHandler
             alt Question Set Already Added
-                Handler --> ClassEndpoints : Error: QUESTION_SET_ALREADY_ADDED_TO_CLASS
-                ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_ALREADY_ADDED_TO_CLASS)
-                UI -> User : Error: Question set already added to class
+                AddQuestionSetToClassCommandHandler --> ClassEndpoints : Error: QUESTION_SET_ALREADY_ADDED_TO_CLASS
+                deactivate AddQuestionSetToClassCommandHandler
+                activate ClassEndpoints
+                ClassEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_ALREADY_ADDED_TO_CLASS" }
+                deactivate ClassEndpoints
+                UI -> User : Display error: Question set already added to class
             else Question Set Not Added
-                Handler -> ApplicationDbContext : Add new ClassQuestionSet
+                activate AddQuestionSetToClassCommandHandler
+                AddQuestionSetToClassCommandHandler -> ApplicationDbContext : Add new ClassQuestionSet
+                deactivate AddQuestionSetToClassCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Insert ClassQuestionSet
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
                 deactivate Database
-                ApplicationDbContext --> Handler : Guid
+                activate ApplicationDbContext
+                ApplicationDbContext --> AddQuestionSetToClassCommandHandler : Guid
                 deactivate ApplicationDbContext
-                Handler --> ClassEndpoints : Guid
+                activate AddQuestionSetToClassCommandHandler
+                AddQuestionSetToClassCommandHandler --> ClassEndpoints : Guid
+                deactivate AddQuestionSetToClassCommandHandler
+                activate ClassEndpoints
                 ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-                UI -> User : Info: Question set added to class
+                deactivate ClassEndpoints
+                UI -> User : Display info: Question set added to class
             end
         end
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
-deactivate UI
+
 @enduml

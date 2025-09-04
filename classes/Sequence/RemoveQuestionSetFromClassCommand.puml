@@ -1,76 +1,121 @@
 @startuml
 actor "Lecturer" as User
-participant "Class Detail UI" as UI
-participant ClassEndpoints
-participant RemoveQuestionSetFromClassCommandHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class Detail UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":RemoveQuestionSetFromClassCommandHandler" as RemoveQuestionSetFromClassCommandHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of RemoveQuestionSetFromClassCommandHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Select question set, click "Remove from Class"
 activate UI
 UI -> ClassEndpoints : DELETE /api/Class/{ClassId}/Questionsets/{QuestionSetId}
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(RemoveQuestionSetFromClassCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Class by ClassId
+ClassEndpoints -> RemoveQuestionSetFromClassCommandHandler : Handle(RemoveQuestionSetFromClassCommand)
+deactivate ClassEndpoints
+activate RemoveQuestionSetFromClassCommandHandler
+RemoveQuestionSetFromClassCommandHandler -> ApplicationDbContext : Query Class by ClassId
+deactivate RemoveQuestionSetFromClassCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
-ApplicationDbContext --> Handler : Class
+activate ApplicationDbContext
+ApplicationDbContext --> RemoveQuestionSetFromClassCommandHandler : Class
 deactivate ApplicationDbContext
+activate RemoveQuestionSetFromClassCommandHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    RemoveQuestionSetFromClassCommandHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate RemoveQuestionSetFromClassCommandHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    activate RemoveQuestionSetFromClassCommandHandler
+    RemoveQuestionSetFromClassCommandHandler -> ClassService : IsLecturerOrOwnerInClass(classId)
+    deactivate RemoveQuestionSetFromClassCommandHandler
     activate ClassService
     ClassService -> ApplicationDbContext : Query Permission
+    deactivate ClassService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> ClassService : Permission
     deactivate ApplicationDbContext
-    ClassService --> Handler : bool
+    activate ClassService
+    ClassService --> RemoveQuestionSetFromClassCommandHandler : bool
     deactivate ClassService
+    activate RemoveQuestionSetFromClassCommandHandler
     alt Not Lecturer or Owner
-        Handler --> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS)
-        UI -> User : Error: Not lecturer or owner of class
+        RemoveQuestionSetFromClassCommandHandler -> ClassEndpoints : Error: NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS
+        deactivate RemoveQuestionSetFromClassCommandHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_TEACHER_OR_OWNER_IN_CLASS" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: Not lecturer or owner of class
     else Allowed
-        Handler -> ApplicationDbContext : Query ClassQuestionSet by QuestionSetId and ClassId
+        activate RemoveQuestionSetFromClassCommandHandler
+        RemoveQuestionSetFromClassCommandHandler -> ApplicationDbContext : Query ClassQuestionSet by QuestionSetId and ClassId
+        deactivate RemoveQuestionSetFromClassCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query ClassQuestionSet
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : ClassQuestionSet
         deactivate Database
-        ApplicationDbContext --> Handler : ClassQuestionSet
+        activate ApplicationDbContext
+        ApplicationDbContext --> RemoveQuestionSetFromClassCommandHandler : ClassQuestionSet
         deactivate ApplicationDbContext
+        activate RemoveQuestionSetFromClassCommandHandler
         alt Question Set Not Found in Class
-            Handler --> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND_IN_CLASS
-            ClassEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND_IN_CLASS)
-            UI -> User : Error: Question set not found in class
+            RemoveQuestionSetFromClassCommandHandler -> ClassEndpoints : Error: QUESTION_SET_NOT_FOUND_IN_CLASS
+            deactivate RemoveQuestionSetFromClassCommandHandler
+            activate ClassEndpoints
+            ClassEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND_IN_CLASS" }
+            deactivate ClassEndpoints
+            UI -> User : Display error: Question set not found in class
         else Question Set Found in Class
-            Handler -> ApplicationDbContext : Remove ClassQuestionSet
+            activate RemoveQuestionSetFromClassCommandHandler
+            RemoveQuestionSetFromClassCommandHandler -> ApplicationDbContext : Remove ClassQuestionSet
+            deactivate RemoveQuestionSetFromClassCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Delete ClassQuestionSet
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            ApplicationDbContext --> Handler : Guid
+            activate ApplicationDbContext
+            ApplicationDbContext --> RemoveQuestionSetFromClassCommandHandler : Guid
             deactivate ApplicationDbContext
-            Handler --> ClassEndpoints : Guid
+            activate RemoveQuestionSetFromClassCommandHandler
+            RemoveQuestionSetFromClassCommandHandler -> ClassEndpoints : Guid
+            deactivate RemoveQuestionSetFromClassCommandHandler
+            activate ClassEndpoints
             ClassEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-            UI -> User : Info: Question set removed from class
+            deactivate ClassEndpoints
+            UI -> User : Display info: Question set removed from class
         end
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

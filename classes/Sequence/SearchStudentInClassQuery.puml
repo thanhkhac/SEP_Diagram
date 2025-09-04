@@ -1,77 +1,99 @@
 @startuml
 actor User
-participant "Class Members UI" as UI
-participant ClassEndpoints
-participant SearchStudentInClassQueryHandler as Handler
-participant ClassService
-participant ApplicationDbContext
+participant "Class Members UI" as UI <<UI>>
+participant ":ClassEndpoints" as ClassEndpoints <<Controller>>
+participant ":SearchStudentInClassQueryHandler" as SearchStudentInClassQueryHandler <<Handler>>
+participant ":ClassService" as ClassService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchStudentInClassQueryHandler
+  Managed by MediatR
+end note
+
+note right of ClassService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Search for students
 activate UI
 UI -> ClassEndpoints : GET /api/Class/{ClassId}/Students?keyword=...
 activate ClassEndpoints
-ClassEndpoints -> Handler : Handle(SearchStudentInClassQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Class by ClassId
+ClassEndpoints -> SearchStudentInClassQueryHandler : Handle(SearchStudentInClassQuery)
+deactivate ClassEndpoints
+activate SearchStudentInClassQueryHandler
+SearchStudentInClassQueryHandler -> ApplicationDbContext : Query Class by ClassId
+deactivate SearchStudentInClassQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Class
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Class
 deactivate Database
-ApplicationDbContext --> Handler : Class
+activate ApplicationDbContext
+ApplicationDbContext --> SearchStudentInClassQueryHandler : Class
 deactivate ApplicationDbContext
+activate SearchStudentInClassQueryHandler
 alt Class Not Found
-    Handler --> ClassEndpoints : Error: CLASS_NOTFOUND
-    ClassEndpoints --> UI : 400 Bad Request (errorCode: CLASS_NOTFOUND)
-    UI -> User : Error: Class not found
+    SearchStudentInClassQueryHandler -> ClassEndpoints : Error: CLASS_NOTFOUND
+    deactivate SearchStudentInClassQueryHandler
+    activate ClassEndpoints
+    ClassEndpoints --> UI : 400 Bad Request { "error": "CLASS_NOTFOUND" }
+    deactivate ClassEndpoints
+    UI -> User : Display error: Class not found
 else Class Found
-    Handler -> ClassService : IsUserInClass(classId)
+    activate SearchStudentInClassQueryHandler
+    SearchStudentInClassQueryHandler -> ClassService : IsUserInClass(classId)
+    deactivate SearchStudentInClassQueryHandler
     activate ClassService
     ClassService -> ApplicationDbContext : Query ClassUser
+    deactivate ClassService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query ClassUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : ClassUser
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> ClassService : ClassUser
     deactivate ApplicationDbContext
-    ClassService --> Handler : bool
+    activate ClassService
+    ClassService --> SearchStudentInClassQueryHandler : bool
     deactivate ClassService
+    activate SearchStudentInClassQueryHandler
     alt User Not In Class
-        Handler --> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
-        ClassEndpoints --> UI : 400 Bad Request (errorCode: NOT_FOUND_USER_IN_CLASS)
-        UI -> User : Error: User not in class
+        SearchStudentInClassQueryHandler -> ClassEndpoints : Error: NOT_FOUND_USER_IN_CLASS
+        deactivate SearchStudentInClassQueryHandler
+        activate ClassEndpoints
+        ClassEndpoints --> UI : 400 Bad Request { "error": "NOT_FOUND_USER_IN_CLASS" }
+        deactivate ClassEndpoints
+        UI -> User : Display error: User not in class
     else User In Class
-        Handler -> ApplicationDbContext : Query Students in Class
+        activate SearchStudentInClassQueryHandler
+        SearchStudentInClassQueryHandler -> ApplicationDbContext : Query Students in Class
+        deactivate SearchStudentInClassQueryHandler
         activate ApplicationDbContext
-        alt Keyword and FieldName Provided
-            Handler -> Handler : Validate FieldName
-            alt Invalid FieldName
-                Handler --> ClassEndpoints : Error: FIELD_NAME_NOT_FOUND
-                ClassEndpoints --> UI : 400 Bad Request (errorCode: FIELD_NAME_NOT_FOUND)
-                UI -> User : Error: Invalid search field
-            else Valid FieldName
                 ApplicationDbContext -> Database : Query Students with dynamic filter
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : List<Student>
                 deactivate Database
-                ApplicationDbContext --> Handler : List<Student>
-            end
-        else No Keyword or FieldName
-            ApplicationDbContext -> Database : Query all Students in Class
-            activate Database
-            Database --> ApplicationDbContext : List<Student>
-            deactivate Database
-            ApplicationDbContext --> Handler : List<Student>
-        end
+                activate ApplicationDbContext
+                ApplicationDbContext --> SearchStudentInClassQueryHandler : List<Student>
         deactivate ApplicationDbContext
-        Handler --> ClassEndpoints : PaginatedList<StudentSearchResultDto>
+        activate SearchStudentInClassQueryHandler
+        SearchStudentInClassQueryHandler -> ClassEndpoints : PaginatedList<StudentSearchResultDto>
+        deactivate SearchStudentInClassQueryHandler
+        activate ClassEndpoints
         ClassEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<StudentSearchResultDto>>)
+        deactivate ClassEndpoints
         UI -> User : Show student search results
     end
 end
-deactivate Handler
-deactivate ClassEndpoints
 deactivate UI
+
 @enduml

@@ -1,76 +1,140 @@
 @startuml
 actor Guest as User
-participant "Login UI" as UI
-participant AuthenticationEndpoints
-participant LoginHandler
-participant IdentityService
-participant UserManager
+participant "Login UI" as UI <<UI>>
+participant AuthenticationEndpoints <<Controller>>
+participant LoginHandler <<Handler>>
+participant IdentityService <<Service>>
+participant UserManager <<Service>>
 Database Database
+
+note right of LoginHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of UserManager
+  Managed by IoC
+end note
 
 User -> UI : Enter email, password
 activate UI
 UI -> AuthenticationEndpoints : POST /api/Authentication/Login
+deactivate UI
 activate AuthenticationEndpoints
 AuthenticationEndpoints -> LoginHandler : Send LoginCommand
+deactivate AuthenticationEndpoints
 activate LoginHandler
 LoginHandler -> IdentityService : TryLoginAsync(email, password)
+deactivate LoginHandler
 activate IdentityService
 IdentityService -> UserManager : FindByEmailAsync(email)
+deactivate IdentityService
 activate UserManager
 UserManager -> Database : Query User
+deactivate UserManager
 activate Database
 Database --> UserManager : User/null
-UserManager --> IdentityService : User/null
-
 deactivate Database
+activate UserManager
+UserManager --> IdentityService : User/null
+deactivate UserManager
+activate IdentityService
+
 alt User not found
-    deactivate UserManager
     IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
+    deactivate IdentityService
+    activate LoginHandler
     LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
+    deactivate LoginHandler
+    activate AuthenticationEndpoints
     AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_INVALID_CREDENTIALS" }
+    deactivate AuthenticationEndpoints
+    activate UI
     UI -> User : Display error message: "Invalid account or password"
+    deactivate UI
 else User found
     alt Account is banned
-        deactivate UserManager
+        activate IdentityService
         IdentityService --> LoginHandler : Error: ACCOUNT_BANNED
+        deactivate IdentityService
+        activate LoginHandler
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_BANNED)
+        deactivate LoginHandler
+        activate AuthenticationEndpoints
         AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_BANNED" }
+        deactivate AuthenticationEndpoints
+        activate UI
         UI -> User : Display error message: "Your account has been banned"
+        deactivate UI
     else Email not confirmed
-        deactivate UserManager
+        activate IdentityService
         IdentityService --> LoginHandler : Error: ACCOUNT_EMAIL_NOT_VERIFIED
+        deactivate IdentityService
+        activate LoginHandler
         LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_EMAIL_NOT_VERIFIED)
+        deactivate LoginHandler
+        activate AuthenticationEndpoints
         AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_EMAIL_NOT_VERIFIED" }
+        deactivate AuthenticationEndpoints
+        activate UI
         UI -> User : Redirect to email verification page
+        deactivate UI
     else Valid user
+        activate IdentityService
         IdentityService -> UserManager : CheckPasswordSignInAsync(user, password)
+        deactivate IdentityService
         activate UserManager
         UserManager -> Database : Verify password
+        deactivate UserManager
         activate Database
         Database --> UserManager : Data
         deactivate Database
+        activate UserManager
         UserManager --> IdentityService : SignInResult
         deactivate UserManager
+        activate IdentityService
         alt Account is locked
             IdentityService --> LoginHandler : Error: ACCOUNT_LOCKED_OUT
+            deactivate IdentityService
+            activate LoginHandler
             LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_LOCKED_OUT)
+            deactivate LoginHandler
+            activate AuthenticationEndpoints
             AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_LOCKED_OUT" }
+            deactivate AuthenticationEndpoints
+            activate UI
             UI -> User : Display error message: "Account locked due to multiple incorrect login attempts"
+            deactivate UI
         else Password incorrect
+            activate IdentityService
             IdentityService --> LoginHandler : Error: ACCOUNT_INVALID_CREDENTIALS
+            deactivate IdentityService
+            activate LoginHandler
             LoginHandler --> AuthenticationEndpoints : Error (ACCOUNT_INVALID_CREDENTIALS)
+            deactivate LoginHandler
+            activate AuthenticationEndpoints
             AuthenticationEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_INVALID_CREDENTIALS" }
+            deactivate AuthenticationEndpoints
+            activate UI
             UI -> User : Display error message: "Invalid account or password"
+            deactivate UI
         else Password correct
+            activate IdentityService
             IdentityService --> LoginHandler : TokenDto
+            deactivate IdentityService
+            activate LoginHandler
             LoginHandler --> AuthenticationEndpoints : TokenDto
+            deactivate LoginHandler
+            activate AuthenticationEndpoints
             AuthenticationEndpoints --> UI : 200 OK { "token": <TokenDto> }
+            deactivate AuthenticationEndpoints
+            activate UI
             UI -> User : Redirect to home page
+            deactivate UI
         end
     end
 end
-deactivate IdentityService
-deactivate LoginHandler
-deactivate AuthenticationEndpoints
-deactivate UI
 @enduml
