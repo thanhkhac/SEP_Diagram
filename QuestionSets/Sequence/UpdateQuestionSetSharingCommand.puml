@@ -1,106 +1,88 @@
-
 @startuml
 actor User
-participant "Question Set Sharing UI" as UI
-participant QuestionSetEndpoints
-participant UpdateQuestionSetSharingCommandHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set Sharing UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":UpdateQuestionSetSharingCommandHandler" as UpdateQuestionSetSharingCommandHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateQuestionSetSharingCommandHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Update sharing settings
 activate UI
-UI -> QuestionSetEndpoints : PATCH /api/QuestionSet/{questionSetId}/Sharing
+UI -> QuestionSetEndpoints : PATCH /api/QuestionSet/{id}/Sharing
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(UpdateQuestionSetSharingCommand)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> UpdateQuestionSetSharingCommandHandler : Handle(UpdateQuestionSetSharingCommand)
+deactivate QuestionSetEndpoints
+activate UpdateQuestionSetSharingCommandHandler
+UpdateQuestionSetSharingCommandHandler -> QuestionSetService : GetActiveQuestionSet(id)
+deactivate UpdateQuestionSetSharingCommandHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> UpdateQuestionSetSharingCommandHandler : QuestionSet
 deactivate QuestionSetService
+activate UpdateQuestionSetSharingCommandHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    UpdateQuestionSetSharingCommandHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate UpdateQuestionSetSharingCommandHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> Handler : Check if User is Owner
+    activate UpdateQuestionSetSharingCommandHandler
+    UpdateQuestionSetSharingCommandHandler -> UpdateQuestionSetSharingCommandHandler : Check if User is Owner
     alt Not Owner
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: Not allowed to edit sharing
+        UpdateQuestionSetSharingCommandHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate UpdateQuestionSetSharingCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: Not allowed to edit sharing
     else Is Owner
-        alt VisibilityMode Changed to OnlyClass (from Public)
-            Handler -> ApplicationDbContext : Remove Unauthorized ClassQuestionSets
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Delete ClassQuestionSets
-            activate Database
-            Database --> ApplicationDbContext : Success
-            deactivate Database
-            deactivate ApplicationDbContext
-        end
-        alt VisibilityMode Changed to Private (from any other)
-            Handler -> ApplicationDbContext : Remove All ClassQuestionSets
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Delete ClassQuestionSets
-            activate Database
-            Database --> ApplicationDbContext : Success
-            deactivate Database
-            deactivate ApplicationDbContext
-        end
-        Handler -> ApplicationDbContext : Update QuestionSet VisibilityMode
+        activate UpdateQuestionSetSharingCommandHandler
+        UpdateQuestionSetSharingCommandHandler -> ApplicationDbContext : Add, Update, Delete QuestionSetUser
+        deactivate UpdateQuestionSetSharingCommandHandler
         activate ApplicationDbContext
-        Handler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
-        ApplicationDbContext -> Database : Query DomainUsers
-        activate Database
-        Database --> ApplicationDbContext : List<DomainUser>
-        deactivate Database
-        ApplicationDbContext --> Handler : List<DomainUser>
+        ApplicationDbContext -> Database : Apply changes
         deactivate ApplicationDbContext
-        alt Invalid SharingUserIds
-            Handler --> QuestionSetEndpoints : Error: USER_NOTFOUND
-            QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOTFOUND)
-            UI -> User : Error: Invalid user(s) in sharing list
-        else Valid SharingUserIds
-            Handler -> ApplicationDbContext : Query existing QuestionSetUsers
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Query QuestionSetUsers
-            activate Database
-            Database --> ApplicationDbContext : List<QuestionSetUser>
-            deactivate Database
-            ApplicationDbContext --> Handler : List<QuestionSetUser>
-            deactivate ApplicationDbContext
-            loop For each SharingModel
-                Handler -> ApplicationDbContext : Update or Add QuestionSetUser
-                activate ApplicationDbContext
-                ApplicationDbContext -> Database : Update/Insert QuestionSetUser
-                activate Database
-                Database --> ApplicationDbContext
-                deactivate Database
-                deactivate ApplicationDbContext
-            end
-            Handler -> ApplicationDbContext : Remove QuestionSetUsers for DeleteUserIds
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Delete QuestionSetUsers
-            activate Database
-            Database --> ApplicationDbContext : Success
-            deactivate Database
-            ApplicationDbContext --> Handler : Guid
-            deactivate ApplicationDbContext
-            Handler --> QuestionSetEndpoints : Guid
-            QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-            UI -> User : Info: Sharing settings updated
-        end
+        activate Database
+        Database --> ApplicationDbContext : Success
+        deactivate Database
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateQuestionSetSharingCommandHandler : Updated QuestionSet
+        deactivate ApplicationDbContext
+        activate UpdateQuestionSetSharingCommandHandler
+        UpdateQuestionSetSharingCommandHandler -> QuestionSetEndpoints : Guid
+        deactivate UpdateQuestionSetSharingCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        deactivate QuestionSetEndpoints
+        UI -> User : Display info: Sharing settings updated
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

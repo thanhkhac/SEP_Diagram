@@ -1,34 +1,55 @@
 @startuml
 actor User
-participant "Question Set List UI" as UI
-participant QuestionSetEndpoints
-participant SearchPublicQuestionSetByNameQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set List UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":SearchPublicQuestionSetByNameQueryHandler" as SearchPublicQuestionSetByNameQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchPublicQuestionSetByNameQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Search for public question sets
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/Public?name=...&tagIds=...&sortBy=...
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(SearchPublicQuestionSetQuery)
-activate Handler
-Handler -> QuestionSetService : SearchPublicQuestionSetsAsync(name, tagIds, pageNumber, pageSize, sortBy)
+QuestionSetEndpoints -> SearchPublicQuestionSetByNameQueryHandler : Handle(SearchPublicQuestionSetQuery)
+deactivate QuestionSetEndpoints
+activate SearchPublicQuestionSetByNameQueryHandler
+SearchPublicQuestionSetByNameQueryHandler -> QuestionSetService : SearchPublicQuestionSetsAsync(name, tagIds, pageNumber, pageSize, sortBy)
+deactivate SearchPublicQuestionSetByNameQueryHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query Public QuestionSets
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Public QuestionSets
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<QuestionSet>
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+activate QuestionSetService
+QuestionSetService --> SearchPublicQuestionSetByNameQueryHandler : PaginatedList<QuestionSetForListResponseDto>
 deactivate QuestionSetService
-Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+activate SearchPublicQuestionSetByNameQueryHandler
+SearchPublicQuestionSetByNameQueryHandler -> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+deactivate SearchPublicQuestionSetByNameQueryHandler
+activate QuestionSetEndpoints
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
-UI -> User : Show public question set search results
-deactivate Handler
 deactivate QuestionSetEndpoints
+UI -> User : Show public question set search results
 deactivate UI
+
 @enduml

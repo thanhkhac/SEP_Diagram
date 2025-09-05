@@ -1,66 +1,105 @@
 @startuml
 actor User
-participant "Edit Question Set UI" as UI
-participant QuestionSetEndpoints
-participant UpdateQuestionSetCommandHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Edit Question Set UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":UpdateQuestionSetCommandHandler" as UpdateQuestionSetCommandHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateQuestionSetCommandHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Edit info, click "Save"
 activate UI
 UI -> QuestionSetEndpoints : PATCH /api/QuestionSet/{id}
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(UpdateQuestionSetCommand)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> UpdateQuestionSetCommandHandler : Handle(UpdateQuestionSetCommand)
+deactivate QuestionSetEndpoints
+activate UpdateQuestionSetCommandHandler
+UpdateQuestionSetCommandHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate UpdateQuestionSetCommandHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> UpdateQuestionSetCommandHandler : QuestionSet
 deactivate QuestionSetService
+activate UpdateQuestionSetCommandHandler
 alt Not found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    UpdateQuestionSetCommandHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate UpdateQuestionSetCommandHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Found
-    Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate UpdateQuestionSetCommandHandler
+    UpdateQuestionSetCommandHandler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    deactivate UpdateQuestionSetCommandHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> UpdateQuestionSetCommandHandler : bool
     deactivate QuestionSetService
+    activate UpdateQuestionSetCommandHandler
     alt No permission
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: No permission
+        UpdateQuestionSetCommandHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate UpdateQuestionSetCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: No permission
     else Allowed
-        Handler -> ApplicationDbContext : Update QuestionSet
+        activate UpdateQuestionSetCommandHandler
+        UpdateQuestionSetCommandHandler -> ApplicationDbContext : Update QuestionSet
+        deactivate UpdateQuestionSetCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update QuestionSet
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateQuestionSetCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> QuestionSetEndpoints : Guid
+        activate UpdateQuestionSetCommandHandler
+        UpdateQuestionSetCommandHandler -> QuestionSetEndpoints : Guid
+        deactivate UpdateQuestionSetCommandHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> User : Info: Update successful
+        deactivate QuestionSetEndpoints
+        UI -> User : Display info: Update successful
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

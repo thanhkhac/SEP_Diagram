@@ -1,42 +1,99 @@
 @startuml
 actor User
-participant "Question Set Detail UI" as UI
-participant QuestionSetEndpoints
-participant GetRatingQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set Detail UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetRatingQueryHandler" as GetRatingQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
 
+note right of GetRatingQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
 User -> UI : View rating
+activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Rating
-QuestionSetEndpoints -> Handler : Handle(GetRatingQuery)
-Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+activate QuestionSetEndpoints
+QuestionSetEndpoints -> GetRatingQueryHandler : Handle(GetRatingQuery)
+deactivate QuestionSetEndpoints
+activate GetRatingQueryHandler
+GetRatingQueryHandler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+deactivate GetRatingQueryHandler
+activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
+activate Database
 Database --> ApplicationDbContext : QuestionSet
-ApplicationDbContext --> Handler : QuestionSet
+deactivate Database
+activate ApplicationDbContext
+ApplicationDbContext --> GetRatingQueryHandler : QuestionSet
+deactivate ApplicationDbContext
+activate GetRatingQueryHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    GetRatingQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetRatingQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    activate GetRatingQueryHandler
+    GetRatingQueryHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    deactivate GetRatingQueryHandler
+    activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
+    activate Database
     Database --> ApplicationDbContext : Permission
+    deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
-    QuestionSetService --> Handler : bool
+    deactivate ApplicationDbContext
+    activate QuestionSetService
+    QuestionSetService --> GetRatingQueryHandler : bool
+    deactivate QuestionSetService
+    activate GetRatingQueryHandler
     alt User Not Have Access
-        Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
-        UI -> User : Error: User does not have access to question set
+        GetRatingQueryHandler -> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
+        deactivate GetRatingQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_ACCESS_TO_QUESTION_SET" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: User does not have access to question set
     else User Has Access
-        Handler -> ApplicationDbContext : Query QuestionSetRating by QuestionSetId and UserId
+        activate GetRatingQueryHandler
+        GetRatingQueryHandler -> ApplicationDbContext : Query QuestionSetRating by QuestionSetId and UserId
+        deactivate GetRatingQueryHandler
+        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query QuestionSetRating
+        deactivate ApplicationDbContext
+        activate Database
         Database --> ApplicationDbContext : QuestionSetRating
-        ApplicationDbContext --> Handler : QuestionSetRating
-        Handler --> QuestionSetEndpoints : GetRatingDto
+        deactivate Database
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetRatingQueryHandler : QuestionSetRating
+        deactivate ApplicationDbContext
+        activate GetRatingQueryHandler
+        GetRatingQueryHandler -> QuestionSetEndpoints : GetRatingDto
+        deactivate GetRatingQueryHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<GetRatingDto>)
+        deactivate QuestionSetEndpoints
         UI -> User : Show rating
     end
 end
+deactivate UI
+
 @enduml

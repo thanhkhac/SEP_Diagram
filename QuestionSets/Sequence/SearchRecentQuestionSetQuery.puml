@@ -1,32 +1,44 @@
 @startuml
 actor User
-participant "Question Set List UI" as UI
-participant QuestionSetEndpoints
-participant SearchRecentQuestionSetQueryHandler as Handler
-participant ApplicationDbContext
+participant "Question Set List UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":SearchRecentQuestionSetQueryHandler" as SearchRecentQuestionSetQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchRecentQuestionSetQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Request recent question sets
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/Recent
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(SearchRecentQuestionSetQuery)
-activate Handler
-
-Handler -> ApplicationDbContext : Query recent QuestionSets by UserId
+QuestionSetEndpoints -> SearchRecentQuestionSetQueryHandler : Handle(SearchRecentQuestionSetQuery)
+deactivate QuestionSetEndpoints
+activate SearchRecentQuestionSetQueryHandler
+SearchRecentQuestionSetQueryHandler -> ApplicationDbContext : Query recent QuestionSets by UserId
+deactivate SearchRecentQuestionSetQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Select recent QuestionSets
-activate Database
-Database --> ApplicationDbContext : QuestionSets data
-deactivate Database
-ApplicationDbContext --> Handler : QuestionSets
 deactivate ApplicationDbContext
-
-Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+activate Database
+Database --> ApplicationDbContext : QuestionSets
+deactivate Database
+activate ApplicationDbContext
+ApplicationDbContext --> SearchRecentQuestionSetQueryHandler : QuestionSets
+deactivate ApplicationDbContext
+activate SearchRecentQuestionSetQueryHandler
+SearchRecentQuestionSetQueryHandler -> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+deactivate SearchRecentQuestionSetQueryHandler
+activate QuestionSetEndpoints
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
-UI -> User : Show recent question sets
-
-deactivate Handler
 deactivate QuestionSetEndpoints
+UI -> User : Show recent question sets
 deactivate UI
+
 @enduml

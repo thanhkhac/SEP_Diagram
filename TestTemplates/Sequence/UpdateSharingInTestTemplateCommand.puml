@@ -1,93 +1,133 @@
 @startuml
 actor User
-participant "Test Template Sharing UI" as UI
-participant TestTemplateEndpoints
-participant UpdateSharingInTestTemplateCommandHandler as Handler
-participant TestTemplateService
-participant ApplicationDbContext
+participant "Test Template Sharing UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":UpdateSharingInTestTemplateCommandHandler" as UpdateSharingInTestTemplateCommandHandler <<Handler>>
+participant ":TestTemplateService" as TestTemplateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateSharingInTestTemplateCommandHandler
+  Managed by MediatR
+end note
+
+note right of TestTemplateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Update sharing settings
 activate UI
 UI -> TestTemplateEndpoints : PATCH /api/TestTemplate/{TestTemplateId}/Sharing
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(UpdateSharingInTestTemplateCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+TestTemplateEndpoints -> UpdateSharingInTestTemplateCommandHandler : Handle(UpdateSharingInTestTemplateCommand)
+deactivate TestTemplateEndpoints
+activate UpdateSharingInTestTemplateCommandHandler
+UpdateSharingInTestTemplateCommandHandler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+deactivate UpdateSharingInTestTemplateCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplate
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : TestTemplate
 deactivate Database
-ApplicationDbContext --> Handler : TestTemplate
+activate ApplicationDbContext
+ApplicationDbContext --> UpdateSharingInTestTemplateCommandHandler : TestTemplate
 deactivate ApplicationDbContext
+activate UpdateSharingInTestTemplateCommandHandler
 alt Test Template Not Found
-    Handler --> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
-    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
-    UI -> User : Error: Test template not found
+    UpdateSharingInTestTemplateCommandHandler -> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    deactivate UpdateSharingInTestTemplateCommandHandler
+    activate TestTemplateEndpoints
+    TestTemplateEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND" }
+    deactivate TestTemplateEndpoints
+    UI -> User : Display error: Test template not found
 else Test Template Found
-    Handler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    activate UpdateSharingInTestTemplateCommandHandler
+    UpdateSharingInTestTemplateCommandHandler -> TestTemplateService : CanEditTestTemplate(testTemplateId)
+    deactivate UpdateSharingInTestTemplateCommandHandler
     activate TestTemplateService
     TestTemplateService -> ApplicationDbContext : Query Permission
+    deactivate TestTemplateService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> TestTemplateService : Permission
     deactivate ApplicationDbContext
-    TestTemplateService --> Handler : bool
+    activate TestTemplateService
+    TestTemplateService --> UpdateSharingInTestTemplateCommandHandler : bool
     deactivate TestTemplateService
+    activate UpdateSharingInTestTemplateCommandHandler
     alt No permission
-        Handler --> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
-        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE)
-        UI -> User : Error: User does not have permission to edit sharing
+        UpdateSharingInTestTemplateCommandHandler -> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        deactivate UpdateSharingInTestTemplateCommandHandler
+        activate TestTemplateEndpoints
+        TestTemplateEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE" }
+        deactivate TestTemplateEndpoints
+        UI -> User : Display error: User does not have permission to edit sharing
     else Allowed
-        Handler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        activate UpdateSharingInTestTemplateCommandHandler
+        UpdateSharingInTestTemplateCommandHandler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        deactivate UpdateSharingInTestTemplateCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query DomainUsers
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<DomainUser>
         deactivate Database
-        ApplicationDbContext --> Handler : List<DomainUser>
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateSharingInTestTemplateCommandHandler : List<DomainUser>
         deactivate ApplicationDbContext
+        activate UpdateSharingInTestTemplateCommandHandler
         alt Invalid SharingUserIds
-            Handler --> TestTemplateEndpoints : Error: USER_NOTFOUND
-            TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: USER_NOTFOUND)
-            UI -> User : Error: Invalid user(s) in sharing list
+            UpdateSharingInTestTemplateCommandHandler -> TestTemplateEndpoints : Error: USER_NOTFOUND
+            deactivate UpdateSharingInTestTemplateCommandHandler
+            activate TestTemplateEndpoints
+            TestTemplateEndpoints --> UI : 400 Bad Request { "error": "USER_NOTFOUND" }
+            deactivate TestTemplateEndpoints
+            UI -> User : Display error: Invalid user(s) in sharing list
         else Valid SharingUserIds
-            Handler -> ApplicationDbContext : Query existing TestTemplateUsers
+            activate UpdateSharingInTestTemplateCommandHandler
+            UpdateSharingInTestTemplateCommandHandler -> ApplicationDbContext : Query existing TestTemplateUsers
+            deactivate UpdateSharingInTestTemplateCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Query TestTemplateUsers
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : List<TestTemplateUser>
             deactivate Database
-            ApplicationDbContext --> Handler : List<TestTemplateUser>
+            activate ApplicationDbContext
+            ApplicationDbContext --> UpdateSharingInTestTemplateCommandHandler : List<TestTemplateUser>
             deactivate ApplicationDbContext
-            loop For each SharingModel
-                Handler -> ApplicationDbContext : Update or Add TestTemplateUser
-                activate ApplicationDbContext
-                ApplicationDbContext -> Database : Update/Insert TestTemplateUser
-                activate Database
-                Database --> ApplicationDbContext : Success
-                deactivate Database
-                deactivate ApplicationDbContext
-            end
-            Handler -> ApplicationDbContext : Remove TestTemplateUsers for DeleteUserIds
+            activate UpdateSharingInTestTemplateCommandHandler
+            UpdateSharingInTestTemplateCommandHandler -> ApplicationDbContext : Remove/Update TestTemplateUsers 
+            deactivate UpdateSharingInTestTemplateCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Delete TestTemplateUsers
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            ApplicationDbContext --> Handler : Guid
+            activate ApplicationDbContext
+            ApplicationDbContext --> UpdateSharingInTestTemplateCommandHandler : Guid
             deactivate ApplicationDbContext
-            Handler --> TestTemplateEndpoints : Guid
+            activate UpdateSharingInTestTemplateCommandHandler
+            UpdateSharingInTestTemplateCommandHandler -> TestTemplateEndpoints : Guid
+            deactivate UpdateSharingInTestTemplateCommandHandler
+            activate TestTemplateEndpoints
             TestTemplateEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-            UI -> User : Info: Sharing settings updated
+            deactivate TestTemplateEndpoints
+            UI -> User : Display info: Sharing settings updated
         end
     end
 end
-deactivate Handler
-deactivate TestTemplateEndpoints
 deactivate UI
+
 @enduml

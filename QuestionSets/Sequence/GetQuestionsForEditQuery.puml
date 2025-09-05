@@ -1,66 +1,105 @@
 @startuml
 actor User
-participant "Edit Question Set UI" as UI
-participant QuestionSetEndpoints
-participant GetQuestionSetQuestionsForEditQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Edit Question Set UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetQuestionSetQuestionsForEditQueryHandler" as GetQuestionSetQuestionsForEditQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetQuestionSetQuestionsForEditQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Request questions for editing
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/QuestionsForEdit
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetQuestionSetQuestionsForEditQuery)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> GetQuestionSetQuestionsForEditQueryHandler : Handle(GetQuestionSetQuestionsForEditQuery)
+deactivate QuestionSetEndpoints
+activate GetQuestionSetQuestionsForEditQueryHandler
+GetQuestionSetQuestionsForEditQueryHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate GetQuestionSetQuestionsForEditQueryHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> GetQuestionSetQuestionsForEditQueryHandler : QuestionSet
 deactivate QuestionSetService
+activate GetQuestionSetQuestionsForEditQueryHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    GetQuestionSetQuestionsForEditQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetQuestionSetQuestionsForEditQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate GetQuestionSetQuestionsForEditQueryHandler
+    GetQuestionSetQuestionsForEditQueryHandler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    deactivate GetQuestionSetQuestionsForEditQueryHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> GetQuestionSetQuestionsForEditQueryHandler : bool
     deactivate QuestionSetService
+    activate GetQuestionSetQuestionsForEditQueryHandler
     alt No permission
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: You are not allowed to view this question set
+        GetQuestionSetQuestionsForEditQueryHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate GetQuestionSetQuestionsForEditQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: You are not allowed to view this question set
     else Allowed
-        Handler -> ApplicationDbContext : Query Questions by QuestionSetId
+        activate GetQuestionSetQuestionsForEditQueryHandler
+        GetQuestionSetQuestionsForEditQueryHandler -> ApplicationDbContext : Query Questions by QuestionSetId
+        deactivate GetQuestionSetQuestionsForEditQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Questions
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<Question>
         deactivate Database
-        ApplicationDbContext --> Handler : List<Question>
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetQuestionSetQuestionsForEditQueryHandler : List<Question>
         deactivate ApplicationDbContext
-        Handler --> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
+        activate GetQuestionSetQuestionsForEditQueryHandler
+        GetQuestionSetQuestionsForEditQueryHandler -> QuestionSetEndpoints : List<CreateUpdateQuestionDto>
+        deactivate GetQuestionSetQuestionsForEditQueryHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+        deactivate QuestionSetEndpoints
         UI -> User : Show questions for editing
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

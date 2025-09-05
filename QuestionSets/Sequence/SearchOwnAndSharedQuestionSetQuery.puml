@@ -1,34 +1,55 @@
 @startuml
 actor User
-participant "Question Set List UI" as UI
-participant QuestionSetEndpoints
-participant SearchOwnAndSharedQuestionSetQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set List UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":SearchOwnAndSharedQuestionSetQueryHandler" as SearchOwnAndSharedQuestionSetQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchOwnAndSharedQuestionSetQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Search for owned/shared question sets
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/SharedOrOwned?name=...&filterBy=...&sortBy=...
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(SearchOwnAndSharedQuestionSetQuery)
-activate Handler
-Handler -> QuestionSetService : SearchOwnAndSharedQuestionSetsAsync(userId, name, pageNumber, pageSize, filterBy, sortBy)
+QuestionSetEndpoints -> SearchOwnAndSharedQuestionSetQueryHandler : Handle(SearchOwnAndSharedQuestionSetQuery)
+deactivate QuestionSetEndpoints
+activate SearchOwnAndSharedQuestionSetQueryHandler
+SearchOwnAndSharedQuestionSetQueryHandler -> QuestionSetService : SearchOwnAndSharedQuestionSetsAsync(userId, name, pageNumber, pageSize, filterBy, sortBy)
+deactivate SearchOwnAndSharedQuestionSetQueryHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query Owned/Shared QuestionSets
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Owned/Shared QuestionSets
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<QuestionSet>
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : PaginatedList<QuestionSet>
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : PaginatedList<QuestionSetForListResponseDto>
+activate QuestionSetService
+QuestionSetService --> SearchOwnAndSharedQuestionSetQueryHandler : PaginatedList<QuestionSetForListResponseDto>
 deactivate QuestionSetService
-Handler --> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+activate SearchOwnAndSharedQuestionSetQueryHandler
+SearchOwnAndSharedQuestionSetQueryHandler -> QuestionSetEndpoints : PaginatedList<QuestionSetForListResponseDto>
+deactivate SearchOwnAndSharedQuestionSetQueryHandler
+activate QuestionSetEndpoints
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<QuestionSetForListResponseDto>>)
-UI -> User : Show owned/shared question set search results
-deactivate Handler
 deactivate QuestionSetEndpoints
+UI -> User : Show owned/shared question set search results
 deactivate UI
+
 @enduml

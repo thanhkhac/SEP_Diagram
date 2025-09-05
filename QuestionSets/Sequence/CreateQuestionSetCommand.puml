@@ -1,29 +1,44 @@
 @startuml
 actor User
-participant "Create Question Set UI" as UI
-participant QuestionSetEndpoints
-participant CreateQuestionSetCommandHandler as Handler
-participant ApplicationDbContext
+participant "Create Question Set UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":CreateQuestionSetCommandHandler" as CreateQuestionSetCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of CreateQuestionSetCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Fill in info, click "Create"
 activate UI
 UI -> QuestionSetEndpoints : POST /api/QuestionSet
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(CreateQuestionSetCommand)
-activate Handler
-Handler -> ApplicationDbContext : Add new QuestionSet
+QuestionSetEndpoints -> CreateQuestionSetCommandHandler : Handle(CreateQuestionSetCommand)
+deactivate QuestionSetEndpoints
+activate CreateQuestionSetCommandHandler
+CreateQuestionSetCommandHandler -> ApplicationDbContext : Add new QuestionSet
+deactivate CreateQuestionSetCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Insert new QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSetId
 deactivate Database
-ApplicationDbContext --> Handler : Guid
+activate ApplicationDbContext
+ApplicationDbContext --> CreateQuestionSetCommandHandler : Guid
 deactivate ApplicationDbContext
-Handler --> QuestionSetEndpoints : Guid
+activate CreateQuestionSetCommandHandler
+CreateQuestionSetCommandHandler -> QuestionSetEndpoints : Guid
+deactivate CreateQuestionSetCommandHandler
+activate QuestionSetEndpoints
 QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-UI -> User : Info: Question set created successfully
-deactivate Handler
 deactivate QuestionSetEndpoints
+UI -> User : Display info: Question set created successfully
 deactivate UI
-@enduml 
+
+@enduml

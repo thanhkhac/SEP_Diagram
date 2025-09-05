@@ -1,63 +1,100 @@
 @startuml
 actor User
-participant "Question Set Detail UI" as UI
-participant QuestionSetEndpoints
-participant GetSharingInQuestionSetQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set Detail UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetSharingInQuestionSetQueryHandler" as GetSharingInQuestionSetQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetSharingInQuestionSetQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View sharing details
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Sharing
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetSharingInQuestionSetQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+QuestionSetEndpoints -> GetSharingInQuestionSetQueryHandler : Handle(GetSharingInQuestionSetQuery)
+deactivate QuestionSetEndpoints
+activate GetSharingInQuestionSetQueryHandler
+GetSharingInQuestionSetQueryHandler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+deactivate GetSharingInQuestionSetQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
-ApplicationDbContext --> Handler : QuestionSet
+activate ApplicationDbContext
+ApplicationDbContext --> GetSharingInQuestionSetQueryHandler : QuestionSet
 deactivate ApplicationDbContext
+activate GetSharingInQuestionSetQueryHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    GetSharingInQuestionSetQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetSharingInQuestionSetQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    activate GetSharingInQuestionSetQueryHandler
+    GetSharingInQuestionSetQueryHandler -> QuestionSetService : CanUserEditQuestionSet(userId, questionSetId)
+    deactivate GetSharingInQuestionSetQueryHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> GetSharingInQuestionSetQueryHandler : bool
     deactivate QuestionSetService
-    alt User Not Have Access
-        Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
-        UI -> User : Error: User does not have access to question set
+    activate GetSharingInQuestionSetQueryHandler
+    alt No permission
+        GetSharingInQuestionSetQueryHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate GetSharingInQuestionSetQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: You are not allowed to view this question set
     else User Has Access
-        Handler -> ApplicationDbContext : Query QuestionSetUsers by QuestionSetId
+        activate GetSharingInQuestionSetQueryHandler
+        GetSharingInQuestionSetQueryHandler -> ApplicationDbContext : Query QuestionSetUsers by QuestionSetId
+        deactivate GetSharingInQuestionSetQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query QuestionSetUsers
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<QuestionSetUser>
         deactivate Database
-        ApplicationDbContext --> Handler : List<QuestionSetUser>
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetSharingInQuestionSetQueryHandler : List<QuestionSetUser>
         deactivate ApplicationDbContext
-        Handler -> Handler : Map to SharingModelDto and Sort
-        Handler --> QuestionSetEndpoints : ResourceShareDto
+        activate GetSharingInQuestionSetQueryHandler
+        GetSharingInQuestionSetQueryHandler -> GetSharingInQuestionSetQueryHandler : Map to SharingModelDto and Sort
+        GetSharingInQuestionSetQueryHandler -> QuestionSetEndpoints : ResourceShareDto
+        deactivate GetSharingInQuestionSetQueryHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
+        deactivate QuestionSetEndpoints
         UI -> User : Show sharing details
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

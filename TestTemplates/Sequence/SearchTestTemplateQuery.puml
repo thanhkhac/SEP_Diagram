@@ -1,29 +1,44 @@
 @startuml
 actor User
-participant "Test Template List UI" as UI
-participant TestTemplateEndpoints
-participant SearchTestTemplateQueryHandler as Handler
-participant ApplicationDbContext
+participant "Test Template List UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":SearchTestTemplateQueryHandler" as SearchTestTemplateQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchTestTemplateQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Search for test templates
 activate UI
 UI -> TestTemplateEndpoints : GET /api/TestTemplate?testTemplateName=...&shareMode=...
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(SearchTestTemplateQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query TestTemplateUsers (Include TestTemplate)
+TestTemplateEndpoints -> SearchTestTemplateQueryHandler : Handle(SearchTestTemplateQuery)
+deactivate TestTemplateEndpoints
+activate SearchTestTemplateQueryHandler
+SearchTestTemplateQueryHandler -> ApplicationDbContext : Query TestTemplateUsers (Include TestTemplate)
+deactivate SearchTestTemplateQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query TestTemplateUsers, TestTemplate
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<TestTemplateUser>
 deactivate Database
-ApplicationDbContext --> Handler : List<TestTemplateUser>
+activate ApplicationDbContext
+ApplicationDbContext --> SearchTestTemplateQueryHandler : List<TestTemplateUser>
 deactivate ApplicationDbContext
-Handler --> TestTemplateEndpoints : PaginatedList<TestTemplateDto>
+activate SearchTestTemplateQueryHandler
+SearchTestTemplateQueryHandler -> TestTemplateEndpoints : PaginatedList<TestTemplateDto>
+deactivate SearchTestTemplateQueryHandler
+activate TestTemplateEndpoints
 TestTemplateEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<TestTemplateDto>>)
-UI -> User : Show test template search results
-deactivate Handler
 deactivate TestTemplateEndpoints
+UI -> User : Show test template search results
 deactivate UI
+
 @enduml

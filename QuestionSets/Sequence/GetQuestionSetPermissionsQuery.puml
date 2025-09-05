@@ -1,34 +1,83 @@
 @startuml
 actor User
-participant "Permissions UI" as UI
-participant QuestionSetEndpoints
-participant GetQuestionSetPermissionsQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Permissions UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetQuestionSetPermissionsQueryHandler" as GetQuestionSetPermissionsQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetQuestionSetPermissionsQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View permissions
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{id}/Permissions
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetQuestionSetPermissionsQuery)
-activate Handler
-Handler -> QuestionSetService : GetPermissions(userId, questionSetId)
-activate QuestionSetService
-QuestionSetService -> ApplicationDbContext : Query Permissions
-activate ApplicationDbContext
-ApplicationDbContext -> Database : Query Permissions
-activate Database
-Database --> ApplicationDbContext : QuestionSetPermissions
-deactivate Database
-ApplicationDbContext --> QuestionSetService : QuestionSetPermissionsDto
-deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSetPermissionsDto
-deactivate QuestionSetService
-Handler --> QuestionSetEndpoints : QuestionSetPermissionsDto
-QuestionSetEndpoints --> UI : 200 OK (ApiResponse<QuestionSetPermissionsDto>)
-UI -> User : Show permissions
-deactivate Handler
+QuestionSetEndpoints -> GetQuestionSetPermissionsQueryHandler : Handle(GetQuestionSetPermissionsQuery)
 deactivate QuestionSetEndpoints
+activate GetQuestionSetPermissionsQueryHandler
+GetQuestionSetPermissionsQueryHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate GetQuestionSetPermissionsQueryHandler
+activate QuestionSetService
+QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
+activate ApplicationDbContext
+ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
+activate Database
+Database --> ApplicationDbContext : QuestionSet
+deactivate Database
+activate ApplicationDbContext
+ApplicationDbContext --> QuestionSetService : QuestionSet
+deactivate ApplicationDbContext
+activate QuestionSetService
+QuestionSetService --> GetQuestionSetPermissionsQueryHandler : QuestionSet
+deactivate QuestionSetService
+activate GetQuestionSetPermissionsQueryHandler
+alt Not found
+    GetQuestionSetPermissionsQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetQuestionSetPermissionsQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
+else Found
+    activate GetQuestionSetPermissionsQueryHandler
+    GetQuestionSetPermissionsQueryHandler -> QuestionSetService : GetPermissions(userId, questionSetId)
+    deactivate GetQuestionSetPermissionsQueryHandler
+    activate QuestionSetService
+    QuestionSetService -> ApplicationDbContext : Query Permissions
+    deactivate QuestionSetService
+    activate ApplicationDbContext
+    ApplicationDbContext -> Database : Query Permissions
+    deactivate ApplicationDbContext
+    activate Database
+    Database --> ApplicationDbContext : QuestionSetPermissions
+    deactivate Database
+    activate ApplicationDbContext
+    ApplicationDbContext --> QuestionSetService : QuestionSetPermissionsDto
+    deactivate ApplicationDbContext
+    activate QuestionSetService
+    QuestionSetService --> GetQuestionSetPermissionsQueryHandler : QuestionSetPermissionsDto
+    deactivate QuestionSetService
+    activate GetQuestionSetPermissionsQueryHandler
+    GetQuestionSetPermissionsQueryHandler -> QuestionSetEndpoints : QuestionSetPermissionsDto
+    deactivate GetQuestionSetPermissionsQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 200 OK (ApiResponse<QuestionSetPermissionsDto>)
+    deactivate QuestionSetEndpoints
+    UI -> User : Show permissions
+end
 deactivate UI
+
 @enduml

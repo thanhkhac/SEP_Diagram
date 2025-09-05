@@ -1,38 +1,99 @@
 @startuml
 actor User
-participant "Import Test Template UI" as UI
-participant TestTemplateEndpoints
-participant ImportFileTestTemplateCommandHandler as Handler
-participant FileService
+participant "Test Template Detail UI" as UI <<UI>>
+participant ":TestTemplateEndpoints" as TestTemplateEndpoints <<Controller>>
+participant ":GetTestTemplateDetailQueryHandler" as GetTestTemplateDetailQueryHandler <<Handler>>
+participant ":TestTemplateService" as TestTemplateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
+participant Database
 
-User -> UI : Upload Excel file
+note right of GetTestTemplateDetailQueryHandler
+  Managed by MediatR
+end note
+
+note right of TestTemplateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
+User -> UI : Open test template detail
 activate UI
-UI -> TestTemplateEndpoints : POST /api/TestTemplate/ImportFile
+UI -> TestTemplateEndpoints : GET /api/TestTemplate/{TestTemplateId}
 activate TestTemplateEndpoints
-TestTemplateEndpoints -> Handler : Handle(ImportFileTestTemplateCommand)
-activate Handler
-Handler -> Handler : Check FileData and FileData.Data
-alt File Not Found or Empty
-    Handler --> TestTemplateEndpoints : Error: FILE_NOT_FOUND
-    TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: FILE_NOT_FOUND)
-    UI -> User : Error: File not found or empty
-else File Found
-    Handler -> Handler : Check File Format
-    alt Invalid File Format
-        Handler --> TestTemplateEndpoints : Error: ERROR_FORMAT_FILE
-        TestTemplateEndpoints --> UI : 400 Bad Request (errorCode: ERROR_FORMAT_FILE)
-        UI -> User : Error: Invalid file format (must be .xlsx or .xls)
-    else Valid File Format
-        Handler -> FileService : GetQuestionFromFile(fileData)
-        activate FileService
-        FileService --> Handler : ImportedQuestionDto (validQuestions, invalidQuestions)
-        deactivate FileService
-        Handler --> TestTemplateEndpoints : ImportedQuestionDto
-        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<ImportedQuestionDto>)
-        UI -> User : Show imported questions (valid and invalid)
+TestTemplateEndpoints -> GetTestTemplateDetailQueryHandler : Handle(GetTestTemplateDetailQuery)
+deactivate TestTemplateEndpoints
+activate GetTestTemplateDetailQueryHandler
+GetTestTemplateDetailQueryHandler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+deactivate GetTestTemplateDetailQueryHandler
+activate ApplicationDbContext
+ApplicationDbContext -> Database : Query TestTemplate
+deactivate ApplicationDbContext
+activate Database
+Database --> ApplicationDbContext : TestTemplate
+deactivate Database
+activate ApplicationDbContext
+ApplicationDbContext --> GetTestTemplateDetailQueryHandler : TestTemplate
+deactivate ApplicationDbContext
+activate GetTestTemplateDetailQueryHandler
+alt Test Template Not Found
+    GetTestTemplateDetailQueryHandler -> TestTemplateEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+    deactivate GetTestTemplateDetailQueryHandler
+    activate TestTemplateEndpoints
+    TestTemplateEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND" }
+    deactivate TestTemplateEndpoints
+    UI -> User : Display error: Test template not found
+else Test Template Found
+    activate GetTestTemplateDetailQueryHandler
+    GetTestTemplateDetailQueryHandler -> TestTemplateService : CanViewTestTemplate(testTemplateId)
+    deactivate GetTestTemplateDetailQueryHandler
+    activate TestTemplateService
+    TestTemplateService -> ApplicationDbContext : Query Permission
+    deactivate TestTemplateService
+    activate ApplicationDbContext
+    ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
+    activate Database
+    Database --> ApplicationDbContext : Permission
+    deactivate Database
+    activate ApplicationDbContext
+    ApplicationDbContext --> TestTemplateService : Permission
+    deactivate ApplicationDbContext
+    activate TestTemplateService
+    TestTemplateService --> GetTestTemplateDetailQueryHandler : bool
+    deactivate TestTemplateService
+    activate GetTestTemplateDetailQueryHandler
+    alt No permission
+        GetTestTemplateDetailQueryHandler -> TestTemplateEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE
+        deactivate GetTestTemplateDetailQueryHandler
+        activate TestTemplateEndpoints
+        TestTemplateEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_HAVE_PERMISSION_IN_TEST_TEMPLATE" }
+        deactivate TestTemplateEndpoints
+        UI -> User : Display error: User does not have permission to view this test template
+    else Allowed
+        activate GetTestTemplateDetailQueryHandler
+        GetTestTemplateDetailQueryHandler -> ApplicationDbContext : Query TestTemplate with Questions (Include CreatedByUser, TestTemplateQuestions, Question)
+        deactivate GetTestTemplateDetailQueryHandler
+        activate ApplicationDbContext
+        ApplicationDbContext -> Database : Query TestTemplate, Questions
+        deactivate ApplicationDbContext
+        activate Database
+        Database --> ApplicationDbContext : TestTemplate, List<Question>
+        deactivate Database
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetTestTemplateDetailQueryHandler : TestTemplate, List<Question>
+        deactivate ApplicationDbContext
+        activate GetTestTemplateDetailQueryHandler
+        GetTestTemplateDetailQueryHandler -> TestTemplateEndpoints : TestTemplateDetailDto
+        deactivate GetTestTemplateDetailQueryHandler
+        activate TestTemplateEndpoints
+        TestTemplateEndpoints --> UI : 200 OK (ApiResponse<TestTemplateDetailDto>)
+        deactivate TestTemplateEndpoints
+        UI -> User : Show test template detail
     end
 end
-deactivate Handler
-deactivate TestTemplateEndpoints
 deactivate UI
+
 @enduml

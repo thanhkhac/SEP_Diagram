@@ -1,74 +1,121 @@
 @startuml
 actor User
-participant "Test UI" as UI
-participant QuestionSetEndpoints
-participant GetTestFromQuestionSetQueryHandler as Handler
-participant PlanService
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Test UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetTestFromQuestionSetQueryHandler" as GetTestFromQuestionSetQueryHandler <<Handler>>
+participant ":PlanService" as PlanService <<Service>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetTestFromQuestionSetQueryHandler
+  Managed by MediatR
+end note
+
+note right of PlanService
+  Managed by IoC
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Request test questions
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{questionSetId}/Test?numberOfQuestion=n&questionTypes=...
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetTestFromQuestionSetQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId (Include Questions)
+QuestionSetEndpoints -> GetTestFromQuestionSetQueryHandler : Handle(GetTestFromQuestionSetQuery)
+deactivate QuestionSetEndpoints
+activate GetTestFromQuestionSetQueryHandler
+GetTestFromQuestionSetQueryHandler -> ApplicationDbContext : Query QuestionSet by QuestionSetId (Include Questions)
+deactivate GetTestFromQuestionSetQueryHandler
 activate ApplicationDbContext
-ApplicationDbContext -> Database : Query QuestionSet
+ApplicationDbContext -> Database : Query QuestionSet, Questions
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
-ApplicationDbContext --> Handler : QuestionSet
+activate ApplicationDbContext
+ApplicationDbContext --> GetTestFromQuestionSetQueryHandler : QuestionSet
 deactivate ApplicationDbContext
+activate GetTestFromQuestionSetQueryHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    GetTestFromQuestionSetQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetTestFromQuestionSetQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> PlanService : CanLearn(userId)
+    activate GetTestFromQuestionSetQueryHandler
+    GetTestFromQuestionSetQueryHandler -> PlanService : CanLearn(userId)
+    deactivate GetTestFromQuestionSetQueryHandler
     activate PlanService
     PlanService -> ApplicationDbContext : Query UserSubscription
+    deactivate PlanService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query UserSubscription
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : List<UserSubscription>
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> PlanService : List<UserSubscription>
     deactivate ApplicationDbContext
-    PlanService --> Handler : bool
+    activate PlanService
+    PlanService --> GetTestFromQuestionSetQueryHandler : bool
     deactivate PlanService
+    activate GetTestFromQuestionSetQueryHandler
     alt Plan Required
-        Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
-        UI -> User : Error: Please buy a plan
+        GetTestFromQuestionSetQueryHandler -> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
+        deactivate GetTestFromQuestionSetQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "PLAN_REQUIRE_PLAN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: Please buy a plan
     else Plan Available
-        Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        activate GetTestFromQuestionSetQueryHandler
+        GetTestFromQuestionSetQueryHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        deactivate GetTestFromQuestionSetQueryHandler
         activate QuestionSetService
         QuestionSetService -> ApplicationDbContext : Query Permission
+        deactivate QuestionSetService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Permission
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> QuestionSetService : Permission
         deactivate ApplicationDbContext
-        QuestionSetService --> Handler : bool
+        activate QuestionSetService
+        QuestionSetService --> GetTestFromQuestionSetQueryHandler : bool
         deactivate QuestionSetService
+        activate GetTestFromQuestionSetQueryHandler
         alt No permission
-            Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
-            QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
-            UI -> User : Error: User does not have access to question set
+            GetTestFromQuestionSetQueryHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+            deactivate GetTestFromQuestionSetQueryHandler
+            activate QuestionSetEndpoints
+            QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+            deactivate QuestionSetEndpoints
+            UI -> User : Display error: User does not have access to question set
         else Allowed
-            Handler -> Handler : Organize Questions by Type
-            Handler --> QuestionSetEndpoints : List<QuestionResponseDto>
+            activate GetTestFromQuestionSetQueryHandler
+            GetTestFromQuestionSetQueryHandler -> GetTestFromQuestionSetQueryHandler : Organize Questions by Type
+            GetTestFromQuestionSetQueryHandler -> QuestionSetEndpoints : List<QuestionResponseDto>
+            deactivate GetTestFromQuestionSetQueryHandler
+            activate QuestionSetEndpoints
             QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<QuestionResponseDto>>)
+            deactivate QuestionSetEndpoints
             UI -> User : Show test questions
         end
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

@@ -1,90 +1,149 @@
 @startuml
 actor User
-participant "Learn UI" as UI
-participant QuestionSetEndpoints
-participant GetQuestionSetLearnQuestionsQueryHandler as Handler
-participant PlanService
-participant QuestionSetService
-participant QuestionService
-participant ApplicationDbContext
+participant "Learn UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetQuestionSetLearnQuestionsQueryHandler" as GetQuestionSetLearnQuestionsQueryHandler <<Handler>>
+participant ":PlanService" as PlanService <<Service>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":QuestionService" as QuestionService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetQuestionSetLearnQuestionsQueryHandler
+  Managed by MediatR
+end note
+
+note right of PlanService
+  Managed by IoC
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of QuestionService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Request learn questions
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{id}/LearnQuestions?questionCount=n
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetQuestionSetLearnQuestionsQuery)
-activate Handler
-Handler -> PlanService : CanLearn(userId)
+QuestionSetEndpoints -> GetQuestionSetLearnQuestionsQueryHandler : Handle(GetQuestionSetLearnQuestionsQuery)
+deactivate QuestionSetEndpoints
+activate GetQuestionSetLearnQuestionsQueryHandler
+GetQuestionSetLearnQuestionsQueryHandler -> PlanService : CanLearn(userId)
+deactivate GetQuestionSetLearnQuestionsQueryHandler
 activate PlanService
 PlanService -> ApplicationDbContext : Query UserSubscription
+deactivate PlanService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query UserSubscription
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<UserSubscription>
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> PlanService : List<UserSubscription>
 deactivate ApplicationDbContext
-PlanService --> Handler : bool
+activate PlanService
+PlanService --> GetQuestionSetLearnQuestionsQueryHandler : bool
 deactivate PlanService
+activate GetQuestionSetLearnQuestionsQueryHandler
 alt Require plan
-    Handler --> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: PLAN_REQUIRE_PLAN)
-    UI -> User : Error: Please buy a plan
+    GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetEndpoints : Error: PLAN_REQUIRE_PLAN
+    deactivate GetQuestionSetLearnQuestionsQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "PLAN_REQUIRE_PLAN" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Please buy a plan
 else Continue
-    Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    activate GetQuestionSetLearnQuestionsQueryHandler
+    GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+    deactivate GetQuestionSetLearnQuestionsQueryHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query QuestionSet
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query QuestionSet
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : QuestionSet
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : QuestionSet
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : QuestionSet
+    activate QuestionSetService
+    QuestionSetService --> GetQuestionSetLearnQuestionsQueryHandler : QuestionSet
     deactivate QuestionSetService
+    activate GetQuestionSetLearnQuestionsQueryHandler
     alt Not found
-        Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-        UI -> User : Error: Question set not found
+        GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+        deactivate GetQuestionSetLearnQuestionsQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: Question set not found
     else Found
-        Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        activate GetQuestionSetLearnQuestionsQueryHandler
+        GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+        deactivate GetQuestionSetLearnQuestionsQueryHandler
         activate QuestionSetService
         QuestionSetService -> ApplicationDbContext : Query Permission
+        deactivate QuestionSetService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Permission
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> QuestionSetService : Permission
         deactivate ApplicationDbContext
-        QuestionSetService --> Handler : bool
+        activate QuestionSetService
+        QuestionSetService --> GetQuestionSetLearnQuestionsQueryHandler : bool
         deactivate QuestionSetService
+        activate GetQuestionSetLearnQuestionsQueryHandler
         alt No permission
-            Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-            QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-            UI -> User : Error: No permission
+            GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+            deactivate GetQuestionSetLearnQuestionsQueryHandler
+            activate QuestionSetEndpoints
+            QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+            deactivate QuestionSetEndpoints
+            UI -> User : Display error: No permission
         else Allowed
-            Handler -> QuestionService : GetQuestionsBySetIdForLearnAsync(questionSetId, userId, questionCount)
+            activate GetQuestionSetLearnQuestionsQueryHandler
+            GetQuestionSetLearnQuestionsQueryHandler -> QuestionService : GetQuestionsBySetIdForLearnAsync(questionSetId, userId, questionCount)
+            deactivate GetQuestionSetLearnQuestionsQueryHandler
             activate QuestionService
             QuestionService -> ApplicationDbContext : Query Questions
+            deactivate QuestionService
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Query Questions
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : List<Question>
             deactivate Database
+            activate ApplicationDbContext
             ApplicationDbContext --> QuestionService : List<Question>
             deactivate ApplicationDbContext
-            QuestionService --> Handler : List<QuestionResponseDto>
+            activate QuestionService
+            QuestionService --> GetQuestionSetLearnQuestionsQueryHandler : List<QuestionResponseDto>
             deactivate QuestionService
-            Handler --> QuestionSetEndpoints : List<QuestionResponseDto>
+            activate GetQuestionSetLearnQuestionsQueryHandler
+            GetQuestionSetLearnQuestionsQueryHandler -> QuestionSetEndpoints : List<QuestionResponseDto>
+            deactivate GetQuestionSetLearnQuestionsQueryHandler
+            activate QuestionSetEndpoints
             QuestionSetEndpoints --> UI : 200 OK (ApiResponse<List<QuestionResponseDto>>)
+            deactivate QuestionSetEndpoints
             UI -> User : Show learn questions
         end
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

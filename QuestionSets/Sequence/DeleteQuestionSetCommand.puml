@@ -1,66 +1,105 @@
 @startuml
 actor User
-participant "Question Set List UI" as UI
-participant QuestionSetEndpoints
-participant DeleteQuestionSetCommandHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set List UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":DeleteQuestionSetCommandHandler" as DeleteQuestionSetCommandHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of DeleteQuestionSetCommandHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Click "Delete"
 activate UI
 UI -> QuestionSetEndpoints : DELETE /api/QuestionSet/{id}
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(DeleteQuestionSetCommand)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> DeleteQuestionSetCommandHandler : Handle(DeleteQuestionSetCommand)
+deactivate QuestionSetEndpoints
+activate DeleteQuestionSetCommandHandler
+DeleteQuestionSetCommandHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate DeleteQuestionSetCommandHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> DeleteQuestionSetCommandHandler : QuestionSet
 deactivate QuestionSetService
+activate DeleteQuestionSetCommandHandler
 alt Not found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    DeleteQuestionSetCommandHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate DeleteQuestionSetCommandHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Found
-    Handler -> QuestionSetService : CanUserDeleteQuestionSet(userId, questionSetId)
+    activate DeleteQuestionSetCommandHandler
+    DeleteQuestionSetCommandHandler -> QuestionSetService : CanUserDeleteQuestionSet(userId, questionSetId)
+    deactivate DeleteQuestionSetCommandHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> DeleteQuestionSetCommandHandler : bool
     deactivate QuestionSetService
+    activate DeleteQuestionSetCommandHandler
     alt No permission
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: No permission
+        DeleteQuestionSetCommandHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate DeleteQuestionSetCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: No permission
     else Allowed
-        Handler -> ApplicationDbContext : Delete QuestionSet
+        activate DeleteQuestionSetCommandHandler
+        DeleteQuestionSetCommandHandler -> ApplicationDbContext : Delete QuestionSet
+        deactivate DeleteQuestionSetCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Delete QuestionSet
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Unit
+        activate ApplicationDbContext
+        ApplicationDbContext --> DeleteQuestionSetCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> QuestionSetEndpoints : Unit
-        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Unit>)
-        UI -> User : Info: Delete successful
+        activate DeleteQuestionSetCommandHandler
+        DeleteQuestionSetCommandHandler -> QuestionSetEndpoints : Guid
+        deactivate DeleteQuestionSetCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        deactivate QuestionSetEndpoints
+        UI -> User : Display info: Delete successful
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

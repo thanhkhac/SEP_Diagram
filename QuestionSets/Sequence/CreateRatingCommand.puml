@@ -1,87 +1,137 @@
 @startuml
 actor User
-participant "Question Set Detail UI" as UI
-participant QuestionSetEndpoints
-participant CreateRatingCommandHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set Detail UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":CreateRatingCommandHandler" as CreateRatingCommandHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of CreateRatingCommandHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Submit rating
 activate UI
 UI -> QuestionSetEndpoints : POST /api/QuestionSet/{questionSetId}/Rating
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(CreateRatingCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+QuestionSetEndpoints -> CreateRatingCommandHandler : Handle(CreateRatingCommand)
+deactivate QuestionSetEndpoints
+activate CreateRatingCommandHandler
+CreateRatingCommandHandler -> ApplicationDbContext : Query QuestionSet by QuestionSetId
+deactivate CreateRatingCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
-ApplicationDbContext --> Handler : QuestionSet
+activate ApplicationDbContext
+ApplicationDbContext --> CreateRatingCommandHandler : QuestionSet
 deactivate ApplicationDbContext
+activate CreateRatingCommandHandler
 alt Question Set Not Found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    CreateRatingCommandHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate CreateRatingCommandHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Question Set Found
-    Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    activate CreateRatingCommandHandler
+    CreateRatingCommandHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    deactivate CreateRatingCommandHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> CreateRatingCommandHandler : bool
     deactivate QuestionSetService
+    activate CreateRatingCommandHandler
     alt User Not Have Access
-        Handler --> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_ACCESS_TO_QUESTION_SET)
-        UI -> User : Error: User does not have access to question set
+        CreateRatingCommandHandler -> QuestionSetEndpoints : Error: USER_NOT_ACCESS_TO_QUESTION_SET
+        deactivate CreateRatingCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_ACCESS_TO_QUESTION_SET" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: User does not have access to question set
     else User Has Access
-        Handler -> ApplicationDbContext : Query existing QuestionSetRating by QuestionSetId and UserId
+        activate CreateRatingCommandHandler
+        CreateRatingCommandHandler -> ApplicationDbContext : Query existing QuestionSetRating by QuestionSetId and UserId
+        deactivate CreateRatingCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query QuestionSetRating
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : QuestionSetRating
         deactivate Database
-        ApplicationDbContext --> Handler : QuestionSetRating
+        activate ApplicationDbContext
+        ApplicationDbContext --> CreateRatingCommandHandler : QuestionSetRating
         deactivate ApplicationDbContext
+        activate CreateRatingCommandHandler
         alt Existing Rating Found
-            Handler -> ApplicationDbContext : Update existing QuestionSetRating
+            ' activate CreateRatingCommandHandler
+            CreateRatingCommandHandler -> ApplicationDbContext : Update existing QuestionSetRating
+            deactivate CreateRatingCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Update QuestionSetRating
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            deactivate ApplicationDbContext
+            ' activate ApplicationDbContext
+            ' deactivate ApplicationDbContext
         else No Existing Rating
-            Handler -> ApplicationDbContext : Add new QuestionSetRating
+            activate CreateRatingCommandHandler
+            CreateRatingCommandHandler -> ApplicationDbContext : Add new QuestionSetRating
+            deactivate CreateRatingCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Insert QuestionSetRating
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            deactivate ApplicationDbContext
+            ' activate ApplicationDbContext
+            ' deactivate ApplicationDbContext
         end
-        Handler -> ApplicationDbContext : Recalculate QuestionSet Rating (Average, Count, Sum)
+        activate CreateRatingCommandHandler
+        CreateRatingCommandHandler -> ApplicationDbContext : Recalculate QuestionSet Rating (Average, Count, Sum)
+        deactivate CreateRatingCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update QuestionSet
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> CreateRatingCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> QuestionSetEndpoints : Guid
+        activate CreateRatingCommandHandler
+        CreateRatingCommandHandler -> QuestionSetEndpoints : Guid
+        deactivate CreateRatingCommandHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> User : Info: Rating created/updated
+        deactivate QuestionSetEndpoints
+        UI -> User : Display info: Rating created/updated
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

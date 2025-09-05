@@ -1,66 +1,105 @@
 @startuml
 actor User
-participant "Learn UI" as UI
-participant QuestionSetEndpoints
-participant UpdateQuestionSetHistoryCommandHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Learn UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":UpdateQuestionSetHistoryCommandHandler" as UpdateQuestionSetHistoryCommandHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateQuestionSetHistoryCommandHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Submit learn history
 activate UI
 UI -> QuestionSetEndpoints : POST /api/QuestionSet/{id}/LearnHistory
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(UpdateQuestionSetHistoryCommand)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> UpdateQuestionSetHistoryCommandHandler : Handle(UpdateQuestionSetHistoryCommand)
+deactivate QuestionSetEndpoints
+activate UpdateQuestionSetHistoryCommandHandler
+UpdateQuestionSetHistoryCommandHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate UpdateQuestionSetHistoryCommandHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> UpdateQuestionSetHistoryCommandHandler : QuestionSet
 deactivate QuestionSetService
+activate UpdateQuestionSetHistoryCommandHandler
 alt Not found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    UpdateQuestionSetHistoryCommandHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate UpdateQuestionSetHistoryCommandHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Found
-    Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSetId)
+    activate UpdateQuestionSetHistoryCommandHandler
+    UpdateQuestionSetHistoryCommandHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSetId)
+    deactivate UpdateQuestionSetHistoryCommandHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> UpdateQuestionSetHistoryCommandHandler : bool
     deactivate QuestionSetService
+    activate UpdateQuestionSetHistoryCommandHandler
     alt No permission
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: No permission
+        UpdateQuestionSetHistoryCommandHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate UpdateQuestionSetHistoryCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: No permission
     else Allowed
-        Handler -> ApplicationDbContext : Update UserQuestionSetHistories
+        activate UpdateQuestionSetHistoryCommandHandler
+        UpdateQuestionSetHistoryCommandHandler -> ApplicationDbContext : Update UserQuestionSetHistories
+        deactivate UpdateQuestionSetHistoryCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update UserQuestionSetHistories
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Unit
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateQuestionSetHistoryCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> QuestionSetEndpoints : Unit
-        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Unit>)
-        UI -> User : Info: Learn history updated
+        activate UpdateQuestionSetHistoryCommandHandler
+        UpdateQuestionSetHistoryCommandHandler -> QuestionSetEndpoints : Guid
+        deactivate UpdateQuestionSetHistoryCommandHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        deactivate QuestionSetEndpoints
+        UI -> User : Display info: Learn history updated
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml

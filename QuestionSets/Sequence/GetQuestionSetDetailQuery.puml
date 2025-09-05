@@ -1,58 +1,93 @@
 @startuml
 actor User
-participant "Question Set Detail UI" as UI
-participant QuestionSetEndpoints
-participant GetQuestionSetDetailQueryHandler as Handler
-participant QuestionSetService
-participant ApplicationDbContext
+participant "Question Set Detail UI" as UI <<UI>>
+participant ":QuestionSetEndpoints" as QuestionSetEndpoints <<Controller>>
+participant ":GetQuestionSetDetailQueryHandler" as GetQuestionSetDetailQueryHandler <<Handler>>
+participant ":QuestionSetService" as QuestionSetService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetQuestionSetDetailQueryHandler
+  Managed by MediatR
+end note
+
+note right of QuestionSetService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Open question set detail
 activate UI
 UI -> QuestionSetEndpoints : GET /api/QuestionSet/{id}
 activate QuestionSetEndpoints
-QuestionSetEndpoints -> Handler : Handle(GetQuestionSetDetailQuery)
-activate Handler
-Handler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+QuestionSetEndpoints -> GetQuestionSetDetailQueryHandler : Handle(GetQuestionSetDetailQuery)
+deactivate QuestionSetEndpoints
+activate GetQuestionSetDetailQueryHandler
+GetQuestionSetDetailQueryHandler -> QuestionSetService : GetActiveQuestionSet(questionSetId)
+deactivate GetQuestionSetDetailQueryHandler
 activate QuestionSetService
 QuestionSetService -> ApplicationDbContext : Query QuestionSet
+deactivate QuestionSetService
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query QuestionSet
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : QuestionSet
 deactivate Database
+activate ApplicationDbContext
 ApplicationDbContext --> QuestionSetService : QuestionSet
 deactivate ApplicationDbContext
-QuestionSetService --> Handler : QuestionSet
+activate QuestionSetService
+QuestionSetService --> GetQuestionSetDetailQueryHandler : QuestionSet
 deactivate QuestionSetService
+activate GetQuestionSetDetailQueryHandler
 alt Not found
-    Handler --> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
-    QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: QUESTION_SET_NOT_FOUND)
-    UI -> User : Error: Question set not found
+    GetQuestionSetDetailQueryHandler -> QuestionSetEndpoints : Error: QUESTION_SET_NOT_FOUND
+    deactivate GetQuestionSetDetailQueryHandler
+    activate QuestionSetEndpoints
+    QuestionSetEndpoints --> UI : 400 Bad Request { "error": "QUESTION_SET_NOT_FOUND" }
+    deactivate QuestionSetEndpoints
+    UI -> User : Display error: Question set not found
 else Found
-    Handler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    activate GetQuestionSetDetailQueryHandler
+    GetQuestionSetDetailQueryHandler -> QuestionSetService : CanUserViewQuestionSet(userId, questionSet)
+    deactivate GetQuestionSetDetailQueryHandler
     activate QuestionSetService
     QuestionSetService -> ApplicationDbContext : Query Permission
+    deactivate QuestionSetService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> QuestionSetService : Permission
     deactivate ApplicationDbContext
-    QuestionSetService --> Handler : bool
+    activate QuestionSetService
+    QuestionSetService --> GetQuestionSetDetailQueryHandler : bool
     deactivate QuestionSetService
+    activate GetQuestionSetDetailQueryHandler
     alt No permission
-        Handler --> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
-        QuestionSetEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-        UI -> User : Error: No permission
+        GetQuestionSetDetailQueryHandler -> QuestionSetEndpoints : Error: COMMON_FORBIDDEN
+        deactivate GetQuestionSetDetailQueryHandler
+        activate QuestionSetEndpoints
+        QuestionSetEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate QuestionSetEndpoints
+        UI -> User : Display error: No permission
     else Allowed
-        Handler --> QuestionSetEndpoints : QuestionSetDetailDto
+        activate GetQuestionSetDetailQueryHandler
+        GetQuestionSetDetailQueryHandler -> QuestionSetEndpoints : QuestionSetDetailDto
+        deactivate GetQuestionSetDetailQueryHandler
+        activate QuestionSetEndpoints
         QuestionSetEndpoints --> UI : 200 OK (ApiResponse<QuestionSetDetailDto>)
+        deactivate QuestionSetEndpoints
         UI -> User : Show question set detail
     end
 end
-deactivate Handler
-deactivate QuestionSetEndpoints
 deactivate UI
+
 @enduml
