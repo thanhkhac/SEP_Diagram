@@ -1,59 +1,101 @@
 @startuml
 actor Moderator
-participant "Plan Purchase UI" as UI
-participant PlanEndpoints
-participant BuyPlanCommandHandler as Handler
-participant ApplicationDbContext
+participant "Plan Purchase UI" as UI <<UI>>
+participant ":PlanEndpoints" as PlanEndpoints <<Controller>>
+participant ":BuyPlanCommandHandler" as BuyPlanCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of BuyPlanCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 Moderator -> UI : Select plan, click "Buy"
 activate UI
 UI -> PlanEndpoints : POST /api/Plan/Buy
 activate PlanEndpoints
-PlanEndpoints -> Handler : Handle(BuyPlanCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Plan by PlanId
+PlanEndpoints -> BuyPlanCommandHandler : Handle(BuyPlanCommand)
+deactivate PlanEndpoints
+activate BuyPlanCommandHandler
+BuyPlanCommandHandler -> ApplicationDbContext : Query Plan by PlanId
+deactivate BuyPlanCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Plan
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Plan
 deactivate Database
-ApplicationDbContext --> Handler : Plan
+activate ApplicationDbContext
+ApplicationDbContext --> BuyPlanCommandHandler : Plan
 deactivate ApplicationDbContext
+activate BuyPlanCommandHandler
 alt Plan Not Found
-    Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
-    PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-    UI -> Moderator : Error: Plan not found
+    BuyPlanCommandHandler -> PlanEndpoints : Error: PLAN_NOT_FOUND
+    deactivate BuyPlanCommandHandler
+    activate PlanEndpoints
+    PlanEndpoints --> UI : 400 Bad Request { "error": "PLAN_NOT_FOUND" }
+    deactivate PlanEndpoints
+    UI -> Moderator : Display error: Plan not found
 else Plan Found
-    Handler -> ApplicationDbContext : Query User (Include UserSubscriptions) by UserId
+    activate BuyPlanCommandHandler
+    BuyPlanCommandHandler -> ApplicationDbContext : Query User (Include UserSubscriptions) by UserId
+    deactivate BuyPlanCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query User, UserSubscriptions
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : User, List<UserSubscription>
     deactivate Database
-    ApplicationDbContext --> Handler : User
+    activate ApplicationDbContext
+    ApplicationDbContext --> BuyPlanCommandHandler : User
     deactivate ApplicationDbContext
+    activate BuyPlanCommandHandler
     alt Insufficient Balance
-        Handler --> PlanEndpoints : Error: INSUFFICIENT_BALANCE
-        PlanEndpoints --> UI : 400 Bad Request (errorCode: INSUFFICIENT_BALANCE)
-        UI -> Moderator : Error: Insufficient balance
+        BuyPlanCommandHandler -> PlanEndpoints : Error: INSUFFICIENT_BALANCE
+        deactivate BuyPlanCommandHandler
+        activate PlanEndpoints
+        PlanEndpoints --> UI : 400 Bad Request { "error": "INSUFFICIENT_BALANCE" }
+        deactivate PlanEndpoints
+        UI -> Moderator : Display error: Insufficient balance
     else Sufficient Balance
-        Handler -> Handler : Calculate DateFinish based on Plan Duration and Unit
-        Handler -> ApplicationDbContext : Add new UserSubscription
+        activate BuyPlanCommandHandler
+        BuyPlanCommandHandler -> BuyPlanCommandHandler : Calculate DateFinish based on Plan Duration and Unit
+        BuyPlanCommandHandler -> ApplicationDbContext : Add new UserSubscription
+        deactivate BuyPlanCommandHandler
         activate ApplicationDbContext
-        Handler -> ApplicationDbContext : Decrease User Balance
-        ApplicationDbContext -> Database : Insert UserSubscription, Update User
+        ApplicationDbContext -> Database : Insert UserSubscription
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> BuyPlanCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> PlanEndpoints : Guid
+        activate BuyPlanCommandHandler
+        BuyPlanCommandHandler -> ApplicationDbContext : Decrease User Balance
+        deactivate BuyPlanCommandHandler
+        activate ApplicationDbContext
+        ApplicationDbContext -> Database : Update User
+        deactivate ApplicationDbContext
+        activate Database
+        Database --> ApplicationDbContext : Success
+        deactivate Database
+        activate ApplicationDbContext
+        ApplicationDbContext --> BuyPlanCommandHandler : Success
+        deactivate ApplicationDbContext
+        activate BuyPlanCommandHandler
+        BuyPlanCommandHandler -> PlanEndpoints : Guid
+        deactivate BuyPlanCommandHandler
+        activate PlanEndpoints
         PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> Moderator : Info: Plan purchased successfully
+        deactivate PlanEndpoints
+        UI -> Moderator : Display info: Plan purchased successfully
     end
 end
-deactivate Handler
-deactivate PlanEndpoints
 deactivate UI
+
 @enduml

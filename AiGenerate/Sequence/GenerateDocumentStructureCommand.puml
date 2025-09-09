@@ -1,145 +1,220 @@
 @startuml
 actor User
-participant "AI Generate UI" as UI
-participant AiGenerateEndpoints
-participant GenerateDocumentStructureCommandHandler as Handler
-participant AiGenerateService
-participant ApplicationDbContext
+participant "AI Generate UI" as UI <<UI>>
+participant ":AiGenerateEndpoints" as AiGenerateEndpoints <<Controller>>
+participant ":GenerateDocumentStructureCommandHandler" as GenerateDocumentStructureCommandHandler <<Handler>>
+participant ":AiGenerateService" as AiGenerateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
-participant PromptProvider
+participant ":PromptProvider" as PromptProvider <<Service>>
+
+note right of GenerateDocumentStructureCommandHandler
+  Managed by MediatR
+end note
+
+note right of AiGenerateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
+note right of PromptProvider
+  Managed by IoC
+end note
 
 User -> UI : Upload PDF, click "Generate Structure"
 activate UI
 UI -> AiGenerateEndpoints : POST /api/AiGenerate/DocumentStructure
 activate AiGenerateEndpoints
-AiGenerateEndpoints -> Handler : Handle(GenerateDocumentStructureCommand)
-activate Handler
-Handler -> AiGenerateService : UploadFileAsync(fileData)
+AiGenerateEndpoints -> GenerateDocumentStructureCommandHandler : Handle(GenerateDocumentStructureCommand)
+deactivate AiGenerateEndpoints
+activate GenerateDocumentStructureCommandHandler
+GenerateDocumentStructureCommandHandler -> AiGenerateService : UploadFileAsync(fileData)
+deactivate GenerateDocumentStructureCommandHandler
 activate AiGenerateService
-AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+AiGenerateService --> GenerateDocumentStructureCommandHandler : UploadResult (FileUri, FileName)
 deactivate AiGenerateService
-Handler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
+activate GenerateDocumentStructureCommandHandler
+GenerateDocumentStructureCommandHandler -> PromptProvider : GetGenerateDocumentStructureSystemInstructionPrompt()
+deactivate GenerateDocumentStructureCommandHandler
 activate PromptProvider
-PromptProvider --> Handler : SystemInstruction
+PromptProvider --> GenerateDocumentStructureCommandHandler : SystemInstruction
 deactivate PromptProvider
-Handler -> ApplicationDbContext : Query currentUser by UserId
+activate GenerateDocumentStructureCommandHandler
+GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Query currentUser by UserId
+deactivate GenerateDocumentStructureCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : DomainUser
 deactivate Database
-ApplicationDbContext --> Handler : DomainUser (currentUser)
+activate ApplicationDbContext
+ApplicationDbContext --> GenerateDocumentStructureCommandHandler : DomainUser (currentUser)
 deactivate ApplicationDbContext
+activate GenerateDocumentStructureCommandHandler
 alt Payment Locked
-    Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
-    AiGenerateEndpoints --> UI : 400 Bad Request (PAYMENT_IN_PROGRESS)
-    UI -> User : Error: Payment in progress
+    GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
+    deactivate GenerateDocumentStructureCommandHandler
+    activate AiGenerateEndpoints
+    AiGenerateEndpoints --> UI : 400 Bad Request { "error": "PAYMENT_IN_PROGRESS" }
+    deactivate AiGenerateEndpoints
+    UI -> User : Display error: Payment in progress
 else Payment Not Locked
-    Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
+    activate GenerateDocumentStructureCommandHandler
+    GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
+    deactivate GenerateDocumentStructureCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Update DomainUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
-deactivate Database
-    ApplicationDbContext --> Handler : Success
-deactivate ApplicationDbContext
-    Handler -> ApplicationDbContext : Query SystemSettings
+    deactivate Database
+    activate ApplicationDbContext
+    ApplicationDbContext --> GenerateDocumentStructureCommandHandler : Success
+    deactivate ApplicationDbContext
+    activate GenerateDocumentStructureCommandHandler
+    GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Query SystemSettings
+    deactivate GenerateDocumentStructureCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query SystemSettings
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : SystemSetting
-deactivate Database
-    ApplicationDbContext --> Handler : SystemSetting
-deactivate ApplicationDbContext
+    deactivate Database
+    activate ApplicationDbContext
+    ApplicationDbContext --> GenerateDocumentStructureCommandHandler : SystemSetting
+    deactivate ApplicationDbContext
+    activate GenerateDocumentStructureCommandHandler
     alt System Setting Not Found
-        Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
-        AiGenerateEndpoints --> UI : 400 Bad Request (SYSTEM_SETTING_NOT_FOUND)
-        UI -> User : Error: System settings not found
+        GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
+        deactivate GenerateDocumentStructureCommandHandler
+        activate AiGenerateEndpoints
+        AiGenerateEndpoints --> UI : 400 Bad Request { "error": "SYSTEM_SETTING_NOT_FOUND" }
+        deactivate AiGenerateEndpoints
+        UI -> User : Display error: System settings not found
     else System Setting Found
-        Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+        activate GenerateDocumentStructureCommandHandler
+        GenerateDocumentStructureCommandHandler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+        deactivate GenerateDocumentStructureCommandHandler
         activate AiGenerateService
-        AiGenerateService --> Handler : TokenCount
-deactivate AiGenerateService
+        AiGenerateService --> GenerateDocumentStructureCommandHandler : TokenCount
+        deactivate AiGenerateService
+        activate GenerateDocumentStructureCommandHandler
         alt File Too Large
-            Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
-            AiGenerateEndpoints --> UI : 400 Bad Request (AI_FILE_TOO_LARGE)
-            UI -> User : Error: File too large
+            GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
+            deactivate GenerateDocumentStructureCommandHandler
+            activate AiGenerateEndpoints
+            AiGenerateEndpoints --> UI : 400 Bad Request { "error": "AI_FILE_TOO_LARGE" }
+            deactivate AiGenerateEndpoints
+            UI -> User : Display error: File too large
         else File Size OK
-            Handler -> Handler : Calculate minimumTotalPoint
+            activate GenerateDocumentStructureCommandHandler
+            GenerateDocumentStructureCommandHandler -> GenerateDocumentStructureCommandHandler : Calculate minimumTotalPoint
             alt Insufficient Balance
-                Handler --> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
-                AiGenerateEndpoints --> UI : 400 Bad Request (INSUFFICIENT_BALANCE)
-                UI -> User : Error: Insufficient balance
+                GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
+                deactivate GenerateDocumentStructureCommandHandler
+                activate AiGenerateEndpoints
+                AiGenerateEndpoints --> UI : 400 Bad Request { "error": "INSUFFICIENT_BALANCE" }
+                deactivate AiGenerateEndpoints
+                UI -> User : Display error: Insufficient balance
             else Sufficient Balance
-                Handler -> AiGenerateService : SendPromptWithFileAsync(...)
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> AiGenerateService : SendPromptWithFileAsync(...)
+                deactivate GenerateDocumentStructureCommandHandler
                 activate AiGenerateService
-                AiGenerateService --> Handler : AI_Response
-deactivate AiGenerateService
-                Handler -> ApplicationDbContext : Decrease Balance
+                AiGenerateService --> GenerateDocumentStructureCommandHandler : AI_Response
+                deactivate AiGenerateService
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Decrease Balance
+                deactivate GenerateDocumentStructureCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
-deactivate Database
-                ApplicationDbContext --> Handler : Success
-deactivate ApplicationDbContext
-                Handler -> AiGenerateService : CountToken(result)
+                deactivate Database
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateDocumentStructureCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> AiGenerateService : CountToken(result)
+                deactivate GenerateDocumentStructureCommandHandler
                 activate AiGenerateService
-                AiGenerateService --> Handler : OutputTokenCount
-deactivate AiGenerateService
-                Handler -> Handler : Calculate output cost
-                Handler -> ApplicationDbContext : Decrease Balance (output cost)
+                AiGenerateService --> GenerateDocumentStructureCommandHandler : OutputTokenCount
+                deactivate AiGenerateService
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> GenerateDocumentStructureCommandHandler : Calculate output cost
+                GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Decrease Balance (output cost)
+                deactivate GenerateDocumentStructureCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
-deactivate Database
-                ApplicationDbContext --> Handler : Success
-deactivate ApplicationDbContext
-                Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+                deactivate Database
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateDocumentStructureCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Set IsPaymentLocked = false
+                deactivate GenerateDocumentStructureCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
-deactivate Database
-                ApplicationDbContext -> Database : SaveChanges()
-                activate Database
-                Database --> ApplicationDbContext : Success
-deactivate Database
-                ApplicationDbContext --> Handler : Success
-deactivate ApplicationDbContext
-                Handler -> Handler : Extract JSON from AI Response
+                deactivate Database
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateDocumentStructureCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateDocumentStructureCommandHandler
+                GenerateDocumentStructureCommandHandler -> GenerateDocumentStructureCommandHandler : Extract JSON from AI Response
                 alt NO_STRUCTURE_FOUND
-                    Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
-                    AiGenerateEndpoints --> UI : 400 Bad Request (NO_STRUCTURE_FOUND)
-                    UI -> User : Error: No document structure found
-                else if JSON Deserialization Failed
-                    Handler --> AiGenerateEndpoints : Error: GENERATE_CONTENT_FAILED
-                    AiGenerateEndpoints --> UI : 500 Internal Server Error (GENERATE_CONTENT_FAILED)
-                    UI -> User : Error: Failed to generate structure
+                    GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
+                    deactivate GenerateDocumentStructureCommandHandler
+                    activate AiGenerateEndpoints
+                    AiGenerateEndpoints --> UI : 400 Bad Request { "error": "NO_STRUCTURE_FOUND" }
+                    deactivate AiGenerateEndpoints
+                    UI -> User : Display error: No document structure found
                 else JSON Deserialization Success
-                    Handler --> AiGenerateEndpoints : DocumentStructureDto
-                    AiGenerateEndpoints --> UI : 200 OK
+                    activate GenerateDocumentStructureCommandHandler
+                    GenerateDocumentStructureCommandHandler -> AiGenerateEndpoints : DocumentStructureDto
+                    deactivate GenerateDocumentStructureCommandHandler
+                    activate AiGenerateEndpoints
+                    AiGenerateEndpoints --> UI : 200 OK (ApiResponse<DocumentStructureDto>)
+                    deactivate AiGenerateEndpoints
                     UI -> User : Show generated document structure
+   activate GenerateDocumentStructureCommandHandler
+
                 end
             end
         end
     end
 end
-'... Always cleanup ...
-Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+deactivate UI
+GenerateDocumentStructureCommandHandler -> ApplicationDbContext : Set IsPaymentLocked = false
+deactivate GenerateDocumentStructureCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Update DomainUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Success
 deactivate Database
-ApplicationDbContext --> Handler : Success
+activate ApplicationDbContext
+ApplicationDbContext --> GenerateDocumentStructureCommandHandler : Success
 deactivate ApplicationDbContext
-Handler -> AiGenerateService : DeleteFileAsync(fileName)
+activate GenerateDocumentStructureCommandHandler
+GenerateDocumentStructureCommandHandler -> AiGenerateService : DeleteFileAsync(fileName)
+deactivate GenerateDocumentStructureCommandHandler
 activate AiGenerateService
-AiGenerateService --> Handler : Success
+AiGenerateService --> GenerateDocumentStructureCommandHandler : Success
 deactivate AiGenerateService
-deactivate Handler
+activate GenerateDocumentStructureCommandHandler
+deactivate GenerateDocumentStructureCommandHandler
 deactivate AiGenerateEndpoints
 deactivate UI
+
 @enduml

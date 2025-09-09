@@ -1,76 +1,121 @@
 @startuml
 actor User
-participant "Edit Folder UI" as UI
-participant FolderTestEndpoints
-participant UpdateFolderCommandHandler as Handler
-participant FolderTestService
-participant ApplicationDbContext
+participant "Edit Folder UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":UpdateFolderCommandHandler" as UpdateFolderCommandHandler <<Handler>>
+participant ":FolderTestService" as FolderTestService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateFolderCommandHandler
+  Managed by MediatR
+end note
+
+note right of FolderTestService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Edit folder name, click "Save"
 activate UI
 UI -> FolderTestEndpoints : PATCH /api/Folder/{FolderId}
 activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(UpdateFolderCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Folder by FolderId
+FolderTestEndpoints -> UpdateFolderCommandHandler : Handle(UpdateFolderCommand)
+deactivate FolderTestEndpoints
+activate UpdateFolderCommandHandler
+UpdateFolderCommandHandler -> ApplicationDbContext : Query Folder by FolderId
+deactivate UpdateFolderCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Folder
 deactivate Database
-ApplicationDbContext --> Handler : Folder
+activate ApplicationDbContext
+ApplicationDbContext --> UpdateFolderCommandHandler : Folder
 deactivate ApplicationDbContext
+activate UpdateFolderCommandHandler
 alt Folder Not Found
-    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
-    UI -> User : Error: Folder not found
+    UpdateFolderCommandHandler -> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    deactivate UpdateFolderCommandHandler
+    activate FolderTestEndpoints
+    FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_NOT_FOUND" }
+    deactivate FolderTestEndpoints
+    UI -> User : Display error: Folder not found
 else Folder Found
-    Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    activate UpdateFolderCommandHandler
+    UpdateFolderCommandHandler -> FolderTestService : IsOwnerOrEditor(folderId)
+    deactivate UpdateFolderCommandHandler
     activate FolderTestService
     FolderTestService -> ApplicationDbContext : Query Permission
+    deactivate FolderTestService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> FolderTestService : Permission
     deactivate ApplicationDbContext
-    FolderTestService --> Handler : bool
+    activate FolderTestService
+    FolderTestService --> UpdateFolderCommandHandler : bool
     deactivate FolderTestService
+    activate UpdateFolderCommandHandler
     alt No permission
-        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
-        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
-        UI -> User : Error: User does not have permission to edit folder
+        UpdateFolderCommandHandler -> FolderTestEndpoints : Error: COMMON_FORBIDDEN
+        deactivate UpdateFolderCommandHandler
+        activate FolderTestEndpoints
+        FolderTestEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate FolderTestEndpoints
+        UI -> User : Display error: User does not have permission to edit folder
     else Allowed
-        Handler -> ApplicationDbContext : Query Folder by Name and CreatedBy (for duplicate check)
+        activate UpdateFolderCommandHandler
+        UpdateFolderCommandHandler -> ApplicationDbContext : Query Folder by Name and CreatedBy (for duplicate check)
+        deactivate UpdateFolderCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Folder
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Folder
         deactivate Database
-        ApplicationDbContext --> Handler : Folder (folderByName)
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateFolderCommandHandler : Folder (folderByName)
         deactivate ApplicationDbContext
+        activate UpdateFolderCommandHandler
         alt Folder Name Already Exists
-            Handler --> FolderTestEndpoints : Error: FOLDER_ALREADY_EXISTS
-            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_ALREADY_EXISTS)
-            UI -> User : Error: Folder name already exists
+            UpdateFolderCommandHandler -> FolderTestEndpoints : Error: FOLDER_ALREADY_EXISTS
+            deactivate UpdateFolderCommandHandler
+            activate FolderTestEndpoints
+            FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_ALREADY_EXISTS" }
+            deactivate FolderTestEndpoints
+            UI -> User : Display error: Folder name already exists
         else Folder Name Unique
-            Handler -> ApplicationDbContext : Update Folder Name
+            activate UpdateFolderCommandHandler
+            UpdateFolderCommandHandler -> ApplicationDbContext : Update Folder Name
+            deactivate UpdateFolderCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Update Folder
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            ApplicationDbContext --> Handler : Guid
+            activate ApplicationDbContext
+            ApplicationDbContext --> UpdateFolderCommandHandler : Guid
             deactivate ApplicationDbContext
-            Handler --> FolderTestEndpoints : Guid
+            activate UpdateFolderCommandHandler
+            UpdateFolderCommandHandler -> FolderTestEndpoints : Guid
+            deactivate UpdateFolderCommandHandler
+            activate FolderTestEndpoints
             FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-            UI -> User : Info: Folder updated successfully
+            deactivate FolderTestEndpoints
+            UI -> User : Display info: Folder updated successfully
         end
     end
 end
-deactivate Handler
-deactivate FolderTestEndpoints
 deactivate UI
+
 @enduml

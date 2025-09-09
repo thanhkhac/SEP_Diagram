@@ -1,93 +1,146 @@
 @startuml
 actor User
-participant "Folder Sharing UI" as UI
-participant FolderTestEndpoints
-participant UpdateSharingInFolderCommandHandler as Handler
-participant FolderTestService
-participant ApplicationDbContext
+participant "Folder Sharing UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":UpdateSharingInFolderCommandHandler" as UpdateSharingInFolderCommandHandler <<Handler>>
+participant ":FolderTestService" as FolderTestService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateSharingInFolderCommandHandler
+  Managed by MediatR
+end note
+
+note right of FolderTestService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Update sharing settings
 activate UI
 UI -> FolderTestEndpoints : PATCH /api/Folder/{FolderId}/Sharing
 activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(UpdateSharingInFolderCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Folder by FolderId
+FolderTestEndpoints -> UpdateSharingInFolderCommandHandler : Handle(UpdateSharingInFolderCommand)
+deactivate FolderTestEndpoints
+activate UpdateSharingInFolderCommandHandler
+UpdateSharingInFolderCommandHandler -> ApplicationDbContext : Query Folder by FolderId
+deactivate UpdateSharingInFolderCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Folder
 deactivate Database
-ApplicationDbContext --> Handler : Folder
+activate ApplicationDbContext
+ApplicationDbContext --> UpdateSharingInFolderCommandHandler : Folder
 deactivate ApplicationDbContext
+activate UpdateSharingInFolderCommandHandler
 alt Folder Not Found
-    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
-    UI -> User : Error: Folder not found
+    UpdateSharingInFolderCommandHandler -> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    deactivate UpdateSharingInFolderCommandHandler
+    activate FolderTestEndpoints
+    FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_NOT_FOUND" }
+    deactivate FolderTestEndpoints
+    UI -> User : Display error: Folder not found
 else Folder Found
-    Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    activate UpdateSharingInFolderCommandHandler
+    UpdateSharingInFolderCommandHandler -> FolderTestService : IsOwnerOrEditor(folderId)
+    deactivate UpdateSharingInFolderCommandHandler
     activate FolderTestService
     FolderTestService -> ApplicationDbContext : Query Permission
+    deactivate FolderTestService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> FolderTestService : Permission
     deactivate ApplicationDbContext
-    FolderTestService --> Handler : bool
+    activate FolderTestService
+    FolderTestService --> UpdateSharingInFolderCommandHandler : bool
     deactivate FolderTestService
+    activate UpdateSharingInFolderCommandHandler
     alt No permission
-        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
-        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
-        UI -> User : Error: User does not have permission in folder
+        UpdateSharingInFolderCommandHandler -> FolderTestEndpoints : Error: COMMON_FORBIDDEN
+        deactivate UpdateSharingInFolderCommandHandler
+        activate FolderTestEndpoints
+        FolderTestEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate FolderTestEndpoints
+        UI -> User : Display error: User does not have permission in folder
     else Allowed
-        Handler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        activate UpdateSharingInFolderCommandHandler
+        UpdateSharingInFolderCommandHandler -> ApplicationDbContext : Query existing DomainUsers for SharingModels
+        deactivate UpdateSharingInFolderCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query DomainUsers
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<DomainUser>
         deactivate Database
-        ApplicationDbContext --> Handler : List<DomainUser>
+        activate ApplicationDbContext
+        ApplicationDbContext --> UpdateSharingInFolderCommandHandler : List<DomainUser>
         deactivate ApplicationDbContext
+        activate UpdateSharingInFolderCommandHandler
         alt Invalid SharingUserIds
-            Handler --> FolderTestEndpoints : Error: USER_NOTFOUND
-            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOTFOUND)
-            UI -> User : Error: Invalid user(s) in sharing list
+            UpdateSharingInFolderCommandHandler -> FolderTestEndpoints : Error: USER_NOT_FOUND
+            deactivate UpdateSharingInFolderCommandHandler
+            activate FolderTestEndpoints
+            FolderTestEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_FOUND" }
+            deactivate FolderTestEndpoints
+            UI -> User : Display error: Invalid user(s) in sharing list
         else Valid SharingUserIds
-            Handler -> ApplicationDbContext : Query existing FolderUsers
+            activate UpdateSharingInFolderCommandHandler
+            UpdateSharingInFolderCommandHandler -> ApplicationDbContext : Query existing FolderUsers
+            deactivate UpdateSharingInFolderCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Query FolderUsers
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : List<FolderUser>
             deactivate Database
-            ApplicationDbContext --> Handler : List<FolderUser>
+            activate ApplicationDbContext
+            ApplicationDbContext --> UpdateSharingInFolderCommandHandler : List<FolderUser>
             deactivate ApplicationDbContext
+            activate UpdateSharingInFolderCommandHandler
             loop For each SharingModel
-                Handler -> ApplicationDbContext : Update or Add FolderUser
-                activate ApplicationDbContext
-                ApplicationDbContext -> Database : Update/Insert FolderUser
-                activate Database
-                Database --> ApplicationDbContext : Success
-                deactivate Database
-                deactivate ApplicationDbContext
+                UpdateSharingInFolderCommandHandler -> ApplicationDbContext : Update or Add FolderUser
+                ' deactivate UpdateSharingInFolderCommandHandler
+                ' activate ApplicationDbContext
+                ' ApplicationDbContext -> Database : Update/Insert FolderUser
+                ' deactivate ApplicationDbContext
+                ' activate Database
+                ' Database --> ApplicationDbContext : Success
+                ' deactivate Database
+                ' activate ApplicationDbContext
+                ' deactivate ApplicationDbContext
+                ' activate UpdateSharingInFolderCommandHandler
             end
-            Handler -> ApplicationDbContext : Remove FolderUsers for DeleteUserIds
+            UpdateSharingInFolderCommandHandler -> ApplicationDbContext : Remove FolderUsers for DeleteUserIds
+            deactivate UpdateSharingInFolderCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Delete FolderUsers
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : Success
             deactivate Database
-            ApplicationDbContext --> Handler : Guid
+            activate ApplicationDbContext
+            ApplicationDbContext --> UpdateSharingInFolderCommandHandler : Guid
             deactivate ApplicationDbContext
-            Handler --> FolderTestEndpoints : Guid
+            activate UpdateSharingInFolderCommandHandler
+            UpdateSharingInFolderCommandHandler -> FolderTestEndpoints : Guid
+            deactivate UpdateSharingInFolderCommandHandler
+            activate FolderTestEndpoints
             FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-            UI -> User : Info: Sharing settings updated
+            deactivate FolderTestEndpoints
+            UI -> User : Display info: Sharing settings updated
         end
     end
 end
-deactivate Handler
-deactivate FolderTestEndpoints
 deactivate UI
+
 @enduml

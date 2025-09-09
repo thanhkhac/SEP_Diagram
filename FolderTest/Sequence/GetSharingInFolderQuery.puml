@@ -1,63 +1,100 @@
 @startuml
 actor User
-participant "Folder Detail UI" as UI
-participant FolderTestEndpoints
-participant GetSharingInFolderQueryHandler as Handler
-participant FolderTestService
-participant ApplicationDbContext
+participant "Folder Detail UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":GetSharingInFolderQueryHandler" as GetSharingInFolderQueryHandler <<Handler>>
+participant ":FolderTestService" as FolderTestService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetSharingInFolderQueryHandler
+  Managed by MediatR
+end note
+
+note right of FolderTestService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View sharing details
 activate UI
 UI -> FolderTestEndpoints : GET /api/Folder/{FolderId}/Sharing
 activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(GetSharingInFolderQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Folder by FolderId
+FolderTestEndpoints -> GetSharingInFolderQueryHandler : Handle(GetSharingInFolderQuery)
+deactivate FolderTestEndpoints
+activate GetSharingInFolderQueryHandler
+GetSharingInFolderQueryHandler -> ApplicationDbContext : Query Folder by FolderId
+deactivate GetSharingInFolderQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Folder
 deactivate Database
-ApplicationDbContext --> Handler : Folder
+activate ApplicationDbContext
+ApplicationDbContext --> GetSharingInFolderQueryHandler : Folder
 deactivate ApplicationDbContext
+activate GetSharingInFolderQueryHandler
 alt Folder Not Found
-    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
-    UI -> User : Error: Folder not found
+    GetSharingInFolderQueryHandler -> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    deactivate GetSharingInFolderQueryHandler
+    activate FolderTestEndpoints
+    FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_NOT_FOUND" }
+    deactivate FolderTestEndpoints
+    UI -> User : Display error: Folder not found
 else Folder Found
-    Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+    activate GetSharingInFolderQueryHandler
+    GetSharingInFolderQueryHandler -> FolderTestService : IsOwnerOrEditor(folderId)
+    deactivate GetSharingInFolderQueryHandler
     activate FolderTestService
     FolderTestService -> ApplicationDbContext : Query Permission
+    deactivate FolderTestService
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Permission
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Permission
     deactivate Database
+    activate ApplicationDbContext
     ApplicationDbContext --> FolderTestService : Permission
     deactivate ApplicationDbContext
-    FolderTestService --> Handler : bool
+    activate FolderTestService
+    FolderTestService --> GetSharingInFolderQueryHandler : bool
     deactivate FolderTestService
+    activate GetSharingInFolderQueryHandler
     alt No permission
-        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
-        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
-        UI -> User : Error: User does not have permission in folder
+        GetSharingInFolderQueryHandler -> FolderTestEndpoints : Error: COMMON_FORBIDDEN
+        deactivate GetSharingInFolderQueryHandler
+        activate FolderTestEndpoints
+        FolderTestEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate FolderTestEndpoints
+        UI -> User : Display error: User does not have permission in folder
     else Allowed
-        Handler -> ApplicationDbContext : Query FolderUsers by FolderId
+        activate GetSharingInFolderQueryHandler
+        GetSharingInFolderQueryHandler -> ApplicationDbContext : Query FolderUsers by FolderId
+        deactivate GetSharingInFolderQueryHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query FolderUsers
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : List<FolderUser>
         deactivate Database
-        ApplicationDbContext --> Handler : List<FolderUser>
+        activate ApplicationDbContext
+        ApplicationDbContext --> GetSharingInFolderQueryHandler : List<FolderUser>
         deactivate ApplicationDbContext
-        Handler -> Handler : Map to SharingModelDto
-        Handler --> FolderTestEndpoints : ResourceShareDto
+        activate GetSharingInFolderQueryHandler
+        GetSharingInFolderQueryHandler -> GetSharingInFolderQueryHandler : Map to SharingModelDto
+        GetSharingInFolderQueryHandler -> FolderTestEndpoints : ResourceShareDto
+        deactivate GetSharingInFolderQueryHandler
+        activate FolderTestEndpoints
         FolderTestEndpoints --> UI : 200 OK (ApiResponse<ResourceShareDto>)
+        deactivate FolderTestEndpoints
         UI -> User : Show sharing details
     end
 end
-deactivate Handler
-deactivate FolderTestEndpoints
 deactivate UI
+
 @enduml

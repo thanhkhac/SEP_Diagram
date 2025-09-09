@@ -1,90 +1,143 @@
 @startuml
 actor User
-participant "Folder Detail UI" as UI
-participant FolderTestEndpoints
-participant RemoveTestTemplateInFolderCommandHandler as Handler
-participant FolderTestService
-participant ApplicationDbContext
+participant "Folder Detail UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":RemoveTestTemplateInFolderCommandHandler" as RemoveTestTemplateInFolderCommandHandler <<Handler>>
+participant ":FolderTestService" as FolderTestService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of RemoveTestTemplateInFolderCommandHandler
+  Managed by MediatR
+end note
+
+note right of FolderTestService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Select test template, click "Remove from Folder"
 activate UI
 UI -> FolderTestEndpoints : DELETE /api/Folder/{FolderId}/TestTemplates/{TestTemplateId}
 activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(RemoveTestTemplateInFolderCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Folder by FolderId
+FolderTestEndpoints -> RemoveTestTemplateInFolderCommandHandler : Handle(RemoveTestTemplateInFolderCommand)
+deactivate FolderTestEndpoints
+activate RemoveTestTemplateInFolderCommandHandler
+RemoveTestTemplateInFolderCommandHandler -> ApplicationDbContext : Query Folder by FolderId
+deactivate RemoveTestTemplateInFolderCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Folder
 deactivate Database
-ApplicationDbContext --> Handler : Folder
+activate ApplicationDbContext
+ApplicationDbContext --> RemoveTestTemplateInFolderCommandHandler : Folder
 deactivate ApplicationDbContext
+activate RemoveTestTemplateInFolderCommandHandler
 alt Folder Not Found
-    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
-    UI -> User : Error: Folder not found
+    RemoveTestTemplateInFolderCommandHandler -> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    deactivate RemoveTestTemplateInFolderCommandHandler
+    activate FolderTestEndpoints
+    FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_NOT_FOUND" }
+    deactivate FolderTestEndpoints
+    UI -> User : Display error: Folder not found
 else Folder Found
-    Handler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+    activate RemoveTestTemplateInFolderCommandHandler
+    RemoveTestTemplateInFolderCommandHandler -> ApplicationDbContext : Query TestTemplate by TestTemplateId
+    deactivate RemoveTestTemplateInFolderCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query TestTemplate
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : TestTemplate
     deactivate Database
-    ApplicationDbContext --> Handler : TestTemplate
+    activate ApplicationDbContext
+    ApplicationDbContext --> RemoveTestTemplateInFolderCommandHandler : TestTemplate
     deactivate ApplicationDbContext
+    activate RemoveTestTemplateInFolderCommandHandler
     alt Test Template Not Found
-        Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
-        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND)
-        UI -> User : Error: Test template not found
+        RemoveTestTemplateInFolderCommandHandler -> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND
+        deactivate RemoveTestTemplateInFolderCommandHandler
+        activate FolderTestEndpoints
+        FolderTestEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND" }
+        deactivate FolderTestEndpoints
+        UI -> User : Display error: Test template not found
     else Test Template Found
-        Handler -> FolderTestService : IsOwnerOrEditor(folderId)
+        activate RemoveTestTemplateInFolderCommandHandler
+        RemoveTestTemplateInFolderCommandHandler -> FolderTestService : IsOwnerOrEditor(folderId)
+        deactivate RemoveTestTemplateInFolderCommandHandler
         activate FolderTestService
         FolderTestService -> ApplicationDbContext : Query Permission
+        deactivate FolderTestService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query Permission
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Permission
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> FolderTestService : Permission
         deactivate ApplicationDbContext
-        FolderTestService --> Handler : bool
+        activate FolderTestService
+        FolderTestService --> RemoveTestTemplateInFolderCommandHandler : bool
         deactivate FolderTestService
+        activate RemoveTestTemplateInFolderCommandHandler
         alt No permission
-            Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
-            FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
-            UI -> User : Error: User does not have permission in folder
+            RemoveTestTemplateInFolderCommandHandler -> FolderTestEndpoints : Error: COMMON_FORBIDDEN
+            deactivate RemoveTestTemplateInFolderCommandHandler
+            activate FolderTestEndpoints
+            FolderTestEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+            deactivate FolderTestEndpoints
+            UI -> User : Display error: User does not have permission in folder
         else Allowed
-            Handler -> ApplicationDbContext : Query FolderTestTemplate by FolderId and TestTemplateId
+            activate RemoveTestTemplateInFolderCommandHandler
+            RemoveTestTemplateInFolderCommandHandler -> ApplicationDbContext : Query FolderTestTemplate by FolderId and TestTemplateId
+            deactivate RemoveTestTemplateInFolderCommandHandler
             activate ApplicationDbContext
             ApplicationDbContext -> Database : Query FolderTestTemplate
+            deactivate ApplicationDbContext
             activate Database
             Database --> ApplicationDbContext : FolderTestTemplate
             deactivate Database
-            ApplicationDbContext --> Handler : FolderTestTemplate
+            activate ApplicationDbContext
+            ApplicationDbContext --> RemoveTestTemplateInFolderCommandHandler : FolderTestTemplate
             deactivate ApplicationDbContext
+            activate RemoveTestTemplateInFolderCommandHandler
             alt Test Template Not Found in Folder
-                Handler --> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND_IN_FOLDER
-                FolderTestEndpoints --> UI : 400 Bad Request (errorCode: TEST_TEMPLATE_NOT_FOUND_IN_FOLDER)
-                UI -> User : Error: Test template not found in folder
+                RemoveTestTemplateInFolderCommandHandler -> FolderTestEndpoints : Error: TEST_TEMPLATE_NOT_FOUND_IN_FOLDER
+                deactivate RemoveTestTemplateInFolderCommandHandler
+                activate FolderTestEndpoints
+                FolderTestEndpoints --> UI : 400 Bad Request { "error": "TEST_TEMPLATE_NOT_FOUND_IN_FOLDER" }
+                deactivate FolderTestEndpoints
+                UI -> User : Display error: Test template not found in folder
             else Test Template Found in Folder
-                Handler -> ApplicationDbContext : Remove FolderTestTemplate
+                activate RemoveTestTemplateInFolderCommandHandler
+                RemoveTestTemplateInFolderCommandHandler -> ApplicationDbContext : Remove FolderTestTemplate
+                deactivate RemoveTestTemplateInFolderCommandHandler
                 activate ApplicationDbContext
                 ApplicationDbContext -> Database : Delete FolderTestTemplate
+                deactivate ApplicationDbContext
                 activate Database
                 Database --> ApplicationDbContext : Success
                 deactivate Database
-                ApplicationDbContext --> Handler : Guid
+                activate ApplicationDbContext
+                ApplicationDbContext --> RemoveTestTemplateInFolderCommandHandler : Guid
                 deactivate ApplicationDbContext
-                Handler --> FolderTestEndpoints : Guid
+                activate RemoveTestTemplateInFolderCommandHandler
+                RemoveTestTemplateInFolderCommandHandler -> FolderTestEndpoints : Guid
+                deactivate RemoveTestTemplateInFolderCommandHandler
+                activate FolderTestEndpoints
                 FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-                UI -> User : Info: Test template removed from folder
+                deactivate FolderTestEndpoints
+                UI -> User : Display info: Test template removed from folder
             end
         end
     end
 end
-deactivate Handler
-deactivate FolderTestEndpoints
 deactivate UI
+
 @enduml

@@ -1,87 +1,140 @@
 @startuml
 actor Moderator
-participant "Plan Management UI" as UI
-participant PlanEndpoints
-participant CreatePlanCommandHandler as Handler
-participant ApplicationDbContext
+participant "Plan Management UI" as UI <<UI>>
+participant ":PlanEndpoints" as PlanEndpoints <<Controller>>
+participant ":CreatePlanCommandHandler" as CreatePlanCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of CreatePlanCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 Moderator -> UI : Create/Update plan details
 activate UI
 UI -> PlanEndpoints : POST /api/Plan (or PUT/PATCH)
 activate PlanEndpoints
-PlanEndpoints -> Handler : Handle(CreateUpdatePlanCommand)
-activate Handler
+PlanEndpoints -> CreatePlanCommandHandler : Handle(CreatePlanCommand)
+deactivate PlanEndpoints
+activate CreatePlanCommandHandler
 alt PlanId is provided (Update existing plan)
-    Handler -> ApplicationDbContext : Query Plan by PlanId
+    CreatePlanCommandHandler -> ApplicationDbContext : Query Plan by PlanId
+    deactivate CreatePlanCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query Plan
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Plan
     deactivate Database
-    ApplicationDbContext --> Handler : Plan (existedPlan)
+    activate ApplicationDbContext
+    ApplicationDbContext --> CreatePlanCommandHandler : Plan (existedPlan)
     deactivate ApplicationDbContext
+    activate CreatePlanCommandHandler
     alt Plan Not Found
-        Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
-        PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-        UI -> Moderator : Error: Plan not found
+        CreatePlanCommandHandler -> PlanEndpoints : Error: PLAN_NOT_FOUND
+        deactivate CreatePlanCommandHandler
+        activate PlanEndpoints
+        PlanEndpoints --> UI : 400 Bad Request { "error": "PLAN_NOT_FOUND" }
+        deactivate PlanEndpoints
+        UI -> Moderator : Display error: Plan not found
     else Plan Found
-        Handler -> ApplicationDbContext : Update Plan properties
+        activate CreatePlanCommandHandler
+        CreatePlanCommandHandler -> ApplicationDbContext : Update Plan properties
+        deactivate CreatePlanCommandHandler
         activate ApplicationDbContext
+        ApplicationDbContext -> Database : Update Plan properties
         deactivate ApplicationDbContext
-
-        alt Price Changed
-            Handler -> ApplicationDbContext : Query latest PlanPriceHistory
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Query PlanPriceHistory
-            activate Database
-            Database --> ApplicationDbContext : PlanPriceHistory
-            deactivate Database
-            ApplicationDbContext --> Handler : PlanPriceHistory (latestPlanPriceHistory)
-            deactivate ApplicationDbContext
-            alt Latest Price History Found
-                Handler -> ApplicationDbContext : Update latest PlanPriceHistory (set DateFinish)
-                activate ApplicationDbContext
-                ApplicationDbContext -> Database : Update PlanPriceHistory
-                activate Database
-                Database --> ApplicationDbContext : Success
-                deactivate Database
-                deactivate ApplicationDbContext
-            end
-            Handler -> ApplicationDbContext : Add new PlanPriceHistory
-            activate ApplicationDbContext
-            ApplicationDbContext -> Database : Insert PlanPriceHistory
-            activate Database
-            Database --> ApplicationDbContext : Success
-            deactivate Database
-            deactivate ApplicationDbContext
-        end
-        Handler -> ApplicationDbContext : Update Plan Price
-        activate ApplicationDbContext
-        ApplicationDbContext -> Database : Update Plan
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> CreatePlanCommandHandler : Success
         deactivate ApplicationDbContext
-        Handler --> PlanEndpoints : Guid
+        activate CreatePlanCommandHandler
+        alt Price Changed
+            CreatePlanCommandHandler -> ApplicationDbContext : Query latest PlanPriceHistory
+            deactivate CreatePlanCommandHandler
+            activate ApplicationDbContext
+            ApplicationDbContext -> Database : Query PlanPriceHistory
+            deactivate ApplicationDbContext
+            activate Database
+            Database --> ApplicationDbContext : PlanPriceHistory
+            deactivate Database
+            activate ApplicationDbContext
+            ApplicationDbContext --> CreatePlanCommandHandler : PlanPriceHistory (latestPlanPriceHistory)
+            deactivate ApplicationDbContext
+            activate CreatePlanCommandHandler
+            alt Latest Price History Found
+                CreatePlanCommandHandler -> ApplicationDbContext : Update latest PlanPriceHistory (set DateFinish)
+                deactivate CreatePlanCommandHandler
+                activate ApplicationDbContext
+                ApplicationDbContext -> Database : Update PlanPriceHistory
+                deactivate ApplicationDbContext
+                activate Database
+                Database --> ApplicationDbContext : Success
+                deactivate Database
+                activate ApplicationDbContext
+                ApplicationDbContext --> CreatePlanCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate CreatePlanCommandHandler
+            end
+            CreatePlanCommandHandler -> ApplicationDbContext : Add new PlanPriceHistory
+            deactivate CreatePlanCommandHandler
+            activate ApplicationDbContext
+            ApplicationDbContext -> Database : Insert PlanPriceHistory
+            deactivate ApplicationDbContext
+            activate Database
+            Database --> ApplicationDbContext : Success
+            deactivate Database
+            activate ApplicationDbContext
+            ApplicationDbContext --> CreatePlanCommandHandler : Success
+            deactivate ApplicationDbContext
+            activate CreatePlanCommandHandler
+        end
+        CreatePlanCommandHandler -> ApplicationDbContext : Update Plan Price
+        deactivate CreatePlanCommandHandler
+        activate ApplicationDbContext
+        ApplicationDbContext -> Database : Update Plan
+        deactivate ApplicationDbContext
+        activate Database
+        Database --> ApplicationDbContext : Success
+        deactivate Database
+        activate ApplicationDbContext
+        ApplicationDbContext --> CreatePlanCommandHandler : Guid
+        deactivate ApplicationDbContext
+        activate CreatePlanCommandHandler
+        CreatePlanCommandHandler -> PlanEndpoints : Guid
+        deactivate CreatePlanCommandHandler
+        activate PlanEndpoints
         PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> Moderator : Info: Plan updated successfully
+        deactivate PlanEndpoints
+        UI -> Moderator : Display info: Plan updated successfully
     end
 else PlanId is null (Create new plan)
-    Handler -> ApplicationDbContext : Add new Plan and PlanPriceHistory
+    activate CreatePlanCommandHandler
+    CreatePlanCommandHandler -> ApplicationDbContext : Add new Plan and PlanPriceHistory
+    deactivate CreatePlanCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Insert Plan, PlanPriceHistory
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    ApplicationDbContext --> Handler : Guid
+    activate ApplicationDbContext
+    ApplicationDbContext --> CreatePlanCommandHandler : Guid
     deactivate ApplicationDbContext
-    Handler --> PlanEndpoints : Guid
+    activate CreatePlanCommandHandler
+    CreatePlanCommandHandler -> PlanEndpoints : Guid
+    deactivate CreatePlanCommandHandler
+    activate PlanEndpoints
     PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> Moderator : Info: Plan created successfully
+    deactivate PlanEndpoints
+    UI -> Moderator : Display info: Plan created successfully
 end
-deactivate Handler
-deactivate PlanEndpoints
 deactivate UI
+
 @enduml

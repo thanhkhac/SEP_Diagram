@@ -1,33 +1,49 @@
 @startuml
 actor Moderator
-participant "Plan List UI" as UI
-participant PlanEndpoints
-participant SearchPlanQueryHandler as Handler
-participant ApplicationDbContext
+participant "Plan List UI" as UI <<UI>>
+participant ":PlanEndpoints" as PlanEndpoints <<Controller>>
+participant ":SearchPlanQueryHandler" as SearchPlanQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchPlanQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 Moderator -> UI : View plans / Search plans
 activate UI
 UI -> PlanEndpoints : GET /api/Plan?isActive=...
 activate PlanEndpoints
-PlanEndpoints -> Handler : Handle(SearchPlanQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Plans (not deleted)
+PlanEndpoints -> SearchPlanQueryHandler : Handle(SearchPlanQuery)
+deactivate PlanEndpoints
+activate SearchPlanQueryHandler
+SearchPlanQueryHandler -> ApplicationDbContext : Query Plans (not deleted)
+deactivate SearchPlanQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Plans
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<Plan>
 deactivate Database
-ApplicationDbContext --> Handler : List<Plan>
+activate ApplicationDbContext
+ApplicationDbContext --> SearchPlanQueryHandler : List<Plan>
 deactivate ApplicationDbContext
+activate SearchPlanQueryHandler
 alt IsActive Filter Provided
-    Handler -> Handler : Filter by IsActive
+    SearchPlanQueryHandler -> SearchPlanQueryHandler : Filter by IsActive
 end
-Handler -> Handler : Order by Price
-Handler --> PlanEndpoints : List<PlanDetailDto>
+SearchPlanQueryHandler -> SearchPlanQueryHandler : Order by Price
+SearchPlanQueryHandler -> SearchPlanQueryHandler : Map to List<PlanDetailDto>
+SearchPlanQueryHandler -> PlanEndpoints : List<PlanDetailDto>
+deactivate SearchPlanQueryHandler
+activate PlanEndpoints
 PlanEndpoints --> UI : 200 OK (ApiResponse<List<PlanDetailDto>>)
-UI -> Moderator : Show list of plans
-deactivate Handler
 deactivate PlanEndpoints
+UI -> Moderator : Show list of plans
 deactivate UI
+
 @enduml

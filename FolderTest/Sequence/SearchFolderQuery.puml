@@ -1,29 +1,44 @@
 @startuml
 actor User
-participant "Folder List UI" as UI
-participant FolderTestEndpoints as API
-participant SearchFolderQueryHandler as Handler
-participant ApplicationDbContext as DbContext
+participant "Folder List UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":SearchFolderQueryHandler" as SearchFolderQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchFolderQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Search folders
 activate UI
-UI -> API : GET /api/Folder?folderName=...&shareMode=...
-activate API
-API -> Handler : Handle(SearchFolderQuery)
-activate Handler
-Handler -> DbContext : Query folders + authors
-activate DbContext
-DbContext -> Database : Execute SQL
+UI -> FolderTestEndpoints : GET /api/Folder?folderName=...&shareMode=...
+activate FolderTestEndpoints
+FolderTestEndpoints -> SearchFolderQueryHandler : Handle(SearchFolderQuery)
+deactivate FolderTestEndpoints
+activate SearchFolderQueryHandler
+SearchFolderQueryHandler -> ApplicationDbContext : Query folders + authors
+deactivate SearchFolderQueryHandler
+activate ApplicationDbContext
+ApplicationDbContext -> Database : Execute SQL
+deactivate ApplicationDbContext
 activate Database
-Database --> DbContext : Data
+Database --> ApplicationDbContext : Data
 deactivate Database
-DbContext --> Handler : Folders + Authors
-deactivate DbContext
-Handler --> API : PaginatedList<SearchFolderDto>
-deactivate Handler
-API --> UI : 200 OK
-deactivate API
+activate ApplicationDbContext
+ApplicationDbContext --> SearchFolderQueryHandler : Folders + Authors
+deactivate ApplicationDbContext
+activate SearchFolderQueryHandler
+SearchFolderQueryHandler -> FolderTestEndpoints : PaginatedList<SearchFolderDto>
+deactivate SearchFolderQueryHandler
+activate FolderTestEndpoints
+FolderTestEndpoints --> UI : 200 OK (ApiResponse<PaginatedList<SearchFolderDto>>)
+deactivate FolderTestEndpoints
 UI -> User : Show search results
 deactivate UI
+
 @enduml

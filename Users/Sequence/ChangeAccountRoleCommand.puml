@@ -1,38 +1,61 @@
 @startuml
 actor AdminUser
-participant "Admin UI" as UI
-participant UserEndpoints
-participant ChangeAccountRoleCommandHandler as Handler
-participant IdentityService
+participant "Admin UI" as UI <<UI>>
+participant ":UserEndpoints" as UserEndpoints <<Controller>>
+participant ":ChangeAccountRoleCommandHandler" as ChangeAccountRoleCommandHandler <<Handler>>
+participant ":IdentityService" as IdentityService <<Service>>
+
+note right of ChangeAccountRoleCommandHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
 
 AdminUser -> UI : Select user, choose new role, click "Change Role"
 activate UI
 UI -> UserEndpoints : PATCH /api/User/{UserId}/Role
 activate UserEndpoints
-UserEndpoints -> Handler : Handle(ChangeAccountRoleCommand)
-activate Handler
-Handler -> IdentityService : ChangeRoleAsync(userId, role)
+UserEndpoints -> ChangeAccountRoleCommandHandler : Handle(ChangeAccountRoleCommand)
+deactivate UserEndpoints
+activate ChangeAccountRoleCommandHandler
+ChangeAccountRoleCommandHandler -> IdentityService : ChangeRoleAsync(userId, role)
+deactivate ChangeAccountRoleCommandHandler
 activate IdentityService
 alt User Not Found
-    IdentityService --> Handler : Error: USER_NOT_FOUND
+    IdentityService --> ChangeAccountRoleCommandHandler : Error: USER_NOT_FOUND
     deactivate IdentityService
-    Handler --> UserEndpoints : Error: USER_NOT_FOUND
-    UserEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_FOUND)
-    UI -> AdminUser : Error: User not found
-else Invalid Role
-    IdentityService --> Handler : Error: INVALID_ROLE
+    activate ChangeAccountRoleCommandHandler
+    ChangeAccountRoleCommandHandler -> UserEndpoints : Error: USER_NOT_FOUND
+    deactivate ChangeAccountRoleCommandHandler
+    activate UserEndpoints
+    UserEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_FOUND" }
+    deactivate UserEndpoints
+    UI -> AdminUser : Display error: User not found
+else Invalid
+    activate IdentityService
+    IdentityService --> ChangeAccountRoleCommandHandler : Error: INVALID_ROLE
     deactivate IdentityService
-    Handler --> UserEndpoints : Error: INVALID_ROLE
-    UserEndpoints --> UI : 400 Bad Request (errorCode: INVALID_ROLE)
-    UI -> AdminUser : Error: Invalid role provided
+    activate ChangeAccountRoleCommandHandler
+    ChangeAccountRoleCommandHandler -> UserEndpoints : Error: INVALID_ROLE
+    deactivate ChangeAccountRoleCommandHandler
+    activate UserEndpoints
+    UserEndpoints --> UI : 400 Bad Request { "error": "INVALID_ROLE" }
+    deactivate UserEndpoints
+    UI -> AdminUser : Display error: Invalid role provided
 else Role Change Success
-    IdentityService --> Handler : Guid (userId)
+    activate IdentityService
+    IdentityService --> ChangeAccountRoleCommandHandler : Guid (userId)
     deactivate IdentityService
-    Handler --> UserEndpoints : Guid
+    activate ChangeAccountRoleCommandHandler
+    ChangeAccountRoleCommandHandler -> UserEndpoints : Guid
+    deactivate ChangeAccountRoleCommandHandler
+    activate UserEndpoints
     UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> AdminUser : Info: User role updated successfully
+    deactivate UserEndpoints
+    UI -> AdminUser : Display info: User role updated successfully
 end
-deactivate Handler
-deactivate UserEndpoints
 deactivate UI
+
 @enduml

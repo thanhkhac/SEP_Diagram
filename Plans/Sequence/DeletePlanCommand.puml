@@ -1,43 +1,66 @@
 @startuml
 actor Moderator
-participant "Plan Management UI" as UI
-participant PlanEndpoints
-participant DeletePlanCommandHandler as Handler
-participant ApplicationDbContext
+participant "Plan Management UI" as UI <<UI>>
+participant ":PlanEndpoints" as PlanEndpoints <<Controller>>
+participant ":DeletePlanCommandHandler" as DeletePlanCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of DeletePlanCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 Moderator -> UI : Select plan, click "Delete"
 activate UI
 UI -> PlanEndpoints : DELETE /api/Plan/{PlanId}
 activate PlanEndpoints
-PlanEndpoints -> Handler : Handle(DeletePlanCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Plan by PlanId
+PlanEndpoints -> DeletePlanCommandHandler : Handle(DeletePlanCommand)
+deactivate PlanEndpoints
+activate DeletePlanCommandHandler
+DeletePlanCommandHandler -> ApplicationDbContext : Query Plan by PlanId
+deactivate DeletePlanCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Plan
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Plan
 deactivate Database
-ApplicationDbContext --> Handler : Plan
+activate ApplicationDbContext
+ApplicationDbContext --> DeletePlanCommandHandler : Plan
 deactivate ApplicationDbContext
+activate DeletePlanCommandHandler
 alt Plan Not Found
-    Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
-    PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-    UI -> Moderator : Error: Plan not found
+    DeletePlanCommandHandler -> PlanEndpoints : Error: PLAN_NOT_FOUND
+    deactivate DeletePlanCommandHandler
+    activate PlanEndpoints
+    PlanEndpoints --> UI : 400 Bad Request { "error": "PLAN_NOT_FOUND" }
+    deactivate PlanEndpoints
+    UI -> Moderator : Display error: Plan not found
 else Plan Found
-    Handler -> ApplicationDbContext : Mark Plan as Deleted
+    activate DeletePlanCommandHandler
+    DeletePlanCommandHandler -> ApplicationDbContext : Mark Plan as Deleted
+    deactivate DeletePlanCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Update Plan (IsDeleted = true)
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    ApplicationDbContext --> Handler : Guid
+    activate ApplicationDbContext
+    ApplicationDbContext --> DeletePlanCommandHandler : Guid
     deactivate ApplicationDbContext
-    Handler --> PlanEndpoints : Guid
+    activate DeletePlanCommandHandler
+    DeletePlanCommandHandler -> PlanEndpoints : Guid
+    deactivate DeletePlanCommandHandler
+    activate PlanEndpoints
     PlanEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-    UI -> Moderator : Info: Plan deleted successfully
+    deactivate PlanEndpoints
+    UI -> Moderator : Display info: Plan deleted successfully
 end
-deactivate Handler
-deactivate PlanEndpoints
 deactivate UI
+
 @enduml

@@ -1,35 +1,55 @@
 @startuml
 actor User
-participant "Plan Detail UI" as UI
-participant PlanEndpoints
-participant GetDetailPlanQueryHandler as Handler
-participant ApplicationDbContext
+participant "Plan Detail UI" as UI <<UI>>
+participant ":PlanEndpoints" as PlanEndpoints <<Controller>>
+participant ":GetDetailPlanQueryHandler" as GetDetailPlanQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of GetDetailPlanQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : View plan details
 activate UI
 UI -> PlanEndpoints : GET /api/Plan/{PlanId}
 activate PlanEndpoints
-PlanEndpoints -> Handler : Handle(GetDetailPlanQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query Plan by PlanId
+PlanEndpoints -> GetDetailPlanQueryHandler : Handle(GetDetailPlanQuery)
+deactivate PlanEndpoints
+activate GetDetailPlanQueryHandler
+GetDetailPlanQueryHandler -> ApplicationDbContext : Query Plan by PlanId
+deactivate GetDetailPlanQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Plan
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Plan
 deactivate Database
-ApplicationDbContext --> Handler : Plan
+activate ApplicationDbContext
+ApplicationDbContext --> GetDetailPlanQueryHandler : Plan
 deactivate ApplicationDbContext
+activate GetDetailPlanQueryHandler
 alt Plan Not Found
-    Handler --> PlanEndpoints : Error: PLAN_NOT_FOUND
-    PlanEndpoints --> UI : 400 Bad Request (errorCode: PLAN_NOT_FOUND)
-    UI -> User : Error: Plan not found
+    GetDetailPlanQueryHandler -> PlanEndpoints : Error: PLAN_NOT_FOUND
+    deactivate GetDetailPlanQueryHandler
+    activate PlanEndpoints
+    PlanEndpoints --> UI : 400 Bad Request { "error": "PLAN_NOT_FOUND" }
+    deactivate PlanEndpoints
+    UI -> User : Display error: Plan not found
 else Plan Found
-    Handler --> PlanEndpoints : PlanDetailDto
+    activate GetDetailPlanQueryHandler
+    GetDetailPlanQueryHandler -> GetDetailPlanQueryHandler : Map to PlanDetailDto
+    GetDetailPlanQueryHandler -> PlanEndpoints : PlanDetailDto
+    deactivate GetDetailPlanQueryHandler
+    activate PlanEndpoints
     PlanEndpoints --> UI : 200 OK (ApiResponse<PlanDetailDto>)
+    deactivate PlanEndpoints
     UI -> User : Show plan details
 end
-deactivate Handler
-deactivate PlanEndpoints
 deactivate UI
+
 @enduml

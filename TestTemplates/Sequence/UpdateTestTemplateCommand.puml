@@ -87,7 +87,7 @@ else Test Template Found
         activate UpdateTestTemplateCommandHandler
         UpdateTestTemplateCommandHandler -> ApplicationDbContext : Query existing TestTemplateQuestions (Include Questions)
         deactivate UpdateTestTemplateCommandHandler
-        activate ApplicationDbContext
+'        activate ApplicationDbContext
         ApplicationDbContext -> Database : Query TestTemplateQuestions, Questions
         deactivate ApplicationDbContext
         activate Database

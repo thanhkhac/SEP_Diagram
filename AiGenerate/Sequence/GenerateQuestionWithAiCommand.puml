@@ -1,130 +1,223 @@
 @startuml
 actor User
-participant "AI Generate UI" as UI
-participant AiGenerateEndpoints
-participant GenerateQuestionWithAiCommandHandler as Handler
-participant AiGenerateService
-participant ApplicationDbContext
+participant "AI Generate UI" as UI <<UI>>
+participant ":AiGenerateEndpoints" as AiGenerateEndpoints <<Controller>>
+participant ":GenerateQuestionWithAiCommandHandler" as GenerateQuestionWithAiCommandHandler <<Handler>>
+participant ":AiGenerateService" as AiGenerateService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
-participant PromptProvider
+participant ":PromptProvider" as PromptProvider <<Service>>
+
+note right of GenerateQuestionWithAiCommandHandler
+  Managed by MediatR
+end note
+
+note right of AiGenerateService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
+note right of PromptProvider
+  Managed by IoC
+end note
 
 User -> UI : Upload PDF, select parts, types, count, click "Generate Questions"
 activate UI
 UI -> AiGenerateEndpoints : POST /api/AiGenerate/Questions
 activate AiGenerateEndpoints
-AiGenerateEndpoints -> Handler : Handle(GenerateQuestionWithAiCommand)
-activate Handler
-Handler -> AiGenerateService : UploadFileAsync(fileData)
+AiGenerateEndpoints -> GenerateQuestionWithAiCommandHandler : Handle(GenerateQuestionWithAiCommand)
+deactivate AiGenerateEndpoints
+activate GenerateQuestionWithAiCommandHandler
+GenerateQuestionWithAiCommandHandler -> AiGenerateService : UploadFileAsync(fileData)
+deactivate GenerateQuestionWithAiCommandHandler
 activate AiGenerateService
-AiGenerateService --> Handler : UploadResult (FileUri, FileName)
+AiGenerateService --> GenerateQuestionWithAiCommandHandler : UploadResult (FileUri, FileName)
 deactivate AiGenerateService
-Handler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(...)
+activate GenerateQuestionWithAiCommandHandler
+GenerateQuestionWithAiCommandHandler -> PromptProvider : GetGenerateQuestionInstructionSystemPrompt(...)
+deactivate GenerateQuestionWithAiCommandHandler
 activate PromptProvider
-PromptProvider --> Handler : SystemInstruction
-Handler -> PromptProvider : GetGenerateQuestionPrompt(...)
-PromptProvider --> Handler : Prompt
+PromptProvider --> GenerateQuestionWithAiCommandHandler : SystemInstruction
+activate GenerateQuestionWithAiCommandHandler
+GenerateQuestionWithAiCommandHandler -> PromptProvider : GetGenerateQuestionPrompt(...)
+deactivate GenerateQuestionWithAiCommandHandler
+PromptProvider --> GenerateQuestionWithAiCommandHandler : Prompt
 deactivate PromptProvider
-Handler -> ApplicationDbContext : Query currentUser by UserId
+activate GenerateQuestionWithAiCommandHandler
+GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Query currentUser by UserId
+deactivate GenerateQuestionWithAiCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : DomainUser
-ApplicationDbContext --> Handler : DomainUser (currentUser)
 deactivate Database
+activate ApplicationDbContext
+ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : DomainUser (currentUser)
 deactivate ApplicationDbContext
-
+activate GenerateQuestionWithAiCommandHandler
 alt Payment Locked
-    Handler --> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
-    AiGenerateEndpoints --> UI : 400 Bad Request (PAYMENT_IN_PROGRESS)
-    UI -> User : Error: Payment in progress
+    GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : Error: PAYMENT_IN_PROGRESS
+    deactivate GenerateQuestionWithAiCommandHandler
+    activate AiGenerateEndpoints
+    AiGenerateEndpoints --> UI : 400 Bad Request { "error": "PAYMENT_IN_PROGRESS" }
+    deactivate AiGenerateEndpoints
+    UI -> User : Display error: Payment in progress
 else Payment Not Locked
-    Handler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
+    activate GenerateQuestionWithAiCommandHandler
+    GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Set currentUser.IsPaymentLocked = true
+    deactivate GenerateQuestionWithAiCommandHandler
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Update DomainUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : Success
     deactivate Database
-    Handler -> ApplicationDbContext : Query SystemSettings
+    activate ApplicationDbContext
+    ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : Success
+    deactivate ApplicationDbContext
+    activate GenerateQuestionWithAiCommandHandler
+    GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Query SystemSettings
+    deactivate GenerateQuestionWithAiCommandHandler
+    activate ApplicationDbContext
     ApplicationDbContext -> Database : Query SystemSettings
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : SystemSetting
-    ApplicationDbContext --> Handler : SystemSetting
     deactivate Database
-
+    activate ApplicationDbContext
+    ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : SystemSetting
+    deactivate ApplicationDbContext
+    activate GenerateQuestionWithAiCommandHandler
     alt System Setting Not Found
-        Handler --> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
-        AiGenerateEndpoints --> UI : 400 Bad Request (SYSTEM_SETTING_NOT_FOUND)
-        UI -> User : Error: System settings not found
+        GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : Error: SYSTEM_SETTING_NOT_FOUND
+        deactivate GenerateQuestionWithAiCommandHandler
+        activate AiGenerateEndpoints
+        AiGenerateEndpoints --> UI : 400 Bad Request { "error": "SYSTEM_SETTING_NOT_FOUND" }
+        deactivate AiGenerateEndpoints
+        UI -> User : Display error: System settings not found
     else System Setting Found
-        Handler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+        activate GenerateQuestionWithAiCommandHandler
+        GenerateQuestionWithAiCommandHandler -> AiGenerateService : CountTokenWithFileAsync(fileUri, systemInstruction, prompt)
+        deactivate GenerateQuestionWithAiCommandHandler
         activate AiGenerateService
-        AiGenerateService --> Handler : TokenCount
+        AiGenerateService --> GenerateQuestionWithAiCommandHandler : TokenCount
         deactivate AiGenerateService
-
+        activate GenerateQuestionWithAiCommandHandler
         alt File Too Large
-            Handler --> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
-            AiGenerateEndpoints --> UI : 400 Bad Request (AI_FILE_TOO_LARGE)
-            UI -> User : Error: File too large
+            GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : Error: AI_FILE_TOO_LARGE
+            deactivate GenerateQuestionWithAiCommandHandler
+            activate AiGenerateEndpoints
+            AiGenerateEndpoints --> UI : 400 Bad Request { "error": "AI_FILE_TOO_LARGE" }
+            deactivate AiGenerateEndpoints
+            UI -> User : Display error: File too large
         else File Size OK
-            Handler -> Handler : Calculate minimumTotalPoint
-
+            activate GenerateQuestionWithAiCommandHandler
+            GenerateQuestionWithAiCommandHandler -> GenerateQuestionWithAiCommandHandler : Calculate minimumTotalPoint
             alt Insufficient Balance
-                Handler --> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
-                AiGenerateEndpoints --> UI : 400 Bad Request (INSUFFICIENT_BALANCE)
-                UI -> User : Error: Insufficient balance
+                GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : Error: INSUFFICIENT_BALANCE
+                deactivate GenerateQuestionWithAiCommandHandler
+                activate AiGenerateEndpoints
+                AiGenerateEndpoints --> UI : 400 Bad Request { "error": "INSUFFICIENT_BALANCE" }
+                deactivate AiGenerateEndpoints
+                UI -> User : Display error: Insufficient balance
             else Sufficient Balance
-                Handler -> AiGenerateService : SendPromptWithFileAsync(...)
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> AiGenerateService : SendPromptWithFileAsync(...)
+                deactivate GenerateQuestionWithAiCommandHandler
                 activate AiGenerateService
-                AiGenerateService --> Handler : AI_Response
+                AiGenerateService --> GenerateQuestionWithAiCommandHandler : AI_Response
                 deactivate AiGenerateService
-                Handler -> ApplicationDbContext : Decrease Balance
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Decrease Balance
+                deactivate GenerateQuestionWithAiCommandHandler
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
                 activate Database
-                ApplicationDbContext -> Database : SaveChanges()
                 Database --> ApplicationDbContext : Success
                 deactivate Database
-
-                Handler -> AiGenerateService : CountToken(result)
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> AiGenerateService : CountToken(result)
+                deactivate GenerateQuestionWithAiCommandHandler
                 activate AiGenerateService
-                AiGenerateService --> Handler : OutputTokenCount
+                AiGenerateService --> GenerateQuestionWithAiCommandHandler : OutputTokenCount
                 deactivate AiGenerateService
-
-                Handler -> Handler : Calculate output cost
-                Handler -> ApplicationDbContext : Decrease Balance (output cost)
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> GenerateQuestionWithAiCommandHandler : Calculate output cost
+                GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Decrease Balance (output cost)
+                deactivate GenerateQuestionWithAiCommandHandler
+                activate ApplicationDbContext
                 ApplicationDbContext -> Database : Update DomainUser
-                Handler -> ApplicationDbContext : Set IsPaymentLocked = false
-                ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
                 activate Database
-                ApplicationDbContext -> Database : SaveChanges()
                 Database --> ApplicationDbContext : Success
                 deactivate Database
-
-                Handler -> Handler : Extract JSON from AI Response
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Set IsPaymentLocked = false
+                deactivate GenerateQuestionWithAiCommandHandler
+                activate ApplicationDbContext
+                ApplicationDbContext -> Database : Update DomainUser
+                deactivate ApplicationDbContext
+                activate Database
+                Database --> ApplicationDbContext : Success
+                deactivate Database
+                activate ApplicationDbContext
+                ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : Success
+                deactivate ApplicationDbContext
+                activate GenerateQuestionWithAiCommandHandler
+                GenerateQuestionWithAiCommandHandler -> GenerateQuestionWithAiCommandHandler : Extract JSON from AI Response
                 alt NO_STRUCTURE_FOUND
-                    Handler --> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
-                    AiGenerateEndpoints --> UI : 400 Bad Request (NO_STRUCTURE_FOUND)
-                    UI -> User : Error: No structure found
-                else if JSON Deserialization Failed
-                    Handler --> AiGenerateEndpoints : Error: GENERATE_CONTENT_FAILED
-                    AiGenerateEndpoints --> UI : 500 Internal Server Error (GENERATE_CONTENT_FAILED)
-                    UI -> User : Error: Failed to generate
+                    GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : Error: NO_STRUCTURE_FOUND
+                    deactivate GenerateQuestionWithAiCommandHandler
+                    activate AiGenerateEndpoints
+                    AiGenerateEndpoints --> UI : 400 Bad Request { "error": "NO_STRUCTURE_FOUND" }
+                    deactivate AiGenerateEndpoints
+                    UI -> User : Display error: No structure found
                 else JSON Deserialization Success
-                    Handler --> AiGenerateEndpoints : List<CreateUpdateQuestionDto>
-                    AiGenerateEndpoints --> UI : 200 OK
+                    activate GenerateQuestionWithAiCommandHandler
+                    GenerateQuestionWithAiCommandHandler -> AiGenerateEndpoints : List<CreateUpdateQuestionDto>
+                    deactivate GenerateQuestionWithAiCommandHandler
+                    activate AiGenerateEndpoints
+                    AiGenerateEndpoints --> UI : 200 OK (ApiResponse<List<CreateUpdateQuestionDto>>)
+                    deactivate AiGenerateEndpoints
                     UI -> User : Show generated questions
+        activate GenerateQuestionWithAiCommandHandler
                 end
             end
         end
     end
 end
 
-Handler -> ApplicationDbContext : Set IsPaymentLocked = false
+GenerateQuestionWithAiCommandHandler -> ApplicationDbContext : Set IsPaymentLocked = false
+deactivate GenerateQuestionWithAiCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Update DomainUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Success
 deactivate Database
-Handler -> AiGenerateService : DeleteFileAsync(fileName)
+activate ApplicationDbContext
+ApplicationDbContext --> GenerateQuestionWithAiCommandHandler : Success
+deactivate ApplicationDbContext
+activate GenerateQuestionWithAiCommandHandler
+GenerateQuestionWithAiCommandHandler -> AiGenerateService : DeleteFileAsync(fileName)
+deactivate GenerateQuestionWithAiCommandHandler
 activate AiGenerateService
-AiGenerateService --> Handler : Success
+AiGenerateService --> GenerateQuestionWithAiCommandHandler : Success
 deactivate AiGenerateService
+activate GenerateQuestionWithAiCommandHandler
+deactivate GenerateQuestionWithAiCommandHandler
+deactivate AiGenerateEndpoints
+deactivate UI
+
 @enduml

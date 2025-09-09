@@ -1,57 +1,93 @@
 @startuml
 actor AdminUser
-participant "Admin UI" as UI
-participant UserEndpoints
-participant BanAccountCommandHandler as Handler
-participant IdentityService
-participant ApplicationDbContext
+participant "Admin UI" as UI <<UI>>
+participant ":UserEndpoints" as UserEndpoints <<Controller>>
+participant ":BanAccountCommandHandler" as BanAccountCommandHandler <<Handler>>
+participant ":IdentityService" as IdentityService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of BanAccountCommandHandler
+  Managed by MediatR
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 AdminUser -> UI : Select user, click "Ban/Unban"
 activate UI
 UI -> UserEndpoints : PATCH /api/User/{UserId}/Ban
 activate UserEndpoints
-UserEndpoints -> Handler : Handle(BanAccountCommand)
-activate Handler
+UserEndpoints -> BanAccountCommandHandler : Handle(BanAccountCommand)
+deactivate UserEndpoints
+activate BanAccountCommandHandler
 alt Target User is Current User
-    Handler --> UserEndpoints : Error: COMMON_FORBIDDEN
-    UserEndpoints --> UI : 400 Bad Request (errorCode: COMMON_FORBIDDEN)
-    UI -> AdminUser : Error: You cannot ban your own account
+    BanAccountCommandHandler -> UserEndpoints : Error: COMMON_FORBIDDEN
+    deactivate BanAccountCommandHandler
+    activate UserEndpoints
+    UserEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+    deactivate UserEndpoints
+    UI -> AdminUser : Display error: You cannot ban your own account
 else Target User is Different
-    Handler -> IdentityService : GetUsersInRoleAsync() (for Administrators)
+    activate BanAccountCommandHandler
+    BanAccountCommandHandler -> IdentityService : GetUsersInRoleAsync() (for Administrators)
+    deactivate BanAccountCommandHandler
     activate IdentityService
-    IdentityService --> Handler : List<Guid> (adminIds)
+    IdentityService --> BanAccountCommandHandler : List<Guid> (adminIds)
     deactivate IdentityService
-    Handler -> ApplicationDbContext : Query DomainUser by UserId (IgnoreQueryFilters, not deleted, not admin)
+    activate BanAccountCommandHandler
+    BanAccountCommandHandler -> ApplicationDbContext : Query DomainUser by UserId (IgnoreQueryFilters, not deleted, not admin)
+    deactivate BanAccountCommandHandler
     activate ApplicationDbContext
     ApplicationDbContext -> Database : Query DomainUser
+    deactivate ApplicationDbContext
     activate Database
     Database --> ApplicationDbContext : DomainUser
     deactivate Database
-    ApplicationDbContext --> Handler : DomainUser (bannedUsers)
+    activate ApplicationDbContext
+    ApplicationDbContext --> BanAccountCommandHandler : DomainUser (bannedUsers)
     deactivate ApplicationDbContext
+    activate BanAccountCommandHandler
     alt User Not Found or Is Admin
-        Handler --> UserEndpoints : Error: ACCOUNT_NOTFOUND
-        UserEndpoints --> UI : 400 Bad Request (errorCode: ACCOUNT_NOTFOUND)
-        UI -> AdminUser : Error: User not found or cannot be banned
+        BanAccountCommandHandler -> UserEndpoints : Error: ACCOUNT_NOT_FOUND
+        deactivate BanAccountCommandHandler
+        activate UserEndpoints
+        UserEndpoints --> UI : 400 Bad Request { "error": "ACCOUNT_NOT_FOUND" }
+        deactivate UserEndpoints
+        UI -> AdminUser : Display error: User not found or cannot be banned
     else User Found and Can Be Banned
-        Handler -> IdentityService : BanUser(userId, isBanned)
+        activate BanAccountCommandHandler
+        BanAccountCommandHandler -> IdentityService : BanUser(userId, isBanned)
+        deactivate BanAccountCommandHandler
         activate IdentityService
-        IdentityService --> Handler : Success
+        IdentityService --> BanAccountCommandHandler : Success
         deactivate IdentityService
-        Handler -> ApplicationDbContext : Update DomainUser IsBanned status
+        activate BanAccountCommandHandler
+        BanAccountCommandHandler -> ApplicationDbContext : Update DomainUser IsBanned status
+        deactivate BanAccountCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update DomainUser
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> BanAccountCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> UserEndpoints : 200 OK (ApiResponse<Guid>)
-        UserEndpoints --> UI : Info: User ban status updated
+        activate BanAccountCommandHandler
+        BanAccountCommandHandler -> UserEndpoints : Guid
+        deactivate BanAccountCommandHandler
+        activate UserEndpoints
+        UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+        deactivate UserEndpoints
+        UI -> AdminUser : Display info: User ban status updated
     end
 end
-deactivate Handler
-deactivate UserEndpoints
 deactivate UI
+
 @enduml

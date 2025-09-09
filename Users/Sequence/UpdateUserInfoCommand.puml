@@ -1,37 +1,66 @@
 @startuml
 actor User
-participant "User Profile UI" as UI
-participant UserEndpoints
-participant UpdateUserInfoCommandHandler as Handler
-participant ApplicationDbContext
+participant "User Profile UI" as UI <<UI>>
+participant ":UserEndpoints" as UserEndpoints <<Controller>>
+participant ":UpdateUserInfoCommandHandler" as UpdateUserInfoCommandHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of UpdateUserInfoCommandHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Update full name, click "Save"
 activate UI
 UI -> UserEndpoints : PATCH /api/User/Info
 activate UserEndpoints
-UserEndpoints -> Handler : Handle(UpdateUserInfoCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query DomainUser by UserId
+UserEndpoints -> UpdateUserInfoCommandHandler : Handle(UpdateUserInfoCommand)
+deactivate UserEndpoints
+activate UpdateUserInfoCommandHandler
+UpdateUserInfoCommandHandler -> ApplicationDbContext : Query DomainUser by UserId
+deactivate UpdateUserInfoCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUser
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : DomainUser
 deactivate Database
-ApplicationDbContext --> Handler : DomainUser (user)
-deactivate ApplicationDbContext
-Handler -> ApplicationDbContext : Update user FullName
 activate ApplicationDbContext
-ApplicationDbContext -> Database : Update DomainUser
-activate Database
-Database --> ApplicationDbContext : Success
-deactivate Database
-ApplicationDbContext --> Handler : Guid
+ApplicationDbContext --> UpdateUserInfoCommandHandler : DomainUser (user)
 deactivate ApplicationDbContext
-Handler --> UserEndpoints : Guid
-UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-UI -> User : Info: User info updated successfully
-deactivate Handler
-deactivate UserEndpoints
+activate UpdateUserInfoCommandHandler
+alt User Not Found
+    UpdateUserInfoCommandHandler -> UserEndpoints : Error: USER_NOT_FOUND
+    deactivate UpdateUserInfoCommandHandler
+    activate UserEndpoints
+    UserEndpoints --> UI : 400 Bad Request { "error": "USER_NOT_FOUND" }
+    deactivate UserEndpoints
+    UI -> User : Display error: User not found
+else User Found
+    activate UpdateUserInfoCommandHandler
+    UpdateUserInfoCommandHandler -> ApplicationDbContext : Update user FullName
+    deactivate UpdateUserInfoCommandHandler
+    activate ApplicationDbContext
+    ApplicationDbContext -> Database : Update DomainUser
+    deactivate ApplicationDbContext
+    activate Database
+    Database --> ApplicationDbContext : Success
+    deactivate Database
+    activate ApplicationDbContext
+    ApplicationDbContext --> UpdateUserInfoCommandHandler : Guid
+    deactivate ApplicationDbContext
+    activate UpdateUserInfoCommandHandler
+    UpdateUserInfoCommandHandler -> UserEndpoints : Guid
+    deactivate UpdateUserInfoCommandHandler
+    activate UserEndpoints
+    UserEndpoints --> UI : 200 OK (ApiResponse<Guid>)
+    deactivate UserEndpoints
+    UI -> User : Display info: User info updated successfully
+end
 deactivate UI
+
 @enduml

@@ -73,6 +73,7 @@ else Class Found
         deactivate ClassEndpoints
         UI -> User : Display error: User not in class
     else User In Class
+        activate GetClassByIdQueryHandler
         GetClassByIdQueryHandler -> ClassEndpoints : ClassDetailDto
         deactivate GetClassByIdQueryHandler
         activate ClassEndpoints

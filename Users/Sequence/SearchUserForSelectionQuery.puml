@@ -1,30 +1,45 @@
 @startuml
 actor User
-participant "User Selection UI" as UI
-participant UserEndpoints
-participant SearchUserForSelectionQueryHandler as Handler
-participant ApplicationDbContext
+participant "User Selection UI" as UI <<UI>>
+participant ":UserEndpoints" as UserEndpoints <<Controller>>
+participant ":SearchUserForSelectionQueryHandler" as SearchUserForSelectionQueryHandler <<Handler>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
 participant Database
+
+note right of SearchUserForSelectionQueryHandler
+  Managed by MediatR
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
 
 User -> UI : Enter email to search for user
 activate UI
 UI -> UserEndpoints : GET /api/User/SearchForSelection?email=...
 activate UserEndpoints
-UserEndpoints -> Handler : Handle(SearchUserForSelectionQuery)
-activate Handler
-Handler -> ApplicationDbContext : Query DomainUsers by Email
+UserEndpoints -> SearchUserForSelectionQueryHandler : Handle(SearchUserForSelectionQuery)
+deactivate UserEndpoints
+activate SearchUserForSelectionQueryHandler
+SearchUserForSelectionQueryHandler -> ApplicationDbContext : Query DomainUsers by Email
+deactivate SearchUserForSelectionQueryHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query DomainUsers
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : List<DomainUser>
 deactivate Database
-ApplicationDbContext --> Handler : List<DomainUser>
+activate ApplicationDbContext
+ApplicationDbContext --> SearchUserForSelectionQueryHandler : List<DomainUser>
 deactivate ApplicationDbContext
-Handler -> Handler : Map to UserForSelectionDto
-Handler --> UserEndpoints : List<UserForSelectionDto>
+activate SearchUserForSelectionQueryHandler
+SearchUserForSelectionQueryHandler -> SearchUserForSelectionQueryHandler : Map to UserForSelectionDto
+SearchUserForSelectionQueryHandler -> UserEndpoints : List<UserForSelectionDto>
+deactivate SearchUserForSelectionQueryHandler
+activate UserEndpoints
 UserEndpoints --> UI : 200 OK (ApiResponse<List<UserForSelectionDto>>)
-UI -> User : Show user selection results
-deactivate Handler
 deactivate UserEndpoints
+UI -> User : Show user selection results
 deactivate UI
+
 @enduml

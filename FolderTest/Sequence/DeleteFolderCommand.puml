@@ -1,71 +1,115 @@
 @startuml
 actor User
-participant "Folder List UI" as UI
-participant FolderTestEndpoints
-participant DeleteFolderCommandHandler as Handler
-participant FolderTestService
-participant ApplicationDbContext
+participant "Folder List UI" as UI <<UI>>
+participant ":FolderTestEndpoints" as FolderTestEndpoints <<Controller>>
+participant ":DeleteFolderCommandHandler" as DeleteFolderCommandHandler <<Handler>>
+participant ":FolderTestService" as FolderTestService <<Service>>
+participant ":ApplicationDbContext" as ApplicationDbContext <<DbContext>>
+participant ":IdentityService" as IdentityService <<Service>>
 participant Database
-participant IdentityService
+
+note right of DeleteFolderCommandHandler
+  Managed by MediatR
+end note
+
+note right of FolderTestService
+  Managed by IoC
+end note
+
+note right of ApplicationDbContext
+  Managed by IoC
+end note
+
+note right of IdentityService
+  Managed by IoC
+end note
 
 User -> UI : Click "Delete"
 activate UI
 UI -> FolderTestEndpoints : DELETE /api/Folder/{FolderId}
 activate FolderTestEndpoints
-FolderTestEndpoints -> Handler : Handle(DeleteFolderCommand)
-activate Handler
-Handler -> ApplicationDbContext : Query Folder by FolderId
+FolderTestEndpoints -> DeleteFolderCommandHandler : Handle(DeleteFolderCommand)
+deactivate FolderTestEndpoints
+activate DeleteFolderCommandHandler
+DeleteFolderCommandHandler -> ApplicationDbContext : Query Folder by FolderId
+deactivate DeleteFolderCommandHandler
 activate ApplicationDbContext
 ApplicationDbContext -> Database : Query Folder
+deactivate ApplicationDbContext
 activate Database
 Database --> ApplicationDbContext : Folder
 deactivate Database
-ApplicationDbContext --> Handler : Folder
+activate ApplicationDbContext
+ApplicationDbContext --> DeleteFolderCommandHandler : Folder
 deactivate ApplicationDbContext
+activate DeleteFolderCommandHandler
 alt Folder Not Found
-    Handler --> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
-    FolderTestEndpoints --> UI : 400 Bad Request (errorCode: FOLDER_NOT_FOUND)
-    UI -> User : Error: Folder not found
+    DeleteFolderCommandHandler -> FolderTestEndpoints : Error: FOLDER_NOT_FOUND
+    deactivate DeleteFolderCommandHandler
+    activate FolderTestEndpoints
+    FolderTestEndpoints --> UI : 400 Bad Request { "error": "FOLDER_NOT_FOUND" }
+    deactivate FolderTestEndpoints
+    UI -> User : Display error: Folder not found
 else Folder Found
-    Handler -> FolderTestService : CanDeleteOrEditFolderTest(folderId)
+    activate DeleteFolderCommandHandler
+    DeleteFolderCommandHandler -> FolderTestService : CanDeleteOrEditFolderTest(folderId)
+    deactivate DeleteFolderCommandHandler
     activate FolderTestService
     FolderTestService -> IdentityService : IsInAnyRoleAsync(userId, Administrator, Moderator)
+    deactivate FolderTestService
     activate IdentityService
     IdentityService --> FolderTestService : bool (isAdmin)
     deactivate IdentityService
+    activate FolderTestService
     alt Is Admin
-        FolderTestService --> Handler : true
+        FolderTestService --> DeleteFolderCommandHandler : true
     else Not Admin
+        ' activate FolderTestService
         FolderTestService -> ApplicationDbContext : Query FolderUser (Owner)
+        deactivate FolderTestService
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Query FolderUser
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : FolderUser
         deactivate Database
+        activate ApplicationDbContext
         ApplicationDbContext --> FolderTestService : FolderUser
         deactivate ApplicationDbContext
-        FolderTestService --> Handler : bool (isOwner)
+        activate FolderTestService
+        FolderTestService --> DeleteFolderCommandHandler : bool (isOwner)
     end
     deactivate FolderTestService
+    activate DeleteFolderCommandHandler
     alt No permission
-        Handler --> FolderTestEndpoints : Error: USER_NOT_HAVE_PERMISSION_IN_FOLDER
-        FolderTestEndpoints --> UI : 400 Bad Request (errorCode: USER_NOT_HAVE_PERMISSION_IN_FOLDER)
-        UI -> User : Error: User does not have permission to delete folder
+        DeleteFolderCommandHandler -> FolderTestEndpoints : Error: COMMON_FORBIDDEN
+        deactivate DeleteFolderCommandHandler
+        activate FolderTestEndpoints
+        FolderTestEndpoints --> UI : 400 Bad Request { "error": "COMMON_FORBIDDEN" }
+        deactivate FolderTestEndpoints
+        UI -> User : Display error: User does not have permission to delete folder
     else Allowed
-        Handler -> ApplicationDbContext : Mark Folder as Deleted
+        activate DeleteFolderCommandHandler
+        DeleteFolderCommandHandler -> ApplicationDbContext : Mark Folder as Deleted
+        deactivate DeleteFolderCommandHandler
         activate ApplicationDbContext
         ApplicationDbContext -> Database : Update Folder (IsDeleted = true)
+        deactivate ApplicationDbContext
         activate Database
         Database --> ApplicationDbContext : Success
         deactivate Database
-        ApplicationDbContext --> Handler : Guid
+        activate ApplicationDbContext
+        ApplicationDbContext --> DeleteFolderCommandHandler : Guid
         deactivate ApplicationDbContext
-        Handler --> FolderTestEndpoints : Guid
+        activate DeleteFolderCommandHandler
+        DeleteFolderCommandHandler -> FolderTestEndpoints : Guid
+        deactivate DeleteFolderCommandHandler
+        activate FolderTestEndpoints
         FolderTestEndpoints --> UI : 200 OK (ApiResponse<Guid>)
-        UI -> User : Info: Folder deleted successfully
+        deactivate FolderTestEndpoints
+        UI -> User : Display info: Folder deleted successfully
     end
 end
-deactivate Handler
-deactivate FolderTestEndpoints
 deactivate UI
+
 @enduml
